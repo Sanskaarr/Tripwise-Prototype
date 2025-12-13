@@ -1,0 +1,26 @@
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Navbar } from './components/Navbar';
+import { Home } from './pages/Home';
+import { IdentifyUser } from './pages/IdentifyUser';
+import { PlanTrip } from './pages/PlanTrip';
+import { Booking } from './pages/Booking';
+import { Payment } from './pages/Payment';
+import { LocalGuide } from './pages/LocalGuide';
+
+export function App() {
+  return (
+    <Router>
+      <div className="min-h-screen">
+        <Navbar />
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/identify" element={<IdentifyUser />} />
+          <Route path="/plan-trip" element={<PlanTrip />} />
+          <Route path="/booking" element={<Booking />} />
+          <Route path="/payment" element={<Payment />} />
+          <Route path="/local-guide" element={<LocalGuide />} />
+        </Routes>
+      </div>
+    </Router>
+  );
+}
