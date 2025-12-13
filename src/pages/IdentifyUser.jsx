@@ -24,8 +24,24 @@ export function IdentifyUser() {
   const handleContactSubmit = (e) => {
     e.preventDefault();
     if (identifier.trim()) {
-      const hasVisited = localStorage.getItem('tripwise_user');
-      setIsReturning(!!hasVisited);
+      const storedUser = localStorage.getItem('tripwise_user');
+      const hasVisited = !!storedUser;
+      
+      if (hasVisited) {
+        try {
+          const userData = JSON.parse(storedUser);
+          if (userData.identifier === identifier) {
+            setIsReturning(true);
+          } else {
+            setIsReturning(false);
+          }
+        } catch {
+          setIsReturning(false);
+        }
+      } else {
+        setIsReturning(false);
+      }
+      
       login(identifier, name);
       
       setTimeout(() => {

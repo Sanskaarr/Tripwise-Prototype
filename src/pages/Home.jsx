@@ -4,6 +4,7 @@ import { Plane, Mic, Globe, CreditCard, MapPin, Sparkles, ArrowRight } from 'luc
 import { motion, useScroll, useTransform } from 'framer-motion';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { useLanguage } from '../contexts/LanguageContext';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -11,6 +12,7 @@ export function Home() {
   const navigate = useNavigate();
   const sectionRef = useRef(null);
   const { scrollYProgress } = useScroll();
+  const { t } = useLanguage();
   
   const backgroundColor = useTransform(
     scrollYProgress,
@@ -78,7 +80,7 @@ export function Home() {
               className="mb-6 inline-flex items-center gap-2 px-6 py-2 rounded-full border border-charcoal/10"
             >
               <Sparkles size={18} className="text-accent-lavender" />
-              <span className="text-sm font-medium tracking-wider text-gray">AI-POWERED TRAVEL</span>
+              <span className="text-sm font-medium tracking-wider text-gray">{t('aiPowered')}</span>
             </motion.div>
             
             <motion.h1
@@ -87,9 +89,9 @@ export function Home() {
               transition={{ duration: 1, delay: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
               className="text-6xl md:text-8xl font-display font-bold mb-6 text-charcoal"
             >
-              Welcome to
+              {t('welcomeTitle')}
               <br />
-              <span className="text-gradient-pastel">TripWise</span>
+              <span className="text-gradient-pastel">{t('welcomeSubtitle')}</span>
             </motion.h1>
             
             <motion.p
@@ -98,7 +100,7 @@ export function Home() {
               transition={{ duration: 1, delay: 0.8 }}
               className="text-2xl md:text-3xl text-gray mb-12 font-light"
             >
-              Plan. Book. Explore.
+              {t('welcomeDescription')}
             </motion.p>
             
             <motion.button
@@ -111,7 +113,7 @@ export function Home() {
               className="group px-12 py-5 bg-charcoal text-cream text-lg font-medium rounded-full hover:shadow-xl transition-all duration-500"
             >
               <span className="flex items-center gap-3">
-                Start Your Journey
+                {t('getStarted')}
                 <ArrowRight size={20} className="group-hover:translate-x-2 transition-transform duration-300" />
               </span>
             </motion.button>
@@ -174,7 +176,7 @@ export function Home() {
             <div className="inline-flex items-center gap-4 bg-white/60 backdrop-blur-xl px-12 py-8 rounded-3xl hover-lift border border-charcoal/5">
               <MapPin className="text-accent-coral" size={32} />
               <span className="text-2xl font-display font-medium text-charcoal">
-                Your AI Travel Companion
+                {t('aiPowered')}
               </span>
             </div>
           </motion.div>

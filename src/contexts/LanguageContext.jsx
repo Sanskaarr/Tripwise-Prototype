@@ -23,10 +23,10 @@ const translations = {
     aiPowered: 'AI-Powered Travel Companion',
     
     // Home
-    welcomeTitle: 'Your Next Adventure',
-    welcomeSubtitle: 'Awaits',
-    welcomeDescription: 'Intelligent travel planning powered by AI',
-    getStarted: 'Get Started',
+    welcomeTitle: 'Welcome to TripWise',
+    welcomeSubtitle: 'Your Next Adventure Awaits',
+    welcomeDescription: 'Plan. Book. Explore.',
+    getStarted: 'Start Your Journey',
     
     // Identify User
     stepOf: 'STEP',

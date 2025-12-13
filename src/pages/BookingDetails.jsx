@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { MapPin, Calendar, Users, Phone, Mail, Hotel, Plane, CheckCircle, Download, Share2, Sparkles } from 'lucide-react';
+import { MapPin, Calendar, Users, Phone, Mail, Hotel, Plane, Train, Bus, CheckCircle, Download, Share2, Sparkles, Clock, DollarSign, Tag } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useUser } from '../contexts/UserContext';
@@ -51,9 +51,18 @@ export function BookingDetails() {
     );
   }
 
+  const getTravelIcon = (mode) => {
+    switch(mode?.toLowerCase()) {
+      case 'flight': return <Plane size={24} />;
+      case 'train': return <Train size={24} />;
+      case 'bus': return <Bus size={24} />;
+      default: return <Plane size={24} />;
+    }
+  };
+
   return (
     <div className="min-h-screen section-bg-cream py-20 px-4 pt-32">
-      <div className="max-w-5xl mx-auto">
+      <div className="max-w-6xl mx-auto">
         <motion.div
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
@@ -90,65 +99,78 @@ export function BookingDetails() {
             </div>
           </div>
 
-          {/* Trip Details Grid */}
-          <div className="grid md:grid-cols-2 gap-6 mb-8">
-            {/* Travel Details */}
-            <div className="bg-white/80 rounded-2xl p-6 border border-charcoal/10">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-3 bg-accent-coral/10 rounded-xl">
-                  <Plane size={24} className="text-accent-coral" />
-                </div>
-                <h3 className="text-xl font-display font-bold text-charcoal">
-                  {t('travelDetails') || 'Travel Details'}
-                </h3>
+          {/* Detailed Travel Information */}
+          <div className="bg-gradient-to-br from-accent-coral/5 to-accent-lavender/5 rounded-2xl p-8 mb-8 border border-charcoal/10">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-3 bg-accent-coral/10 rounded-xl">
+                {getTravelIcon(booking.travel.mode)}
               </div>
-              
-              <div className="space-y-3">
-                <DetailRow icon={<MapPin size={18} />} label={t('route') || 'Route'} value={`${booking.tripData.from} → ${booking.tripData.destination}`} />
-                <DetailRow icon={<Calendar size={18} />} label={t('date') || 'Date'} value={booking.tripData.date} />
-                <DetailRow icon={<Users size={18} />} label={t('travelers') || 'Travelers'} value={`${booking.tripData.travelers} ${booking.tripData.tripType}`} />
-                <DetailRow icon={<Plane size={18} />} label={t('mode') || 'Mode'} value={booking.travel.name} />
+              <h3 className="text-2xl font-display font-bold text-charcoal">
+                {t('travelDetails') || 'Travel Details'}
+              </h3>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6 mb-6">
+              <div className="bg-white/80 rounded-xl p-5">
+                <p className="text-xs text-gray uppercase tracking-wider mb-2">Operator</p>
+                <p className="text-xl font-bold text-charcoal">{booking.travel.name}</p>
               </div>
-              
-              <div className="mt-4 pt-4 border-t border-charcoal/10">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray">{t('travelCost') || 'Travel Cost'}</span>
-                  <span className="text-2xl font-bold text-accent-coral">₹{booking.travel.price}</span>
-                </div>
+              <div className="bg-white/80 rounded-xl p-5">
+                <p className="text-xs text-gray uppercase tracking-wider mb-2">Travel Mode</p>
+                <p className="text-xl font-bold text-charcoal capitalize">{booking.travel.mode || booking.tripData.travelMode}</p>
               </div>
             </div>
 
-            {/* Hotel Details */}
-            <div className="bg-white/80 rounded-2xl p-6 border border-charcoal/10">
-              <div className="flex items-center gap-3 mb-4">
-                <div className="p-3 bg-accent-lavender/10 rounded-xl">
-                  <Hotel size={24} className="text-accent-lavender" />
-                </div>
-                <h3 className="text-xl font-display font-bold text-charcoal">
-                  {t('hotelDetails') || 'Hotel Details'}
-                </h3>
+            <div className="grid md:grid-cols-3 gap-4">
+              <InfoCard icon={<MapPin size={20} />} label="Route" value={`${booking.tripData.from} → ${booking.tripData.destination}`} />
+              <InfoCard icon={<Calendar size={20} />} label="Departure Date" value={booking.tripData.date} />
+              <InfoCard icon={<Clock size={20} />} label="Duration" value={booking.travel.duration || "TBD"} />
+              <InfoCard icon={<Users size={20} />} label="Travelers" value={`${booking.tripData.travelers} Person(s)`} />
+              <InfoCard icon={<Tag size={20} />} label="Trip Type" value={booking.tripData.tripType} />
+              <InfoCard icon={<DollarSign size={20} />} label="Travel Cost" value={`₹${booking.travel.price}`} accent />
+            </div>
+          </div>
+
+          {/* Detailed Hotel Information */}
+          <div className="bg-gradient-to-br from-accent-lavender/5 to-accent-sage/5 rounded-2xl p-8 mb-8 border border-charcoal/10">
+            <div className="flex items-center gap-3 mb-6">
+              <div className="p-3 bg-accent-lavender/10 rounded-xl">
+                <Hotel size={24} className="text-accent-lavender" />
               </div>
-              
-              <div className="space-y-3">
-                <DetailRow icon={<Hotel size={18} />} label={t('hotel') || 'Hotel'} value={booking.hotel.name} />
-                <DetailRow icon={<MapPin size={18} />} label={t('location') || 'Location'} value={booking.tripData.destination} />
-                <DetailRow icon={<Calendar size={18} />} label={t('checkIn') || 'Check-in'} value={booking.tripData.date} />
-                <div className="flex flex-wrap gap-2 mt-3">
-                  {booking.hotel.amenities?.map((amenity, index) => (
-                    <span key={index} className="px-3 py-1 bg-accent-lavender/10 text-accent-lavender text-xs rounded-full">
+              <h3 className="text-2xl font-display font-bold text-charcoal">
+                {t('hotelDetails') || 'Hotel Details'}
+              </h3>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6 mb-6">
+              <div className="bg-white/80 rounded-xl p-5">
+                <p className="text-xs text-gray uppercase tracking-wider mb-2">Hotel Name</p>
+                <p className="text-xl font-bold text-charcoal">{booking.hotel.name}</p>
+              </div>
+              <div className="bg-white/80 rounded-xl p-5">
+                <p className="text-xs text-gray uppercase tracking-wider mb-2">Location</p>
+                <p className="text-xl font-bold text-charcoal">{booking.tripData.destination}</p>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-3 gap-4 mb-6">
+              <InfoCard icon={<Calendar size={20} />} label="Check-in" value={booking.tripData.date} />
+              <InfoCard icon={<Clock size={20} />} label="Nights" value={`${booking.hotel.nights || 3} Night(s)`} />
+              <InfoCard icon={<DollarSign size={20} />} label="Total Hotel Cost" value={`₹${booking.hotel.price}`} accent />
+            </div>
+
+            {booking.hotel.amenities && booking.hotel.amenities.length > 0 && (
+              <div className="bg-white/80 rounded-xl p-5">
+                <p className="text-xs text-gray uppercase tracking-wider mb-3">Amenities</p>
+                <div className="flex flex-wrap gap-2">
+                  {booking.hotel.amenities.map((amenity, index) => (
+                    <span key={index} className="px-4 py-2 bg-accent-lavender/10 text-accent-lavender text-sm font-medium rounded-full">
                       {amenity}
                     </span>
                   ))}
                 </div>
               </div>
-              
-              <div className="mt-4 pt-4 border-t border-charcoal/10">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray">{t('hotelCost') || 'Hotel Cost'}</span>
-                  <span className="text-2xl font-bold text-accent-lavender">₹{booking.hotel.price}</span>
-                </div>
-              </div>
-            </div>
+            )}
           </div>
 
           {/* User Contact Information */}
@@ -207,6 +229,7 @@ export function BookingDetails() {
           <div className="bg-gradient-to-r from-accent-coral to-accent-lavender p-8 rounded-2xl text-white text-center mb-8">
             <p className="text-sm uppercase tracking-wider mb-2 opacity-90">{t('totalCost') || 'Total Cost'}</p>
             <p className="text-5xl font-display font-bold">₹{booking.total}</p>
+            <p className="text-sm mt-2 opacity-80">Travel: ₹{booking.travel.price} + Hotel: ₹{booking.hotel.price}</p>
           </div>
 
           {/* Action Buttons */}
@@ -230,6 +253,18 @@ export function BookingDetails() {
           </div>
         </motion.div>
       </div>
+    </div>
+  );
+}
+
+function InfoCard({ icon, label, value, accent }) {
+  return (
+    <div className={`bg-white/80 rounded-xl p-4 ${accent ? 'ring-2 ring-accent-coral/30' : ''}`}>
+      <div className="flex items-center gap-2 mb-2">
+        <div className={`${accent ? 'text-accent-coral' : 'text-gray'}`}>{icon}</div>
+        <p className="text-xs text-gray uppercase tracking-wider">{label}</p>
+      </div>
+      <p className={`text-lg font-bold ${accent ? 'text-accent-coral' : 'text-charcoal'}`}>{value}</p>
     </div>
   );
 }

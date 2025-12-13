@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Plane, Globe } from 'lucide-react';
+import { Plane, Globe, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useUser } from '../contexts/UserContext';
@@ -191,6 +191,19 @@ export function Navbar() {
             className="fixed inset-0 z-50 bg-cream"
             style={{ paddingTop: '80px' }}
           >
+            {/* Close Button */}
+            <motion.button
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.3, delay: 0.2 }}
+              onClick={() => setIsMenuOpen(false)}
+              className="fixed top-8 right-8 z-50 p-3 bg-white/80 backdrop-blur-sm rounded-full hover:bg-accent-coral hover:text-white transition-all duration-300 shadow-lg group"
+              aria-label="Close menu"
+            >
+              <X size={24} className="text-charcoal group-hover:text-white transition-colors" />
+            </motion.button>
+
             <motion.div
               variants={menuVariants}
               initial="closed"
