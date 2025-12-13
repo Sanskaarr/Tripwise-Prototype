@@ -12,31 +12,19 @@ const apiClient = axios.create({
 
 export const tripAPI = {
   planTrip: async (tripData) => {
-    try {
-      const aiResponse = await aiService.generateTripItinerary(tripData);
-      
-      return {
-        success: true,
-        message: 'Trip planned successfully',
-        data: {
-          tripId: Math.random().toString(36).substr(2, 9),
-          itinerary: aiResponse.content,
-          provider: aiResponse.provider,
-          ...tripData
-        }
-      };
-    } catch (error) {
-      console.error('Error planning trip:', error);
-      return {
-        success: true,
-        message: 'Trip planned successfully (demo mode)',
-        data: {
-          tripId: Math.random().toString(36).substr(2, 9),
-          ...tripData,
-          note: 'AI integration available - configure VITE_GEMINI_API_KEY or VITE_OPENAI_API_KEY to enable'
-        }
-      };
-    }
+    // Get AI-powered suggestions
+    const aiSuggestions = await aiService.generateTripSuggestions(tripData);
+    
+    return {
+      success: true,
+      message: 'Trip planned successfully',
+      data: {
+        tripId: Math.random().toString(36).substr(2, 9),
+        ...tripData,
+        aiSuggestions: aiSuggestions.suggestions,
+        aiSource: aiSuggestions.source
+      }
+    };
   },
 };
 
@@ -99,10 +87,15 @@ export const bookingAPI = {
 
 export const localGuideAPI = {
   getGuide: async (city) => {
+    // Get AI-powered local guide
+    const aiGuide = await aiService.generateLocalGuide(city);
+    
     return {
       success: true,
       data: {
         city: city,
+        aiGuide: aiGuide.guide,
+        aiSource: aiGuide.source,
         attractions: [
           { name: 'Historic Fort', description: 'Ancient fort with stunning architecture' },
           { name: 'Local Market', description: 'Vibrant market for shopping and street food' },

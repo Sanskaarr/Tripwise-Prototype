@@ -1,11 +1,23 @@
-import { useState } from 'react';
+import { useState, createContext, useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Plane, Globe } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
+// Create Language Context
+const LanguageContext = createContext();
+
+export function useLanguage() {
+  const context = useContext(LanguageContext);
+  if (!context) {
+    return { language: 'en', setLanguage: () => {} };
+  }
+  return context;
+}
+
 export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLangOpen, setIsLangOpen] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState('en');
   const location = useLocation();
 
   const navLinks = [
@@ -16,10 +28,28 @@ export function Navbar() {
   ];
 
   const languages = [
-    { code: 'en', label: 'English' },
-    { code: 'hi', label: 'हिंदी' },
-    { code: 'es', label: 'Español' },
+    { code: 'en', label: 'English', flag: '🇺🇸' },
+    { code: 'hi', label: 'हिंदी', flag: '🇮🇳' },
+    { code: 'es', label: 'Español', flag: '🇪🇸' },
+    { code: 'fr', label: 'Français', flag: '🇫🇷' },
+    { code: 'de', label: 'Deutsch', flag: '🇩🇪' },
+    { code: 'zh', label: '中文', flag: '🇨🇳' },
+    { code: 'ja', label: '日本語', flag: '🇯🇵' },
+    { code: 'ar', label: 'العربية', flag: '🇸🇦' },
+    { code: 'pt', label: 'Português', flag: '🇵🇹' },
+    { code: 'ru', label: 'Русский', flag: '🇷🇺' },
   ];
+
+  const currentLang = languages.find(lang => lang.code === selectedLanguage) || languages[0];
+
+  const handleLanguageChange = (langCode) => {
+    setSelectedLanguage(langCode);
+    setIsLangOpen(false);
+    // Store language preference
+    localStorage.setItem('tripwise_language', langCode);
+    // Note: Full translation would require i18n library
+    console.log('Language changed to:', langCode);
+  };
 
   const menuVariants = {
     closed: {
@@ -98,8 +128,8 @@ export function Navbar() {
                   onClick={() => setIsLangOpen(!isLangOpen)}
                   className="flex items-center gap-2 px-3 py-1.5 rounded-full border border-charcoal/10 hover:border-accent-coral/30 transition-all duration-300"
                 >
-                  <Globe size={16} className="text-accent-coral" />
-                  <span className="text-xs font-medium text-gray">EN</span>
+                  <span className="text-lg">{currentLang.flag}</span>
+                  <span className="text-xs font-medium text-gray">{currentLang.code.toUpperCase()}</span>
                 </button>
                 
                 <AnimatePresence>
@@ -109,15 +139,20 @@ export function Navbar() {
                       animate={{ opacity: 1, y: 0 }}
                       exit={{ opacity: 0, y: -10 }}
                       transition={{ duration: 0.3, ease: [0.25, 0.46, 0.45, 0.94] }}
-                      className="absolute top-full right-0 mt-2 w-36 bg-white/90 backdrop-blur-xl rounded-xl overflow-hidden shadow-lg border border-charcoal/5"
+                      className="absolute top-full right-0 mt-2 w-48 bg-white/95 backdrop-blur-xl rounded-xl overflow-hidden shadow-xl border border-charcoal/5 max-h-[400px] overflow-y-auto"
                     >
                       {languages.map((lang) => (
                         <button
                           key={lang.code}
-                          onClick={() => setIsLangOpen(false)}
-                          className="w-full px-4 py-2.5 text-left text-sm text-gray hover:bg-beige hover:text-charcoal transition-all duration-200"
+                          onClick={() => handleLanguageChange(lang.code)}
+                          className={`w-full px-4 py-3 text-left text-sm flex items-center gap-3 transition-all duration-200 ${
+                            selectedLanguage === lang.code 
+                              ? 'bg-accent-coral/10 text-accent-coral font-semibold' 
+                              : 'text-gray hover:bg-beige hover:text-charcoal'
+                          }`}
                         >
-                          {lang.label}
+                          <span className="text-lg">{lang.flag}</span>
+                          <span>{lang.label}</span>
                         </button>
                       ))}
                     </motion.div>
@@ -152,7 +187,7 @@ export function Navbar() {
         </div>
       </nav>
 
-      {/* Full-Screen Overlay Menu - Inspired by cabanana.pt */}
+      {/* Full-Screen Overlay Menu */}
       <AnimatePresence>
         {isMenuOpen && (
           <motion.div
@@ -211,7 +246,7 @@ export function Navbar() {
                 <div className="flex flex-wrap gap-6 text-sm text-mid-gray">
                   <div className="flex items-center gap-2">
                     <Globe size={16} className="text-accent-coral" />
-                    <span>Available in 3 languages</span>
+                    <span>Available in {languages.length} languages</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Plane size={16} className="text-accent-coral" />

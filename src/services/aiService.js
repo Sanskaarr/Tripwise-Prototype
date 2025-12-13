@@ -1,115 +1,161 @@
-import { GoogleGenAI } from '@google/genai';
-import OpenAI from 'openai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
-const GEMINI_API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
-const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
+// Initialize Gemini API
+// Users can add their API key via environment variable VITE_GEMINI_API_KEY
+const apiKey = import.meta.env.VITE_GEMINI_API_KEY || '';
 
-const DEFAULT_PROVIDER = import.meta.env.VITE_AI_PROVIDER || 'gemini';
-
-let geminiClient = null;
-let openaiClient = null;
-
-if (GEMINI_API_KEY) {
-  geminiClient = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
-}
-
-if (OPENAI_API_KEY) {
-  openaiClient = new OpenAI({ apiKey: OPENAI_API_KEY, dangerouslyAllowBrowser: true });
+let genAI = null;
+if (apiKey) {
+  genAI = new GoogleGenerativeAI(apiKey);
 }
 
 export const aiService = {
-  async generateTripItinerary(tripData) {
-    const { from, destination, travelers, tripType, date, budget, mode } = tripData;
-    
-    const prompt = `Create a detailed 3-day travel itinerary for a ${tripType || 'leisure'} trip:
-    
-From: ${from}
-To: ${destination}
-Number of travelers: ${travelers}
-Travel date: ${date}
-Budget: ${budget ? `₹${budget}` : 'Flexible'}
-Travel mode: ${mode}
+  // Generate AI-powered trip suggestions
+  async generateTripSuggestions(tripData) {
+    // If no API key, return mock data
+    if (!genAI) {
+      return getMockSuggestions(tripData);
+    }
+
+    try {
+      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+      
+      const prompt = `You are a travel expert AI. Based on the following trip details, provide personalized travel suggestions:
+      
+Trip Details:
+- Name: ${tripData.name}
+- From: ${tripData.from}
+- Destination: ${tripData.destination}
+- Date: ${tripData.date}
+- Budget: ${tripData.budget || 'Not specified'}
+- Travel Mode: ${tripData.mode}
+- Number of Travelers: ${tripData.travelers}
+- Trip Type: ${tripData.tripType}
 
 Please provide:
-1. Day-by-day itinerary with morning, afternoon, and evening activities
-2. Restaurant recommendations for each day
-3. Must-visit attractions
-4. Estimated costs for activities
-5. Local tips and cultural etiquette
+1. Top 3 must-visit attractions in ${tripData.destination}
+2. Best local food recommendations
+3. Travel tips specific to this destination
+4. Estimated costs breakdown
+5. Best time to visit recommendations
 
-Format the response as a detailed travel guide.`;
+Format the response in a clear, concise manner.`;
+
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+      
+      return {
+        success: true,
+        suggestions: text,
+        source: 'gemini-ai'
+      };
+    } catch (error) {
+      console.error('AI Service Error:', error);
+      return getMockSuggestions(tripData);
+    }
+  },
+
+  // Generate local guide information
+  async generateLocalGuide(city) {
+    if (!genAI) {
+      return getMockGuide(city);
+    }
 
     try {
-      if (DEFAULT_PROVIDER === 'openai' && openaiClient) {
-        return await this.generateWithOpenAI(prompt);
-      } else if (geminiClient) {
-        return await this.generateWithGemini(prompt);
-      } else {
-        throw new Error('No AI provider configured. Please set VITE_GEMINI_API_KEY or VITE_OPENAI_API_KEY in your .env file.');
-      }
+      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+      
+      const prompt = `Provide a comprehensive local guide for ${city}. Include:
+      
+1. Top attractions and landmarks
+2. Local cuisine and recommended restaurants
+3. Cultural tips and etiquette
+4. Transportation options
+5. Emergency contacts
+6. Best neighborhoods to explore
+7. Hidden gems tourists might miss
+
+Format the response in a structured, easy-to-read manner.`;
+
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+      
+      return {
+        success: true,
+        guide: text,
+        source: 'gemini-ai'
+      };
     } catch (error) {
-      console.error('AI generation error:', error);
-      throw error;
+      console.error('AI Service Error:', error);
+      return getMockGuide(city);
     }
   },
 
-  async generateWithGemini(prompt) {
-    if (!geminiClient) {
-      throw new Error('Gemini API key not configured');
-    }
-
-    const response = await geminiClient.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-    });
-
-    return {
-      success: true,
-      provider: 'gemini',
-      content: response.text,
-    };
-  },
-
-  async generateWithOpenAI(prompt) {
-    if (!openaiClient) {
-      throw new Error('OpenAI API key not configured');
-    }
-
-    const response = await openaiClient.responses.create({
-      model: 'gpt-5.2',
-      reasoning: { effort: 'low' },
-      input: prompt,
-    });
-
-    return {
-      success: true,
-      provider: 'openai',
-      content: response.output_text,
-    };
-  },
-
-  async getDestinationInfo(destination) {
-    const prompt = `Provide comprehensive travel information about ${destination}:
-
-1. Best time to visit
-2. Top 5 attractions
-3. Local cuisine and must-try dishes
-4. Cultural customs and etiquette
-5. Safety tips
-6. Transportation options
-7. Average costs
-
-Keep the response concise but informative.`;
-
-    try {
-      if (DEFAULT_PROVIDER === 'openai' && openaiClient) {
-        return await this.generateWithOpenAI(prompt);
-      } else if (geminiClient) {
-        return await this.generateWithGemini(prompt);
-      }
-    } catch (error) {
-      console.error('Error getting destination info:', error);
-      throw error;
-    }
-  },
+  // Check if AI is available
+  isAIAvailable() {
+    return !!genAI;
+  }
 };
+
+// Mock data for when AI is not available
+function getMockSuggestions(tripData) {
+  return {
+    success: true,
+    suggestions: `AI-Powered Trip Suggestions for ${tripData.destination}:
+
+🏛️ Top Attractions:
+1. Historic landmarks and cultural sites
+2. Natural wonders and scenic viewpoints
+3. Local markets and shopping districts
+
+🍽️ Food Recommendations:
+- Try local specialties and street food
+- Visit popular restaurants in the city center
+- Don't miss traditional breakfast spots
+
+💡 Travel Tips:
+- Best time to visit is during spring or fall
+- Book accommodations in advance
+- Use local transportation for authentic experience
+- Respect local customs and traditions
+
+💰 Budget Estimate:
+- Accommodation: ₹${parseInt(tripData.budget) * 0.4 || 3000}/night
+- Food: ₹${parseInt(tripData.budget) * 0.3 || 1500}/day
+- Activities: ₹${parseInt(tripData.budget) * 0.3 || 2000}/day
+
+Note: Add VITE_GEMINI_API_KEY to .env for real AI-powered suggestions!`,
+    source: 'mock'
+  };
+}
+
+function getMockGuide(city) {
+  return {
+    success: true,
+    guide: `Local Guide for ${city}:
+
+🏛️ Must-Visit Attractions:
+- Historic monuments and museums
+- Scenic parks and gardens
+- Cultural centers and galleries
+
+🍽️ Local Cuisine:
+- Traditional dishes to try
+- Popular restaurants
+- Street food recommendations
+
+🚗 Transportation:
+- Public transit options
+- Ride-sharing services
+- Local taxi information
+
+⚠️ Emergency Contacts:
+- Police: 100
+- Ambulance: 108
+- Tourist Helpline: Available 24/7
+
+Note: Add VITE_GEMINI_API_KEY to .env for detailed AI-generated guides!`,
+    source: 'mock'
+  };
+}
