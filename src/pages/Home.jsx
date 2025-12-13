@@ -1,110 +1,208 @@
+import { useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plane, Mic, Globe, CreditCard, MapPin, Sparkles, ArrowRight } from 'lucide-react';
+import { motion, useScroll, useTransform } from 'framer-motion';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+gsap.registerPlugin(ScrollTrigger);
 
 export function Home() {
   const navigate = useNavigate();
+  const sectionRef = useRef(null);
+  const { scrollYProgress } = useScroll();
+  
+  const backgroundColor = useTransform(
+    scrollYProgress,
+    [0, 0.3, 0.6, 1],
+    ['#FDFBF7', '#F5F0E8', '#FAF2ED', '#F4F7FA']
+  );
+
+  useEffect(() => {
+    const sections = gsap.utils.toArray('.scroll-section');
+    
+    sections.forEach((section, index) => {
+      gsap.fromTo(
+        section,
+        { opacity: 0, y: 80 },
+        {
+          opacity: 1,
+          y: 0,
+          duration: 1.2,
+          ease: 'power3.out',
+          scrollTrigger: {
+            trigger: section,
+            start: 'top 80%',
+            end: 'top 40%',
+            toggleActions: 'play none none reverse',
+          },
+        }
+      );
+    });
+
+    return () => {
+      ScrollTrigger.getAll().forEach(trigger => trigger.kill());
+    };
+  }, []);
 
   return (
-    <div className="min-h-screen bg-navy-deep relative overflow-hidden">
-      {/* Animated Background */}
-      <div className="absolute inset-0 opacity-30">
-        <div className="absolute top-20 left-10 w-96 h-96 bg-aurora-purple rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-20 right-10 w-96 h-96 bg-aurora-blue rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }} />
-        <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-aurora-pink rounded-full blur-3xl animate-float" style={{ animationDelay: '4s' }} />
-      </div>
-
-      <div className="relative container mx-auto px-6 py-32 pt-40">
-        {/* Hero Section */}
-        <div className="text-center mb-24 animate-fade-in">
-          <div className="flex justify-center mb-8">
-            <div className="relative">
-              <div className="absolute inset-0 bg-aurora-blue blur-2xl opacity-50 animate-pulse" />
-              <div className="relative glassmorphism p-10 rounded-3xl">
-                <Plane size={80} className="text-aurora-blue animate-float" />
-              </div>
-            </div>
-          </div>
-          
-          <div className="mb-6 inline-flex items-center gap-2 glassmorphism px-6 py-3 rounded-full">
-            <Sparkles size={20} className="text-aurora-purple" />
-            <span className="text-sm font-medium tracking-wider uppercase">AI-Powered Travel</span>
-          </div>
-          
-          <h1 className="text-6xl md:text-8xl font-display font-bold mb-6 animate-slide-in-left">
-            <span className="text-gradient">Welcome to</span>
-            <br />
-            <span className="text-ice-white">TripWise</span>
-          </h1>
-          
-          <p className="text-2xl md:text-3xl text-ice-white/70 mb-12 font-light tracking-wide animate-slide-in-right">
-            Plan. Book. Explore — <span className="text-aurora-blue font-medium">All in One Place</span>
-          </p>
-          
-          <button
-            onClick={() => navigate('/identify')}
-            className="group relative px-12 py-5 bg-gradient-to-r from-aurora-blue to-aurora-purple text-white text-xl font-semibold rounded-full hover:shadow-2xl hover:shadow-aurora-blue/50 transition-all duration-300 transform hover:scale-105 overflow-hidden"
+    <motion.div 
+      ref={sectionRef}
+      style={{ backgroundColor }}
+      className="min-h-screen"
+    >
+      {/* Hero Section - Cream Background */}
+      <section className="scroll-section section-bg-cream min-h-screen flex items-center justify-center relative overflow-hidden">
+        <div className="container mx-auto px-6 py-32 pt-40">
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 1, ease: [0.25, 0.46, 0.45, 0.94] }}
+            className="text-center"
           >
-            <span className="relative z-10 flex items-center gap-3">
-              Start Your Journey
-              <ArrowRight size={24} className="group-hover:translate-x-2 transition-transform duration-300" />
-            </span>
-            <div className="absolute inset-0 bg-gradient-to-r from-aurora-purple to-aurora-pink opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-          </button>
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              transition={{ duration: 0.8, delay: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
+              className="flex justify-center mb-8"
+            >
+              <div className="relative">
+                <Plane size={80} className="text-accent-coral" />
+              </div>
+            </motion.div>
+            
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.8, delay: 0.4 }}
+              className="mb-6 inline-flex items-center gap-2 px-6 py-2 rounded-full border border-charcoal/10"
+            >
+              <Sparkles size={18} className="text-accent-lavender" />
+              <span className="text-sm font-medium tracking-wider text-gray">AI-POWERED TRAVEL</span>
+            </motion.div>
+            
+            <motion.h1
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 1, delay: 0.6, ease: [0.25, 0.46, 0.45, 0.94] }}
+              className="text-6xl md:text-8xl font-display font-bold mb-6 text-charcoal"
+            >
+              Welcome to
+              <br />
+              <span className="text-gradient-pastel">TripWise</span>
+            </motion.h1>
+            
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 1, delay: 0.8 }}
+              className="text-2xl md:text-3xl text-gray mb-12 font-light"
+            >
+              Plan. Book. Explore.
+            </motion.p>
+            
+            <motion.button
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 1 }}
+              whileHover={{ scale: 1.05, y: -4 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => navigate('/identify')}
+              className="group px-12 py-5 bg-charcoal text-cream text-lg font-medium rounded-full hover:shadow-xl transition-all duration-500"
+            >
+              <span className="flex items-center gap-3">
+                Start Your Journey
+                <ArrowRight size={20} className="group-hover:translate-x-2 transition-transform duration-300" />
+              </span>
+            </motion.button>
+          </motion.div>
         </div>
+      </section>
 
-        {/* Features Grid */}
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-24">
-          <FeatureCard
-            icon={<Plane size={36} />}
-            title="Smart Planning"
-            description="AI-powered trip planning tailored to your preferences"
-            delay="0s"
-          />
-          <FeatureCard
-            icon={<CreditCard size={36} />}
-            title="Instant Booking"
-            description="Seamless booking for flights and accommodations"
-            delay="0.1s"
-          />
-          <FeatureCard
-            icon={<Mic size={36} />}
-            title="Voice Control"
-            description="Hands-free experience with voice commands"
-            delay="0.2s"
-          />
-          <FeatureCard
-            icon={<Globe size={36} />}
-            title="Multi-Language"
-            description="Travel support in your preferred language"
-            delay="0.3s"
-          />
-        </div>
-
-        {/* Bottom CTA */}
-        <div className="text-center animate-fade-in">
-          <div className="inline-flex items-center gap-3 glassmorphism px-8 py-5 rounded-2xl hover-lift cursor-pointer">
-            <MapPin className="text-aurora-pink" size={28} />
-            <span className="text-xl font-display font-medium">
-              Your AI Travel Companion for Every Journey
-            </span>
+      {/* Features Section - Beige Background */}
+      <section className="scroll-section section-bg-beige py-32">
+        <div className="container mx-auto px-6">
+          <motion.h2
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="text-5xl md:text-6xl font-display font-bold text-center mb-16 text-charcoal"
+          >
+            Why Choose TripWise?
+          </motion.h2>
+          
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <FeatureCard
+              icon={<Plane size={36} />}
+              title="Smart Planning"
+              description="AI-powered trip planning tailored to your preferences"
+              delay={0}
+            />
+            <FeatureCard
+              icon={<CreditCard size={36} />}
+              title="Instant Booking"
+              description="Seamless booking for flights and accommodations"
+              delay={0.1}
+            />
+            <FeatureCard
+              icon={<Mic size={36} />}
+              title="Voice Control"
+              description="Hands-free experience with voice commands"
+              delay={0.2}
+            />
+            <FeatureCard
+              icon={<Globe size={36} />}
+              title="Multi-Language"
+              description="Travel support in your preferred language"
+              delay={0.3}
+            />
           </div>
         </div>
-      </div>
-    </div>
+      </section>
+
+      {/* CTA Section - Peach Background */}
+      <section className="scroll-section section-bg-peach py-32">
+        <div className="container mx-auto px-6">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.8 }}
+            className="text-center"
+          >
+            <div className="inline-flex items-center gap-4 bg-white/60 backdrop-blur-xl px-12 py-8 rounded-3xl hover-lift border border-charcoal/5">
+              <MapPin className="text-accent-coral" size={32} />
+              <span className="text-2xl font-display font-medium text-charcoal">
+                Your AI Travel Companion
+              </span>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+    </motion.div>
   );
 }
 
 function FeatureCard({ icon, title, description, delay }) {
   return (
-    <div 
-      className="glassmorphism p-8 rounded-2xl hover-lift cursor-pointer group animate-fade-in"
-      style={{ animationDelay: delay }}
+    <motion.div
+      initial={{ opacity: 0, y: 40 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.8, delay }}
+      whileHover={{ y: -8, transition: { duration: 0.3 } }}
+      className="bg-white/60 backdrop-blur-xl p-8 rounded-2xl border border-charcoal/5 cursor-pointer group"
     >
-      <div className="text-aurora-blue mb-4 group-hover:text-aurora-purple transition-colors duration-300 group-hover:scale-110 transform transition-transform">
+      <motion.div
+        whileHover={{ scale: 1.1, rotate: 5 }}
+        transition={{ duration: 0.3 }}
+        className="text-accent-coral mb-4 group-hover:text-accent-lavender transition-colors duration-500"
+      >
         {icon}
-      </div>
-      <h3 className="text-2xl font-display font-bold text-ice-white mb-3">{title}</h3>
-      <p className="text-ice-white/60 leading-relaxed">{description}</p>
-    </div>
+      </motion.div>
+      <h3 className="text-xl font-display font-bold text-charcoal mb-3">{title}</h3>
+      <p className="text-gray leading-relaxed">{description}</p>
+    </motion.div>
   );
 }

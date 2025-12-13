@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Hotel, Star, Sparkles, ArrowRight } from 'lucide-react';
+import { motion } from 'framer-motion';
 import { TripCard } from '../components/TripCard';
 import { bookingAPI } from '../services/api';
 
@@ -55,103 +56,139 @@ export function Booking() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-navy-deep flex items-center justify-center">
+      <div className="min-h-screen section-bg-cream flex items-center justify-center">
         <div className="text-center">
-          <div className="relative w-20 h-20 mx-auto mb-6">
-            <div className="absolute inset-0 border-4 border-aurora-blue/30 rounded-full"></div>
-            <div className="absolute inset-0 border-4 border-transparent border-t-aurora-blue rounded-full animate-spin"></div>
-          </div>
-          <p className="text-ice-white/70 text-lg">Finding best options for you...</p>
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            className="w-16 h-16 mx-auto mb-6 border-4 border-accent-coral/20 border-t-accent-coral rounded-full"
+          />
+          <p className="text-gray text-lg">Finding best options for you...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-navy-deep relative overflow-hidden py-20 px-4 pt-32">
-      {/* Animated Background */}
-      <div className="absolute inset-0 opacity-20">
-        <div className="absolute top-20 left-20 w-80 h-80 bg-aurora-purple rounded-full blur-3xl animate-float" />
-        <div className="absolute bottom-20 right-20 w-80 h-80 bg-aurora-pink rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }} />
-      </div>
-
-      <div className="relative max-w-5xl mx-auto">
-        <div className="glassmorphism rounded-3xl p-10 shadow-2xl">
-          {/* Header */}
-          <div className="text-center mb-10 animate-fade-in">
-            <div className="inline-flex items-center gap-2 glassmorphism px-5 py-2 rounded-full mb-6">
-              <Sparkles size={18} className="text-aurora-blue" />
-              <span className="text-sm font-medium tracking-wider uppercase">Step 2 of 3</span>
-            </div>
+    <div className="min-h-screen section-bg-peach py-20 px-4 pt-32">
+      <div className="max-w-5xl mx-auto">
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }}
+          className="bg-white/60 backdrop-blur-xl rounded-3xl p-10 shadow-lg border border-charcoal/5"
+        >
+          <div className="text-center mb-10">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="inline-flex items-center gap-2 px-5 py-2 rounded-full border border-charcoal/10 mb-6"
+            >
+              <Sparkles size={18} className="text-accent-coral" />
+              <span className="text-sm font-medium tracking-wider text-gray">STEP 2 OF 3</span>
+            </motion.div>
             
-            <h2 className="text-4xl md:text-5xl font-display font-bold text-ice-white mb-3">
-              Choose Your <span className="text-gradient">Travel Options</span>
-            </h2>
-            <p className="text-ice-white/60 text-lg">
+            <motion.h2
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.4 }}
+              className="text-4xl md:text-5xl font-display font-bold text-charcoal mb-3"
+            >
+              Choose Your <span className="text-gradient-pastel">Travel Options</span>
+            </motion.h2>
+            <motion.p
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.6, delay: 0.6 }}
+              className="text-gray text-lg"
+            >
               {tripData.from} → {tripData.destination}
-            </p>
+            </motion.p>
           </div>
 
           <div className="space-y-10">
-            {/* Travel Options */}
-            <div className="animate-slide-in-left">
-              <h3 className="text-2xl font-display font-bold text-ice-white mb-5 flex items-center gap-3">
-                <div className="w-1 h-8 bg-gradient-to-b from-aurora-blue to-aurora-purple rounded-full" />
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 0.8 }}
+            >
+              <h3 className="text-2xl font-display font-bold text-charcoal mb-5 flex items-center gap-3">
+                <div className="w-1 h-8 bg-accent-coral rounded-full" />
                 {tripData.mode} Options
               </h3>
               <div className="space-y-4">
                 {options?.travelOptions.map((option, index) => (
-                  <div key={option.id} className="animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
+                  <motion.div
+                    key={option.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 1 + index * 0.1 }}
+                  >
                     <TripCard
                       option={option}
                       selected={selectedTravel?.id === option.id}
                       onSelect={() => setSelectedTravel(option)}
                     />
-                  </div>
+                  </motion.div>
                 ))}
               </div>
-            </div>
+            </motion.div>
 
-            {/* Hotel Options */}
-            <div className="animate-slide-in-right">
-              <h3 className="text-2xl font-display font-bold text-ice-white mb-5 flex items-center gap-3">
-                <div className="w-1 h-8 bg-gradient-to-b from-aurora-purple to-aurora-pink rounded-full" />
-                <Hotel size={28} />
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ duration: 0.6, delay: 1.2 }}
+            >
+              <h3 className="text-2xl font-display font-bold text-charcoal mb-5 flex items-center gap-3">
+                <div className="w-1 h-8 bg-accent-lavender rounded-full" />
+                <Hotel size={28} className="text-accent-lavender" />
                 Hotel Options
               </h3>
               <div className="space-y-4">
                 {options?.hotels.map((hotel, index) => (
-                  <div key={hotel.id} className="animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
+                  <motion.div
+                    key={hotel.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: 1.4 + index * 0.1 }}
+                  >
                     <HotelCard
                       hotel={hotel}
                       selected={selectedHotel?.id === hotel.id}
                       onSelect={() => setSelectedHotel(hotel)}
                     />
-                  </div>
+                  </motion.div>
                 ))}
               </div>
-            </div>
+            </motion.div>
 
-            {/* Total & Continue */}
-            <div className="border-t border-white/10 pt-8 animate-fade-in">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 1.8 }}
+              className="border-t border-charcoal/10 pt-8"
+            >
               <div className="flex justify-between items-center mb-8">
-                <span className="text-xl font-display font-semibold text-ice-white">Total Cost</span>
-                <span className="text-4xl font-display font-bold text-gradient">
+                <span className="text-xl font-display font-semibold text-charcoal">Total Cost</span>
+                <span className="text-4xl font-display font-bold text-gradient-pastel">
                   ₹{(selectedTravel?.price || 0) + (selectedHotel?.price || 0)}
                 </span>
               </div>
 
-              <button
+              <motion.button
                 onClick={handleContinue}
                 disabled={!selectedTravel || !selectedHotel}
-                className="group w-full py-5 bg-gradient-to-r from-aurora-blue to-aurora-purple text-white text-lg font-display font-semibold rounded-xl hover:shadow-2xl hover:shadow-aurora-blue/50 transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-3"
+                whileHover={{ scale: 1.02, y: -2 }}
+                whileTap={{ scale: 0.98 }}
+                className="group w-full py-5 bg-charcoal text-cream text-lg font-display font-semibold rounded-xl hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-3"
               >
                 Continue to Payment
                 <ArrowRight size={24} className="group-hover:translate-x-2 transition-transform duration-300" />
-              </button>
-            </div>
+              </motion.button>
+            </motion.div>
           </div>
-        </div>
+        </motion.div>
       </div>
     </div>
   );
@@ -159,31 +196,32 @@ export function Booking() {
 
 function HotelCard({ hotel, selected, onSelect }) {
   return (
-    <div
-      className={`group relative rounded-2xl p-6 cursor-pointer transition-all duration-300 border-2 hover-lift ${
+    <motion.div
+      whileHover={{ scale: selected ? 1 : 1.01, y: -4 }}
+      className={`rounded-2xl p-6 cursor-pointer transition-all duration-300 border-2 ${
         selected 
-          ? 'border-aurora-purple bg-aurora-purple/10 shadow-lg shadow-aurora-purple/30' 
-          : 'border-white/10 glassmorphism hover:border-aurora-purple/50'
+          ? 'border-accent-lavender bg-accent-lavender/10 shadow-lg' 
+          : 'border-charcoal/10 bg-white/80 hover:border-accent-lavender/50'
       }`}
       onClick={onSelect}
     >
       <div className="flex justify-between items-start mb-4">
         <div>
-          <h4 className="text-xl font-display font-bold text-ice-white mb-2">{hotel.name}</h4>
+          <h4 className="text-xl font-display font-bold text-charcoal mb-2">{hotel.name}</h4>
           <div className="flex items-center gap-2">
             {[...Array(5)].map((_, i) => (
               <Star 
                 key={i} 
                 size={16} 
-                className={`${i < hotel.rating ? 'text-yellow-400 fill-yellow-400' : 'text-white/20'}`}
+                className={`${i < hotel.rating ? 'text-yellow-500 fill-yellow-500' : 'text-gray/20'}`}
               />
             ))}
-            <span className="text-sm text-ice-white/60 ml-1">{hotel.rating}</span>
+            <span className="text-sm text-gray ml-1">{hotel.rating}</span>
           </div>
         </div>
         <div className="text-right">
-          <div className="text-2xl font-bold text-aurora-purple">₹{hotel.price}</div>
-          <div className="text-xs text-ice-white/50">per night</div>
+          <div className="text-2xl font-bold text-accent-lavender">₹{hotel.price}</div>
+          <div className="text-xs text-gray">per night</div>
         </div>
       </div>
       
@@ -191,7 +229,7 @@ function HotelCard({ hotel, selected, onSelect }) {
         {hotel.amenities.map((amenity, index) => (
           <span
             key={index}
-            className="px-3 py-1 bg-white/5 border border-white/10 text-ice-white/70 text-xs rounded-full"
+            className="px-3 py-1 bg-charcoal/5 border border-charcoal/10 text-gray text-xs rounded-full"
           >
             {amenity}
           </span>
@@ -199,10 +237,14 @@ function HotelCard({ hotel, selected, onSelect }) {
       </div>
 
       {selected && (
-        <div className="absolute top-6 right-6 w-6 h-6 bg-aurora-purple rounded-full flex items-center justify-center">
+        <motion.div
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          className="absolute top-6 right-6 w-6 h-6 bg-accent-lavender rounded-full flex items-center justify-center"
+        >
           <div className="w-2 h-2 bg-white rounded-full" />
-        </div>
+        </motion.div>
       )}
-    </div>
+    </motion.div>
   );
 }
