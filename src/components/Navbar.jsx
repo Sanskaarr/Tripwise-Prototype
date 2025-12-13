@@ -1,30 +1,20 @@
-import { useState, createContext, useContext } from 'react';
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Plane, Globe } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-
-// Create Language Context
-const LanguageContext = createContext();
-
-export function useLanguage() {
-  const context = useContext(LanguageContext);
-  if (!context) {
-    return { language: 'en', setLanguage: () => {} };
-  }
-  return context;
-}
+import { useLanguage } from '../contexts/LanguageContext';
 
 export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLangOpen, setIsLangOpen] = useState(false);
-  const [selectedLanguage, setSelectedLanguage] = useState('en');
+  const { language, setLanguage, t } = useLanguage();
   const location = useLocation();
 
   const navLinks = [
-    { path: '/', label: 'Home' },
-    { path: '/identify', label: 'Start Journey' },
-    { path: '/plan-trip', label: 'Plan Trip' },
-    { path: '/local-guide', label: 'Local Guide' },
+    { path: '/', label: t('home') },
+    { path: '/identify', label: t('startJourney') },
+    { path: '/plan-trip', label: t('planTrip') },
+    { path: '/local-guide', label: t('localGuide') },
   ];
 
   const languages = [
@@ -40,15 +30,11 @@ export function Navbar() {
     { code: 'ru', label: 'Русский', flag: '🇷🇺' },
   ];
 
-  const currentLang = languages.find(lang => lang.code === selectedLanguage) || languages[0];
+  const currentLang = languages.find(lang => lang.code === language) || languages[0];
 
   const handleLanguageChange = (langCode) => {
-    setSelectedLanguage(langCode);
+    setLanguage(langCode);
     setIsLangOpen(false);
-    // Store language preference
-    localStorage.setItem('tripwise_language', langCode);
-    // Note: Full translation would require i18n library
-    console.log('Language changed to:', langCode);
   };
 
   const menuVariants = {
@@ -119,7 +105,7 @@ export function Navbar() {
                 to="/identify"
                 className="text-sm font-medium text-gray hover:text-charcoal transition-all duration-300"
               >
-                Start
+                {t('startJourney')}
               </Link>
               
               {/* Language Selector */}
@@ -146,7 +132,7 @@ export function Navbar() {
                           key={lang.code}
                           onClick={() => handleLanguageChange(lang.code)}
                           className={`w-full px-4 py-3 text-left text-sm flex items-center gap-3 transition-all duration-200 ${
-                            selectedLanguage === lang.code 
+                            language === lang.code 
                               ? 'bg-accent-coral/10 text-accent-coral font-semibold' 
                               : 'text-gray hover:bg-beige hover:text-charcoal'
                           }`}
@@ -246,11 +232,11 @@ export function Navbar() {
                 <div className="flex flex-wrap gap-6 text-sm text-mid-gray">
                   <div className="flex items-center gap-2">
                     <Globe size={16} className="text-accent-coral" />
-                    <span>Available in {languages.length} languages</span>
+                    <span>{t('availableLanguages')} {languages.length} {t('languages')}</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <Plane size={16} className="text-accent-coral" />
-                    <span>AI-Powered Travel Companion</span>
+                    <span>{t('aiPowered')}</span>
                   </div>
                 </div>
               </motion.div>

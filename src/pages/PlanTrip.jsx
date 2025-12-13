@@ -1,12 +1,17 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { MapPin, Calendar, IndianRupee, Plane, Train, Bus, Sparkles, Users, Heart, UserPlus, User as UserIcon } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { VoiceInput } from '../components/VoiceInput';
 import { tripAPI } from '../services/api';
+import { useLanguage } from '../contexts/LanguageContext';
+import { useUser } from '../contexts/UserContext';
 
 export function PlanTrip() {
   const navigate = useNavigate();
+  const { t } = useLanguage();
+  const { user } = useUser();
+  
   const [formData, setFormData] = useState({
     name: '',
     from: '',
@@ -18,6 +23,13 @@ export function PlanTrip() {
     tripType: 'solo',
   });
   const [loading, setLoading] = useState(false);
+
+  // Auto-fill name from user context
+  useEffect(() => {
+    if (user && user.name) {
+      setFormData(prev => ({ ...prev, name: user.name }));
+    }
+  }, [user]);
 
   const handleVoiceTranscript = (field) => (transcript) => {
     setFormData((prev) => ({ ...prev, [field]: transcript }));
@@ -60,7 +72,7 @@ export function PlanTrip() {
               className="inline-flex items-center gap-2 px-5 py-2 rounded-full border border-charcoal/10 mb-6"
             >
               <Sparkles size={18} className="text-accent-lavender" />
-              <span className="text-sm font-medium tracking-wider text-gray">AI PLANNING</span>
+              <span className="text-sm font-medium tracking-wider text-gray">{t('aiPlanning')}</span>
             </motion.div>
             
             <motion.h2
@@ -69,7 +81,7 @@ export function PlanTrip() {
               transition={{ duration: 0.6, delay: 0.4 }}
               className="text-4xl md:text-5xl font-display font-bold text-charcoal mb-3"
             >
-              Plan Your <span className="text-gradient-pastel">Dream Trip</span>
+              {t('planYourDreamTrip')} <span className="text-gradient-pastel">{t('dreamTrip')}</span>
             </motion.h2>
             <motion.p
               initial={{ opacity: 0 }}
@@ -77,7 +89,7 @@ export function PlanTrip() {
               transition={{ duration: 0.6, delay: 0.6 }}
               className="text-gray text-lg"
             >
-              Tell us where you want to go and we'll handle the rest
+              {t('whereYouWantToGo')}
             </motion.p>
           </div>
 
@@ -89,7 +101,7 @@ export function PlanTrip() {
               transition={{ duration: 0.6, delay: 0.8 }}
             >
               <label className="block text-sm font-semibold text-gray mb-3 tracking-wide">
-                YOUR NAME
+                {t('yourName')}
               </label>
               <div className="flex gap-3">
                 <div className="relative flex-1">
@@ -98,7 +110,7 @@ export function PlanTrip() {
                     type="text"
                     value={formData.name}
                     onChange={(e) => handleChange('name', e.target.value)}
-                    placeholder="Enter your full name"
+                    placeholder={t('enterFullName')}
                     className="w-full pl-14 pr-5 py-4 bg-white/80 border border-charcoal/10 rounded-xl text-charcoal placeholder-gray/50 focus:border-accent-coral focus:outline-none transition-all duration-300"
                     required
                   />
@@ -114,33 +126,33 @@ export function PlanTrip() {
               transition={{ duration: 0.6, delay: 1 }}
             >
               <label className="block text-sm font-semibold text-gray mb-4 tracking-wide">
-                TRIP TYPE
+                {t('tripType')}
               </label>
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <TripTypeButton
                   icon={<UserIcon size={24} />}
-                  label="Solo"
+                  label={t('solo')}
                   value="solo"
                   selected={formData.tripType === 'solo'}
                   onClick={() => handleChange('tripType', 'solo')}
                 />
                 <TripTypeButton
                   icon={<Heart size={24} />}
-                  label="Honeymoon"
+                  label={t('honeymoon')}
                   value="honeymoon"
                   selected={formData.tripType === 'honeymoon'}
                   onClick={() => handleChange('tripType', 'honeymoon')}
                 />
                 <TripTypeButton
                   icon={<Users size={24} />}
-                  label="Family"
+                  label={t('family')}
                   value="family"
                   selected={formData.tripType === 'family'}
                   onClick={() => handleChange('tripType', 'family')}
                 />
                 <TripTypeButton
                   icon={<UserPlus size={24} />}
-                  label="Friends"
+                  label={t('friends')}
                   value="friends"
                   selected={formData.tripType === 'friends'}
                   onClick={() => handleChange('tripType', 'friends')}
@@ -155,7 +167,7 @@ export function PlanTrip() {
               transition={{ duration: 0.6, delay: 1.2 }}
             >
               <label className="block text-sm font-semibold text-gray mb-3 tracking-wide">
-                NUMBER OF TRAVELERS
+                {t('numberOfTravelers')}
               </label>
               <div className="relative">
                 <Users className="absolute left-4 top-1/2 -translate-y-1/2 text-accent-lavender" size={22} />
@@ -165,7 +177,7 @@ export function PlanTrip() {
                   max="20"
                   value={formData.travelers}
                   onChange={(e) => handleChange('travelers', e.target.value)}
-                  placeholder="How many people?"
+                  placeholder={t('howManyPeople')}
                   className="w-full pl-14 pr-5 py-4 bg-white/80 border border-charcoal/10 rounded-xl text-charcoal placeholder-gray/50 focus:border-accent-lavender focus:outline-none transition-all duration-300"
                   required
                 />
@@ -179,7 +191,7 @@ export function PlanTrip() {
               transition={{ duration: 0.6, delay: 1.4 }}
             >
               <label className="block text-sm font-semibold text-gray mb-3 tracking-wide">
-                FROM
+                {t('from')}
               </label>
               <div className="flex gap-3">
                 <div className="relative flex-1">
@@ -188,7 +200,7 @@ export function PlanTrip() {
                     type="text"
                     value={formData.from}
                     onChange={(e) => handleChange('from', e.target.value)}
-                    placeholder="Your current location"
+                    placeholder={t('yourCurrentLocation')}
                     className="w-full pl-14 pr-5 py-4 bg-white/80 border border-charcoal/10 rounded-xl text-charcoal placeholder-gray/50 focus:border-accent-coral focus:outline-none transition-all duration-300"
                     required
                   />
@@ -204,7 +216,7 @@ export function PlanTrip() {
               transition={{ duration: 0.6, delay: 1.6 }}
             >
               <label className="block text-sm font-semibold text-gray mb-3 tracking-wide">
-                DESTINATION
+                {t('destination')}
               </label>
               <div className="flex gap-3">
                 <div className="relative flex-1">
@@ -213,7 +225,7 @@ export function PlanTrip() {
                     type="text"
                     value={formData.destination}
                     onChange={(e) => handleChange('destination', e.target.value)}
-                    placeholder="Where do you want to go?"
+                    placeholder={t('whereDoYouWantToGo')}
                     className="w-full pl-14 pr-5 py-4 bg-white/80 border border-charcoal/10 rounded-xl text-charcoal placeholder-gray/50 focus:border-accent-lavender focus:outline-none transition-all duration-300"
                     required
                   />
@@ -230,7 +242,7 @@ export function PlanTrip() {
                 transition={{ duration: 0.6, delay: 1.8 }}
               >
                 <label className="block text-sm font-semibold text-gray mb-3 tracking-wide">
-                  TRAVEL DATE
+                  {t('travelDate')}
                 </label>
                 <div className="relative">
                   <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 text-accent-coral" size={22} />
@@ -251,7 +263,7 @@ export function PlanTrip() {
                 transition={{ duration: 0.6, delay: 2 }}
               >
                 <label className="block text-sm font-semibold text-gray mb-3 tracking-wide">
-                  BUDGET (Optional)
+                  {t('budget')}
                 </label>
                 <div className="relative">
                   <IndianRupee className="absolute left-4 top-1/2 -translate-y-1/2 text-accent-lavender" size={22} />
@@ -259,7 +271,7 @@ export function PlanTrip() {
                     type="number"
                     value={formData.budget}
                     onChange={(e) => handleChange('budget', e.target.value)}
-                    placeholder="Your budget"
+                    placeholder={t('yourBudget')}
                     className="w-full pl-14 pr-5 py-4 bg-white/80 border border-charcoal/10 rounded-xl text-charcoal placeholder-gray/50 focus:border-accent-lavender focus:outline-none transition-all duration-300"
                   />
                 </div>
@@ -273,24 +285,24 @@ export function PlanTrip() {
               transition={{ duration: 0.6, delay: 2.2 }}
             >
               <label className="block text-sm font-semibold text-gray mb-4 tracking-wide">
-                TRAVEL MODE
+                {t('travelMode')}
               </label>
               <div className="grid grid-cols-3 gap-4">
                 <ModeButton
                   icon={<Plane size={28} />}
-                  label="Flight"
+                  label={t('flight')}
                   selected={formData.mode === 'Flight'}
                   onClick={() => handleChange('mode', 'Flight')}
                 />
                 <ModeButton
                   icon={<Train size={28} />}
-                  label="Train"
+                  label={t('train')}
                   selected={formData.mode === 'Train'}
                   onClick={() => handleChange('mode', 'Train')}
                 />
                 <ModeButton
                   icon={<Bus size={28} />}
-                  label="Bus"
+                  label={t('bus')}
                   selected={formData.mode === 'Bus'}
                   onClick={() => handleChange('mode', 'Bus')}
                 />
@@ -310,10 +322,10 @@ export function PlanTrip() {
               {loading ? (
                 <span className="flex items-center justify-center gap-3">
                   <div className="w-5 h-5 border-2 border-cream/30 border-t-cream rounded-full animate-spin" />
-                  Planning Your Journey...
+                  {t('planningYourJourney')}
                 </span>
               ) : (
-                'Find Travel Options'
+                t('findTravelOptions')
               )}
             </motion.button>
           </form>
