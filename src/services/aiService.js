@@ -92,6 +92,52 @@ Format the response in a structured, easy-to-read manner.`;
     }
   },
 
+  // Generate detailed booking information with AI
+  async generateBookingDetails(booking) {
+    if (!genAI) {
+      return getMockBookingDetails(booking);
+    }
+
+    try {
+      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+      
+      const prompt = `You are a travel expert AI. Generate detailed travel suggestions for this confirmed booking:
+
+Trip Details:
+- Destination: ${booking.tripData.destination}
+- From: ${booking.tripData.from}
+- Date: ${booking.tripData.date}
+- Travelers: ${booking.tripData.travelers} (${booking.tripData.tripType} trip)
+- Travel Mode: ${booking.travel.name}
+- Hotel: ${booking.hotel.name}
+
+Please provide:
+1. Best attractions to visit in ${booking.tripData.destination}
+2. Local food and dining recommendations
+3. Day-by-day itinerary suggestions
+4. Cultural tips and local customs
+5. Shopping recommendations
+6. Photography spots
+7. Best time to visit attractions
+8. Local transportation tips
+
+Format the response in a clear, organized manner.`;
+
+      const result = await model.generateContent(prompt);
+      const response = await result.response;
+      const text = response.text();
+      
+      return {
+        success: true,
+        suggestions: text,
+        source: 'gemini-ai'
+      };
+    } catch (error) {
+      console.error('AI Service Error:', error);
+      return getMockBookingDetails(booking);
+    }
+  },
+
   // Check if AI is available
   isAIAvailable() {
     return !!genAI;
@@ -156,6 +202,52 @@ function getMockGuide(city) {
 - Tourist Helpline: Available 24/7
 
 Note: Add VITE_GEMINI_API_KEY to .env for detailed AI-generated guides!`,
+    source: 'mock'
+  };
+}
+
+function getMockBookingDetails(booking) {
+  return {
+    success: true,
+    suggestions: `Personalized Travel Guide for ${booking.tripData.destination}
+
+🏛️ TOP ATTRACTIONS:
+1. Historic landmarks and monuments
+2. Natural scenic viewpoints
+3. Cultural centers and museums
+4. Local markets and bazaars
+
+🍽️ FOOD & DINING:
+- Try authentic local cuisine
+- Visit popular restaurants in city center
+- Don't miss street food delicacies
+- Recommended: Traditional breakfast spots
+
+📅 SUGGESTED ITINERARY:
+Day 1: Arrival & city orientation
+Day 2: Major attractions tour
+Day 3: Local experiences & shopping
+Day 4: Hidden gems & departure prep
+
+🎭 CULTURAL TIPS:
+- Respect local customs and traditions
+- Learn basic local phrases
+- Dress modestly at religious sites
+- Ask permission before photography
+
+🛍️ SHOPPING:
+- Local handicrafts and souvenirs
+- Traditional textiles and clothing
+- Authentic spices and teas
+- Art galleries and markets
+
+📸 PHOTOGRAPHY SPOTS:
+- Sunrise/sunset viewpoints
+- Historic architecture
+- Local street scenes
+- Nature landscapes
+
+Note: Add VITE_GEMINI_API_KEY to .env for AI-powered personalized suggestions!`,
     source: 'mock'
   };
 }

@@ -4,10 +4,14 @@ import { CheckCircle, Receipt, Sparkles, MapPin, Hotel, Plane } from 'lucide-rea
 import { motion } from 'framer-motion';
 import { PaymentQR } from '../components/PaymentQR';
 import { bookingAPI } from '../services/api';
+import { useLanguage } from '../contexts/LanguageContext';
+import { useUser } from '../contexts/UserContext';
 
 export function Payment() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { t } = useLanguage();
+  const { user } = useUser();
   const booking = location.state?.booking;
 
   const [paymentSuccess, setPaymentSuccess] = useState(false);
@@ -22,12 +26,31 @@ export function Payment() {
       });
 
       if (response.success) {
-        setBookingId(response.data.bookingId);
+        const newBookingId = response.data.bookingId;
+        setBookingId(newBookingId);
         setPaymentSuccess(true);
 
+        // Save booking to localStorage for user dashboard
+        const bookingWithId = {
+          ...booking,
+          bookingId: newBookingId,
+          timestamp: new Date().toISOString(),
+        };
+
+        if (user && user.identifier) {
+          const existingBookings = JSON.parse(
+            localStorage.getItem(`bookings_${user.identifier}`) || '[]'
+          );
+          existingBookings.push(bookingWithId);
+          localStorage.setItem(
+            `bookings_${user.identifier}`,
+            JSON.stringify(existingBookings)
+          );
+        }
+
         setTimeout(() => {
-          navigate('/local-guide', {
-            state: { destination: booking.tripData.destination },
+          navigate('/booking-details', {
+            state: { booking: bookingWithId },
           });
         }, 3000);
       }

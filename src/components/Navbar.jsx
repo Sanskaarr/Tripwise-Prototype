@@ -3,11 +3,13 @@ import { Link, useLocation } from 'react-router-dom';
 import { Plane, Globe } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useUser } from '../contexts/UserContext';
 
 export function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isLangOpen, setIsLangOpen] = useState(false);
   const { language, setLanguage, t } = useLanguage();
+  const { user } = useUser();
   const location = useLocation();
 
   const navLinks = [
@@ -16,6 +18,11 @@ export function Navbar() {
     { path: '/plan-trip', label: t('planTrip') },
     { path: '/local-guide', label: t('localGuide') },
   ];
+
+  // Add user dashboard link if logged in
+  if (user) {
+    navLinks.push({ path: '/user-dashboard', label: t('myDashboard') || 'My Dashboard' });
+  }
 
   const languages = [
     { code: 'en', label: 'English', flag: '🇺🇸' },
