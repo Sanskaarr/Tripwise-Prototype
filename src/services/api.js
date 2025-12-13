@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { aiService } from './aiService';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
 
@@ -11,14 +12,31 @@ const apiClient = axios.create({
 
 export const tripAPI = {
   planTrip: async (tripData) => {
-    return {
-      success: true,
-      message: 'Trip planned successfully',
-      data: {
-        tripId: Math.random().toString(36).substr(2, 9),
-        ...tripData
-      }
-    };
+    try {
+      const aiResponse = await aiService.generateTripItinerary(tripData);
+      
+      return {
+        success: true,
+        message: 'Trip planned successfully',
+        data: {
+          tripId: Math.random().toString(36).substr(2, 9),
+          itinerary: aiResponse.content,
+          provider: aiResponse.provider,
+          ...tripData
+        }
+      };
+    } catch (error) {
+      console.error('Error planning trip:', error);
+      return {
+        success: true,
+        message: 'Trip planned successfully (demo mode)',
+        data: {
+          tripId: Math.random().toString(36).substr(2, 9),
+          ...tripData,
+          note: 'AI integration available - configure VITE_GEMINI_API_KEY or VITE_OPENAI_API_KEY to enable'
+        }
+      };
+    }
   },
 };
 

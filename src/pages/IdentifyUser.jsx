@@ -4,16 +4,18 @@ import { User, Mail, Phone, Sparkles } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 export function IdentifyUser() {
+  const [name, setName] = useState('');
   const [identifier, setIdentifier] = useState('');
   const [isReturning, setIsReturning] = useState(false);
   const navigate = useNavigate();
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (identifier.trim()) {
+    if (name.trim() && identifier.trim()) {
       const hasVisited = localStorage.getItem('tripwise_user');
       setIsReturning(!!hasVisited);
       localStorage.setItem('tripwise_user', identifier);
+      localStorage.setItem('tripwise_user_name', name);
       
       setTimeout(() => {
         navigate('/plan-trip');
@@ -65,15 +67,36 @@ export function IdentifyUser() {
             transition={{ duration: 0.6, delay: 0.8 }}
             className="text-gray text-lg"
           >
-            Enter your contact to get started
+            Tell us about yourself to get started
           </motion.p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-7">
+        <form onSubmit={handleSubmit} className="space-y-6">
           <motion.div
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 1 }}
+          >
+            <label className="block text-sm font-semibold text-gray mb-3 tracking-wide">
+              YOUR NAME
+            </label>
+            <div className="relative">
+              <User className="absolute left-4 top-1/2 -translate-y-1/2 text-accent-sage" size={22} />
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="Enter your name"
+                className="w-full pl-14 pr-5 py-5 bg-white/80 border border-charcoal/10 rounded-xl text-charcoal placeholder-gray/50 focus:border-accent-sage focus:outline-none transition-all duration-300 text-lg"
+                required
+              />
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.6, delay: 1.2 }}
           >
             <label className="block text-sm font-semibold text-gray mb-3 tracking-wide">
               PHONE / EMAIL
@@ -121,7 +144,7 @@ export function IdentifyUser() {
             type="submit"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 1.2 }}
+            transition={{ duration: 0.6, delay: 1.4 }}
             whileHover={{ scale: 1.02, y: -2 }}
             whileTap={{ scale: 0.98 }}
             className="w-full py-5 bg-charcoal text-cream text-lg font-display font-semibold rounded-xl hover:shadow-xl transition-all duration-300"

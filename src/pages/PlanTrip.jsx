@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { MapPin, Calendar, IndianRupee, Plane, Train, Bus, Sparkles } from 'lucide-react';
+import { MapPin, Calendar, IndianRupee, Plane, Train, Bus, Sparkles, Users, Heart } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { VoiceInput } from '../components/VoiceInput';
 import { tripAPI } from '../services/api';
@@ -10,6 +10,8 @@ export function PlanTrip() {
   const [formData, setFormData] = useState({
     from: '',
     destination: '',
+    travelers: '1',
+    tripType: '',
     date: '',
     budget: '',
     mode: 'Flight',
@@ -123,6 +125,59 @@ export function PlanTrip() {
               </div>
             </motion.div>
 
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 1.1 }}
+            >
+              <label className="block text-sm font-semibold text-gray mb-3 tracking-wide">
+                NUMBER OF TRAVELERS
+              </label>
+              <div className="relative">
+                <Users className="absolute left-4 top-1/2 -translate-y-1/2 text-accent-sage" size={22} />
+                <input
+                  type="number"
+                  min="1"
+                  max="20"
+                  value={formData.travelers}
+                  onChange={(e) => setFormData({ ...formData, travelers: e.target.value })}
+                  placeholder="How many people?"
+                  className="w-full pl-14 pr-5 py-4 bg-white/80 border border-charcoal/10 rounded-xl text-charcoal placeholder-gray/50 focus:border-accent-sage focus:outline-none transition-all duration-300"
+                  required
+                />
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 1.15 }}
+            >
+              <label className="block text-sm font-semibold text-gray mb-4 tracking-wide">
+                TRIP TYPE
+              </label>
+              <div className="grid grid-cols-3 gap-4">
+                <TripTypeButton
+                  icon={<Heart size={28} />}
+                  label="Honeymoon"
+                  selected={formData.tripType === 'honeymoon'}
+                  onClick={() => setFormData({ ...formData, tripType: 'honeymoon' })}
+                />
+                <TripTypeButton
+                  icon={<Users size={28} />}
+                  label="Family"
+                  selected={formData.tripType === 'family'}
+                  onClick={() => setFormData({ ...formData, tripType: 'family' })}
+                />
+                <TripTypeButton
+                  icon={<Sparkles size={28} />}
+                  label="Friends"
+                  selected={formData.tripType === 'friends'}
+                  onClick={() => setFormData({ ...formData, tripType: 'friends' })}
+                />
+              </div>
+            </motion.div>
+
             <div className="grid md:grid-cols-2 gap-6">
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
@@ -222,6 +277,27 @@ export function PlanTrip() {
 }
 
 function ModeButton({ icon, label, selected, onClick }) {
+  return (
+    <motion.button
+      type="button"
+      onClick={onClick}
+      whileHover={{ scale: selected ? 1 : 1.05 }}
+      whileTap={{ scale: 0.95 }}
+      className={`group flex flex-col items-center justify-center gap-3 p-5 rounded-xl border transition-all duration-300 ${
+        selected
+          ? 'border-accent-coral bg-accent-coral/20 text-accent-coral shadow-lg'
+          : 'border-charcoal/10 bg-white/80 text-gray hover:border-accent-coral/50'
+      }`}
+    >
+      <div className={`transition-transform duration-300 ${selected ? 'scale-110' : ''}`}>
+        {icon}
+      </div>
+      <span className="text-sm font-semibold tracking-wide">{label}</span>
+    </motion.button>
+  );
+}
+
+function TripTypeButton({ icon, label, selected, onClick }) {
   return (
     <motion.button
       type="button"
