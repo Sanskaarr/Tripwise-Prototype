@@ -246,29 +246,11 @@ export function BookingDetails() {
             </motion.div>
           )}
 
-          {/* Destination Images */}
-          <div className="mb-8">
-            <h3 className="text-2xl font-display font-bold text-charcoal mb-4">
-              {t('destinationGallery') || 'Destination Gallery'}
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {[1, 2, 3, 4].map((num) => (
-                <div key={num} className="aspect-square rounded-xl overflow-hidden border-2 border-charcoal/10 hover:border-accent-coral transition-all">
-                  <img 
-                    src={`https://source.unsplash.com/400x400/?${booking.tripData.destination},travel,${num}`}
-                    alt={`${booking.tripData.destination} ${num}`}
-                    className="w-full h-full object-cover hover:scale-110 transition-transform duration-500"
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Total Cost */}
-          <div className="bg-gradient-to-r from-accent-coral to-accent-lavender p-8 rounded-2xl text-white text-center mb-8">
-            <p className="text-sm uppercase tracking-wider mb-2 opacity-90">{t('totalCost') || 'Total Cost'}</p>
-            <p className="text-5xl font-display font-bold">₹{booking.total}</p>
-            <p className="text-sm mt-2 opacity-80">Travel: ₹{booking.travel.price} + Hotel: ₹{booking.hotel.price}</p>
+          {/* Total Cost - Compact */}
+          <div className="bg-gradient-to-r from-accent-coral to-accent-lavender p-5 rounded-xl text-white text-center mb-8">
+            <p className="text-xs uppercase tracking-wider mb-1 opacity-90">{t('totalCost') || 'Total Cost'}</p>
+            <p className="text-3xl font-display font-bold">₹{booking.total}</p>
+            <p className="text-xs mt-1 opacity-80">Travel: ₹{booking.travel.price} + Hotel: ₹{booking.hotel.price}</p>
           </div>
 
           {/* Action Buttons */}
