@@ -19,14 +19,21 @@ export function VoiceInput({ onTranscript, value }) {
     <button
       type="button"
       onClick={isListening ? stopListening : startListening}
-      className={`p-3 rounded-full transition-all ${
+      className={`relative p-4 rounded-xl transition-all duration-300 group ${
         isListening 
-          ? 'bg-red-500 hover:bg-red-600 animate-pulse' 
-          : 'bg-blue-600 hover:bg-blue-700'
+          ? 'bg-gradient-to-r from-red-500 to-pink-500 animate-pulse shadow-lg shadow-red-500/50' 
+          : 'glassmorphism border border-aurora-blue hover:bg-aurora-blue/20'
       } text-white`}
       title={isListening ? 'Stop listening' : 'Start voice input'}
     >
-      {isListening ? <MicOff size={24} /> : <Mic size={24} />}
+      {isListening ? (
+        <>
+          <MicOff size={24} className="text-white" />
+          <span className="absolute inset-0 rounded-xl bg-red-500 opacity-50 animate-ping" />
+        </>
+      ) : (
+        <Mic size={24} className="text-aurora-blue group-hover:text-white transition-colors" />
+      )}
     </button>
   );
 }

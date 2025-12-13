@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Hotel, Star } from 'lucide-react';
+import { Hotel, Star, Sparkles, ArrowRight } from 'lucide-react';
 import { TripCard } from '../components/TripCard';
 import { bookingAPI } from '../services/api';
 
@@ -55,64 +55,88 @@ export function Booking() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white flex items-center justify-center">
+      <div className="min-h-screen bg-navy-deep flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Finding best options for you...</p>
+          <div className="relative w-20 h-20 mx-auto mb-6">
+            <div className="absolute inset-0 border-4 border-aurora-blue/30 rounded-full"></div>
+            <div className="absolute inset-0 border-4 border-transparent border-t-aurora-blue rounded-full animate-spin"></div>
+          </div>
+          <p className="text-ice-white/70 text-lg">Finding best options for you...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white py-12 px-4">
-      <div className="max-w-4xl mx-auto">
-        <div className="bg-white rounded-2xl shadow-2xl p-8">
-          <h2 className="text-3xl font-bold text-gray-800 mb-2 text-center">
-            Available Options
-          </h2>
-          <p className="text-gray-600 text-center mb-8">
-            {tripData.from} → {tripData.destination}
-          </p>
+    <div className="min-h-screen bg-navy-deep relative overflow-hidden py-20 px-4 pt-32">
+      {/* Animated Background */}
+      <div className="absolute inset-0 opacity-20">
+        <div className="absolute top-20 left-20 w-80 h-80 bg-aurora-purple rounded-full blur-3xl animate-float" />
+        <div className="absolute bottom-20 right-20 w-80 h-80 bg-aurora-pink rounded-full blur-3xl animate-float" style={{ animationDelay: '2s' }} />
+      </div>
 
-          <div className="space-y-8">
-            <div>
-              <h3 className="text-xl font-bold text-gray-800 mb-4">
+      <div className="relative max-w-5xl mx-auto">
+        <div className="glassmorphism rounded-3xl p-10 shadow-2xl">
+          {/* Header */}
+          <div className="text-center mb-10 animate-fade-in">
+            <div className="inline-flex items-center gap-2 glassmorphism px-5 py-2 rounded-full mb-6">
+              <Sparkles size={18} className="text-aurora-blue" />
+              <span className="text-sm font-medium tracking-wider uppercase">Step 2 of 3</span>
+            </div>
+            
+            <h2 className="text-4xl md:text-5xl font-display font-bold text-ice-white mb-3">
+              Choose Your <span className="text-gradient">Travel Options</span>
+            </h2>
+            <p className="text-ice-white/60 text-lg">
+              {tripData.from} → {tripData.destination}
+            </p>
+          </div>
+
+          <div className="space-y-10">
+            {/* Travel Options */}
+            <div className="animate-slide-in-left">
+              <h3 className="text-2xl font-display font-bold text-ice-white mb-5 flex items-center gap-3">
+                <div className="w-1 h-8 bg-gradient-to-b from-aurora-blue to-aurora-purple rounded-full" />
                 {tripData.mode} Options
               </h3>
-              <div className="space-y-3">
-                {options?.travelOptions.map((option) => (
-                  <TripCard
-                    key={option.id}
-                    option={option}
-                    selected={selectedTravel?.id === option.id}
-                    onSelect={() => setSelectedTravel(option)}
-                  />
+              <div className="space-y-4">
+                {options?.travelOptions.map((option, index) => (
+                  <div key={option.id} className="animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
+                    <TripCard
+                      option={option}
+                      selected={selectedTravel?.id === option.id}
+                      onSelect={() => setSelectedTravel(option)}
+                    />
+                  </div>
                 ))}
               </div>
             </div>
 
-            <div>
-              <h3 className="text-xl font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <Hotel size={24} />
+            {/* Hotel Options */}
+            <div className="animate-slide-in-right">
+              <h3 className="text-2xl font-display font-bold text-ice-white mb-5 flex items-center gap-3">
+                <div className="w-1 h-8 bg-gradient-to-b from-aurora-purple to-aurora-pink rounded-full" />
+                <Hotel size={28} />
                 Hotel Options
               </h3>
-              <div className="space-y-3">
-                {options?.hotels.map((hotel) => (
-                  <HotelCard
-                    key={hotel.id}
-                    hotel={hotel}
-                    selected={selectedHotel?.id === hotel.id}
-                    onSelect={() => setSelectedHotel(hotel)}
-                  />
+              <div className="space-y-4">
+                {options?.hotels.map((hotel, index) => (
+                  <div key={hotel.id} className="animate-fade-in" style={{ animationDelay: `${index * 0.1}s` }}>
+                    <HotelCard
+                      hotel={hotel}
+                      selected={selectedHotel?.id === hotel.id}
+                      onSelect={() => setSelectedHotel(hotel)}
+                    />
+                  </div>
                 ))}
               </div>
             </div>
 
-            <div className="border-t pt-6">
-              <div className="flex justify-between items-center mb-6">
-                <span className="text-lg font-semibold text-gray-700">Total Cost</span>
-                <span className="text-2xl font-bold text-blue-600">
+            {/* Total & Continue */}
+            <div className="border-t border-white/10 pt-8 animate-fade-in">
+              <div className="flex justify-between items-center mb-8">
+                <span className="text-xl font-display font-semibold text-ice-white">Total Cost</span>
+                <span className="text-4xl font-display font-bold text-gradient">
                   ₹{(selectedTravel?.price || 0) + (selectedHotel?.price || 0)}
                 </span>
               </div>
@@ -120,9 +144,10 @@ export function Booking() {
               <button
                 onClick={handleContinue}
                 disabled={!selectedTravel || !selectedHotel}
-                className="w-full py-4 bg-blue-600 text-white text-lg font-semibold rounded-lg hover:bg-blue-700 transition-all shadow-lg hover:shadow-xl disabled:bg-gray-400"
+                className="group w-full py-5 bg-gradient-to-r from-aurora-blue to-aurora-purple text-white text-lg font-display font-semibold rounded-xl hover:shadow-2xl hover:shadow-aurora-blue/50 transition-all duration-300 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100 flex items-center justify-center gap-3"
               >
                 Continue to Payment
+                <ArrowRight size={24} className="group-hover:translate-x-2 transition-transform duration-300" />
               </button>
             </div>
           </div>
@@ -135,34 +160,49 @@ export function Booking() {
 function HotelCard({ hotel, selected, onSelect }) {
   return (
     <div
-      className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${
-        selected ? 'border-blue-600 bg-blue-50' : 'border-gray-200 hover:border-blue-400'
+      className={`group relative rounded-2xl p-6 cursor-pointer transition-all duration-300 border-2 hover-lift ${
+        selected 
+          ? 'border-aurora-purple bg-aurora-purple/10 shadow-lg shadow-aurora-purple/30' 
+          : 'border-white/10 glassmorphism hover:border-aurora-purple/50'
       }`}
       onClick={onSelect}
     >
-      <div className="flex justify-between items-start mb-3">
+      <div className="flex justify-between items-start mb-4">
         <div>
-          <h4 className="text-lg font-bold text-gray-800">{hotel.name}</h4>
-          <div className="flex items-center gap-1 mt-1">
-            <Star size={16} className="text-yellow-500 fill-yellow-500" />
-            <span className="text-sm text-gray-600">{hotel.rating}</span>
+          <h4 className="text-xl font-display font-bold text-ice-white mb-2">{hotel.name}</h4>
+          <div className="flex items-center gap-2">
+            {[...Array(5)].map((_, i) => (
+              <Star 
+                key={i} 
+                size={16} 
+                className={`${i < hotel.rating ? 'text-yellow-400 fill-yellow-400' : 'text-white/20'}`}
+              />
+            ))}
+            <span className="text-sm text-ice-white/60 ml-1">{hotel.rating}</span>
           </div>
         </div>
         <div className="text-right">
-          <div className="text-xl font-bold text-blue-600">₹{hotel.price}</div>
-          <div className="text-xs text-gray-500">per night</div>
+          <div className="text-2xl font-bold text-aurora-purple">₹{hotel.price}</div>
+          <div className="text-xs text-ice-white/50">per night</div>
         </div>
       </div>
+      
       <div className="flex flex-wrap gap-2">
         {hotel.amenities.map((amenity, index) => (
           <span
             key={index}
-            className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-full"
+            className="px-3 py-1 bg-white/5 border border-white/10 text-ice-white/70 text-xs rounded-full"
           >
             {amenity}
           </span>
         ))}
       </div>
+
+      {selected && (
+        <div className="absolute top-6 right-6 w-6 h-6 bg-aurora-purple rounded-full flex items-center justify-center">
+          <div className="w-2 h-2 bg-white rounded-full" />
+        </div>
+      )}
     </div>
   );
 }
