@@ -191,18 +191,14 @@ export function Navbar() {
             className="fixed inset-0 z-50 bg-cream"
             style={{ paddingTop: '80px' }}
           >
-            {/* Close Button */}
-            <motion.button
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.3, delay: 0.2 }}
+            {/* Close Button - Fixed position outside animation */}
+            <button
               onClick={() => setIsMenuOpen(false)}
-              className="fixed top-8 right-8 z-50 p-3 bg-white/80 backdrop-blur-sm rounded-full hover:bg-accent-coral hover:text-white transition-all duration-300 shadow-lg group"
+              className="fixed top-8 right-8 z-[60] p-3 bg-white/80 backdrop-blur-sm rounded-full hover:bg-accent-coral hover:text-white transition-all duration-300 shadow-lg group"
               aria-label="Close menu"
             >
               <X size={24} className="text-charcoal group-hover:text-white transition-colors" />
-            </motion.button>
+            </button>
 
             <motion.div
               variants={menuVariants}

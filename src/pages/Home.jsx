@@ -131,32 +131,32 @@ export function Home() {
             transition={{ duration: 0.8 }}
             className="text-5xl md:text-6xl font-display font-bold text-center mb-16 text-charcoal"
           >
-            Why Choose TripWise?
+            {t('whyChooseTripwise')}
           </motion.h2>
           
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
             <FeatureCard
               icon={<Plane size={36} />}
-              title="Smart Planning"
-              description="AI-powered trip planning tailored to your preferences"
+              title={t('smartPlanning')}
+              description={t('smartPlanningDesc')}
               delay={0}
             />
             <FeatureCard
               icon={<CreditCard size={36} />}
-              title="Instant Booking"
-              description="Seamless booking for flights and accommodations"
+              title={t('instantBooking')}
+              description={t('instantBookingDesc')}
               delay={0.1}
             />
             <FeatureCard
               icon={<Mic size={36} />}
-              title="Voice Control"
-              description="Hands-free experience with voice commands"
+              title={t('voiceControl')}
+              description={t('voiceControlDesc')}
               delay={0.2}
             />
             <FeatureCard
               icon={<Globe size={36} />}
-              title="Multi-Language"
-              description="Travel support in your preferred language"
+              title={t('multiLanguage')}
+              description={t('multiLanguageDesc')}
               delay={0.3}
             />
           </div>

@@ -112,22 +112,42 @@ export function BookingDetails() {
 
             <div className="grid md:grid-cols-2 gap-6 mb-6">
               <div className="bg-white/80 rounded-xl p-5">
-                <p className="text-xs text-gray uppercase tracking-wider mb-2">Operator</p>
+                <p className="text-xs text-gray uppercase tracking-wider mb-2">Operator/Service</p>
                 <p className="text-xl font-bold text-charcoal">{booking.travel.name}</p>
+                <p className="text-sm text-gray mt-1">{booking.travel.number || 'Service Number TBD'}</p>
               </div>
               <div className="bg-white/80 rounded-xl p-5">
                 <p className="text-xs text-gray uppercase tracking-wider mb-2">Travel Mode</p>
                 <p className="text-xl font-bold text-charcoal capitalize">{booking.travel.mode || booking.tripData.travelMode}</p>
+                <p className="text-sm text-gray mt-1">{booking.travel.class || 'Economy Class'}</p>
               </div>
             </div>
 
-            <div className="grid md:grid-cols-3 gap-4">
-              <InfoCard icon={<MapPin size={20} />} label="Route" value={`${booking.tripData.from} → ${booking.tripData.destination}`} />
-              <InfoCard icon={<Calendar size={20} />} label="Departure Date" value={booking.tripData.date} />
-              <InfoCard icon={<Clock size={20} />} label="Duration" value={booking.travel.duration || "TBD"} />
+            <div className="grid md:grid-cols-2 gap-6 mb-6">
+              <div className="bg-white/80 rounded-xl p-5">
+                <p className="text-xs text-gray uppercase tracking-wider mb-2">Departure</p>
+                <p className="text-lg font-bold text-charcoal">{booking.tripData.from}</p>
+                <p className="text-sm text-gray mt-1">Time: {booking.travel.departureTime || '09:00 AM'}</p>
+                <p className="text-xs text-gray">{booking.tripData.date}</p>
+              </div>
+              <div className="bg-white/80 rounded-xl p-5">
+                <p className="text-xs text-gray uppercase tracking-wider mb-2">Arrival</p>
+                <p className="text-lg font-bold text-charcoal">{booking.tripData.destination}</p>
+                <p className="text-sm text-gray mt-1">Time: {booking.travel.arrivalTime || '12:00 PM'}</p>
+                <p className="text-xs text-gray">{booking.tripData.date}</p>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-4 gap-4 mb-6">
+              <InfoCard icon={<Clock size={20} />} label="Duration" value={booking.travel.duration || "3h 0m"} />
               <InfoCard icon={<Users size={20} />} label="Travelers" value={`${booking.tripData.travelers} Person(s)`} />
-              <InfoCard icon={<Tag size={20} />} label="Trip Type" value={booking.tripData.tripType} />
+              <InfoCard icon={<Tag size={20} />} label="Seat/Class" value={booking.travel.class || 'Economy'} />
               <InfoCard icon={<DollarSign size={20} />} label="Travel Cost" value={`₹${booking.travel.price}`} accent />
+            </div>
+
+            <div className="bg-white/80 rounded-xl p-5">
+              <p className="text-xs text-gray uppercase tracking-wider mb-2">Booking Reference</p>
+              <p className="text-sm font-mono font-semibold text-charcoal">{booking.travel.pnr || booking.bookingId}</p>
             </div>
           </div>
 
@@ -146,10 +166,24 @@ export function BookingDetails() {
               <div className="bg-white/80 rounded-xl p-5">
                 <p className="text-xs text-gray uppercase tracking-wider mb-2">Hotel Name</p>
                 <p className="text-xl font-bold text-charcoal">{booking.hotel.name}</p>
+                <p className="text-sm text-gray mt-1">⭐ {booking.hotel.rating || '4.5'} Star Rating</p>
               </div>
               <div className="bg-white/80 rounded-xl p-5">
                 <p className="text-xs text-gray uppercase tracking-wider mb-2">Location</p>
                 <p className="text-xl font-bold text-charcoal">{booking.tripData.destination}</p>
+                <p className="text-sm text-gray mt-1">{booking.hotel.address || 'City Center'}</p>
+              </div>
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6 mb-6">
+              <div className="bg-white/80 rounded-xl p-5">
+                <p className="text-xs text-gray uppercase tracking-wider mb-2">Room Type</p>
+                <p className="text-lg font-bold text-charcoal">{booking.hotel.roomType || 'Deluxe Double Room'}</p>
+                <p className="text-sm text-gray mt-1">Occupancy: {booking.tripData.travelers} Guest(s)</p>
+              </div>
+              <div className="bg-white/80 rounded-xl p-5">
+                <p className="text-xs text-gray uppercase tracking-wider mb-2">Meal Plan</p>
+                <p className="text-lg font-bold text-charcoal">{booking.hotel.mealPlan || 'Breakfast Included'}</p>
               </div>
             </div>
 
@@ -160,7 +194,7 @@ export function BookingDetails() {
             </div>
 
             {booking.hotel.amenities && booking.hotel.amenities.length > 0 && (
-              <div className="bg-white/80 rounded-xl p-5">
+              <div className="bg-white/80 rounded-xl p-5 mb-4">
                 <p className="text-xs text-gray uppercase tracking-wider mb-3">Amenities</p>
                 <div className="flex flex-wrap gap-2">
                   {booking.hotel.amenities.map((amenity, index) => (
@@ -171,6 +205,11 @@ export function BookingDetails() {
                 </div>
               </div>
             )}
+
+            <div className="bg-white/80 rounded-xl p-5">
+              <p className="text-xs text-gray uppercase tracking-wider mb-2">Cancellation Policy</p>
+              <p className="text-sm text-gray">{booking.hotel.cancellation || 'Free cancellation up to 24 hours before check-in. Cancellation charges apply after that.'}</p>
+            </div>
           </div>
 
           {/* User Contact Information */}

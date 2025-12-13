@@ -27,6 +27,15 @@ const translations = {
     welcomeSubtitle: 'Your Next Adventure Awaits',
     welcomeDescription: 'Plan. Book. Explore.',
     getStarted: 'Start Your Journey',
+    whyChooseTripwise: 'Why Choose TripWise?',
+    smartPlanning: 'Smart Planning',
+    smartPlanningDesc: 'AI-powered trip planning tailored to your preferences',
+    instantBooking: 'Instant Booking',
+    instantBookingDesc: 'Seamless booking for flights and accommodations',
+    voiceControl: 'Voice Control',
+    voiceControlDesc: 'Hands-free experience with voice commands',
+    multiLanguage: 'Multi-Language',
+    multiLanguageDesc: 'Travel support in your preferred language',
     
     // Identify User
     stepOf: 'STEP',
@@ -160,10 +169,19 @@ const translations = {
     aiPowered: 'AI-संचालित यात्रा साथी',
     
     // Home
-    welcomeTitle: 'आपका अगला साहसिक कार्य',
-    welcomeSubtitle: 'इंतजार कर रहा है',
-    welcomeDescription: 'AI द्वारा संचालित बुद्धिमान यात्रा योजना',
-    getStarted: 'शुरू करें',
+    welcomeTitle: 'TripWise में आपका स्वागत है',
+    welcomeSubtitle: 'आपका अगला साहसिक कार्य इंतजार कर रहा है',
+    welcomeDescription: 'योजना बनाएं। बुक करें। अन्वेषण करें।',
+    getStarted: 'अपनी यात्रा शुरू करें',
+    whyChooseTripwise: 'TripWise को क्यों चुनें?',
+    smartPlanning: 'स्मार्ट योजना',
+    smartPlanningDesc: 'आपकी प्राथमिकताओं के अनुसार AI-संचालित यात्रा योजना',
+    instantBooking: 'तत्काल बुकिंग',
+    instantBookingDesc: 'उड़ानों और आवास के लिए सहज बुकिंग',
+    voiceControl: 'वॉयस कंट्रोल',
+    voiceControlDesc: 'वॉयस कमांड के साथ हैंड्स-फ्री अनुभव',
+    multiLanguage: 'बहु-भाषा',
+    multiLanguageDesc: 'आपकी पसंदीदा भाषा में यात्रा सहायता',
     
     // Identify User
     stepOf: 'चरण',
