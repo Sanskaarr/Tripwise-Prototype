@@ -39,4 +39,9 @@ public class RestTemplateConfig {
         restTemplate.getInterceptors().add(interceptor);
         return restTemplate;
     }
+
+    @Bean(name = "googleMapsRestTemplate")
+    public RestTemplate googleMapsRestTemplate() {
+        return new RestTemplate();
+    }
 }

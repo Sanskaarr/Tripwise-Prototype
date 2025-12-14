@@ -1,77 +1,156 @@
 package com.tripwise.service;
 
-import com.google.gson.Gson;
-import com.google.gson.JsonArray;
-import com.google.gson.JsonObject;
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tripwise.dto.PlaceDetails;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.RestTemplate;
 
-import java.net.URI;
-import java.net.URLEncoder;
-import java.net.http.HttpClient;
-import java.net.http.HttpRequest;
-import java.net.http.HttpResponse;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
 @Service
 public class GoogleMapsService {
-
+    private static final Logger logger = LoggerFactory.getLogger(GoogleMapsService.class);
+    
     @Value("${google.maps.api.key:}")
     private String apiKey;
-
-    private final HttpClient httpClient = HttpClient.newHttpClient();
-    private final Gson gson = new Gson();
-
-    public List<JsonObject> searchPlaces(String location, String placeType) throws Exception {
-        if (apiKey == null || apiKey.isEmpty()) {
-            return getMockPlaces(location);
-        }
-
-        String encodedLocation = URLEncoder.encode(location, StandardCharsets.UTF_8);
-        String encodedType = URLEncoder.encode(placeType, StandardCharsets.UTF_8);
-        
-        String url = String.format(
-            "https://maps.googleapis.com/maps/api/place/textsearch/json?query=%s+%s&key=%s",
-            encodedLocation, encodedType, apiKey
-        );
-
-        HttpRequest request = HttpRequest.newBuilder()
-                .uri(URI.create(url))
-                .GET()
-                .build();
-
-        HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
-        JsonObject jsonResponse = gson.fromJson(response.body(), JsonObject.class);
-        
-        List<JsonObject> places = new ArrayList<>();
-        JsonArray results = jsonResponse.getAsJsonArray("results");
-        
-        if (results != null) {
-            for (int i = 0; i < Math.min(5, results.size()); i++) {
-                places.add(results.get(i).getAsJsonObject());
-            }
-        }
-        
-        return places;
+    
+    private final RestTemplate restTemplate;
+    private final ObjectMapper objectMapper;
+    
+    public GoogleMapsService(@Qualifier("googleMapsRestTemplate") RestTemplate restTemplate) {
+        this.restTemplate = restTemplate;
+        this.objectMapper = new ObjectMapper();
     }
-
-    private List<JsonObject> getMockPlaces(String location) {
-        List<JsonObject> mockPlaces = new ArrayList<>();
+    
+    public List<PlaceDetails> searchPlaces(String query, String location) {
+        if (apiKey == null || apiKey.isEmpty()) {
+            logger.warn("Google Maps API key not configured, returning empty results");
+            return new ArrayList<>();
+        }
         
-        JsonObject place1 = new JsonObject();
-        place1.addProperty("name", "Tourist Attraction in " + location);
-        place1.addProperty("rating", 4.5);
-        place1.addProperty("vicinity", location);
-        mockPlaces.add(place1);
+        try {
+            String url = String.format(
+                "https://maps.googleapis.com/maps/api/place/textsearch/json?query=%s&location=%s&key=%s",
+                query.replace(" ", "+"), location, apiKey
+            );
+            
+            String response = restTemplate.getForObject(url, String.class);
+            JsonNode root = objectMapper.readTree(response);
+            
+            List<PlaceDetails> places = new ArrayList<>();
+            JsonNode results = root.get("results");
+            
+            if (results != null && results.isArray()) {
+                for (JsonNode result : results) {
+                    PlaceDetails place = new PlaceDetails();
+                    place.setPlaceId(result.get("place_id").asText());
+                    place.setName(result.get("name").asText());
+                    place.setAddress(result.has("formatted_address") ? result.get("formatted_address").asText() : "");
+                    
+                    JsonNode geometry = result.get("geometry");
+                    if (geometry != null) {
+                        JsonNode locationNode = geometry.get("location");
+                        place.setLatitude(locationNode.get("lat").asDouble());
+                        place.setLongitude(locationNode.get("lng").asDouble());
+                    }
+                    
+                    place.setRating(result.has("rating") ? result.get("rating").asDouble() : 0.0);
+                    place.setTypes(result.has("types") ? result.get("types").toString() : "");
+                    
+                    JsonNode photos = result.get("photos");
+                    if (photos != null && photos.isArray() && photos.size() > 0) {
+                        place.setPhotoReference(photos.get(0).get("photo_reference").asText());
+                    }
+                    
+                    places.add(place);
+                }
+            }
+            
+            return places;
+        } catch (Exception e) {
+            logger.error("Error fetching places from Google Maps: {}", e.getMessage());
+            return new ArrayList<>();
+        }
+    }
+    
+    public PlaceDetails geocodeAddress(String address) {
+        if (apiKey == null || apiKey.isEmpty()) {
+            logger.warn("Google Maps API key not configured");
+            return null;
+        }
         
-        JsonObject place2 = new JsonObject();
-        place2.addProperty("name", "Historic Site in " + location);
-        place2.addProperty("rating", 4.7);
-        place2.addProperty("vicinity", location);
-        mockPlaces.add(place2);
+        try {
+            String url = String.format(
+                "https://maps.googleapis.com/maps/api/geocode/json?address=%s&key=%s",
+                address.replace(" ", "+"), apiKey
+            );
+            
+            String response = restTemplate.getForObject(url, String.class);
+            JsonNode root = objectMapper.readTree(response);
+            
+            JsonNode results = root.get("results");
+            if (results != null && results.isArray() && results.size() > 0) {
+                JsonNode result = results.get(0);
+                PlaceDetails place = new PlaceDetails();
+                
+                place.setAddress(result.get("formatted_address").asText());
+                place.setPlaceId(result.get("place_id").asText());
+                
+                JsonNode geometry = result.get("geometry");
+                if (geometry != null) {
+                    JsonNode location = geometry.get("location");
+                    place.setLatitude(location.get("lat").asDouble());
+                    place.setLongitude(location.get("lng").asDouble());
+                }
+                
+                return place;
+            }
+        } catch (Exception e) {
+            logger.error("Error geocoding address: {}", e.getMessage());
+        }
         
-        return mockPlaces;
+        return null;
+    }
+    
+    public String getDirections(String origin, String destination, String mode) {
+        if (apiKey == null || apiKey.isEmpty()) {
+            logger.warn("Google Maps API key not configured");
+            return null;
+        }
+        
+        try {
+            String url = String.format(
+                "https://maps.googleapis.com/maps/api/directions/json?origin=%s&destination=%s&mode=%s&key=%s",
+                origin.replace(" ", "+"), destination.replace(" ", "+"), mode, apiKey
+            );
+            
+            String response = restTemplate.getForObject(url, String.class);
+            JsonNode root = objectMapper.readTree(response);
+            
+            JsonNode routes = root.get("routes");
+            if (routes != null && routes.isArray() && routes.size() > 0) {
+                JsonNode route = routes.get(0);
+                JsonNode legs = route.get("legs");
+                
+                if (legs != null && legs.isArray() && legs.size() > 0) {
+                    JsonNode leg = legs.get(0);
+                    
+                    String distance = leg.get("distance").get("text").asText();
+                    String duration = leg.get("duration").get("text").asText();
+                    
+                    return String.format("Distance: %s, Duration: %s", distance, duration);
+                }
+            }
+        } catch (Exception e) {
+            logger.error("Error fetching directions: {}", e.getMessage());
+        }
+        
+        return null;
     }
 }

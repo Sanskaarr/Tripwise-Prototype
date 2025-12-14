@@ -1,6 +1,7 @@
 package com.tripwise.service;
 
 import com.tripwise.dto.ChatMessage;
+import com.tripwise.dto.PlaceDetails;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -13,16 +14,19 @@ public class TravelIntentService {
     private final OpenAIChatService openAIChatService;
     private final GeminiChatService geminiChatService;
     private final UserPreferencesService userPreferencesService;
+    private final GoogleMapsService googleMapsService;
 
     @Value("${ai.provider:gemini}")
     private String defaultProvider;
 
     public TravelIntentService(OpenAIChatService openAIChatService, 
                                GeminiChatService geminiChatService,
-                               UserPreferencesService userPreferencesService) {
+                               UserPreferencesService userPreferencesService,
+                               GoogleMapsService googleMapsService) {
         this.openAIChatService = openAIChatService;
         this.geminiChatService = geminiChatService;
         this.userPreferencesService = userPreferencesService;
+        this.googleMapsService = googleMapsService;
     }
 
     public String processTravelIntent(String userId, String userMessage) {
@@ -61,10 +65,21 @@ public class TravelIntentService {
     }
 
     public String getLocalRecommendations(String userId, String location, String category) {
+        List<PlaceDetails> places = googleMapsService.searchPlaces(category, location);
+        
+        StringBuilder placesInfo = new StringBuilder();
+        if (!places.isEmpty()) {
+            placesInfo.append("\n\nReal-time data from Google Maps:\n");
+            for (PlaceDetails place : places) {
+                placesInfo.append(String.format("- %s at %s (Rating: %.1f)\n", 
+                    place.getName(), place.getAddress(), place.getRating()));
+            }
+        }
+        
         String prompt = String.format(
             "Recommend the best %s in %s. Include: names, locations, price ranges, " +
-            "opening hours, and why they're worth visiting. Consider local favorites and hidden gems.",
-            category, location
+            "opening hours, and why they're worth visiting. Consider local favorites and hidden gems.%s",
+            category, location, placesInfo.toString()
         );
 
         return processTravelIntent(userId, prompt);
