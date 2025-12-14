@@ -1,178 +1,201 @@
 # TripWise - AI Travel Companion
 
-An AI-powered travel planning application that helps users plan their dream trips with intelligent suggestions and recommendations.
-
-## ✨ Features
-
-- **AI-Powered Trip Planning**: Get personalized travel suggestions using Google Gemini AI
-- **Voice Input**: Use voice commands to fill in travel details
-- **Multi-Language Support**: Available in 10+ languages (English, Hindi, Spanish, French, German, Chinese, Japanese, Arabic, Portuguese, Russian)
-- **Trip Customization**: 
-  - Select trip type (Solo, Honeymoon, Family, Friends)
-  - Specify number of travelers
-  - Choose travel mode (Flight, Train, Bus)
-  - Set budget preferences
-- **Beautiful UI**: Smooth animations and modern design inspired by snig.digital and cabanana.pt
-- **Responsive Design**: Works perfectly on all devices
-
-## 🚀 Getting Started
-
-### Prerequisites
-
-- Node.js 18+ or Bun
-- (Optional) Google Gemini API key for AI-powered features
-
-### Installation
-
-1. Clone the repository:
-```bash
-git clone <your-repo-url>
-cd tripwise-ai-travel-companion
-```
-
-2. Install dependencies:
-```bash
-npm install
-# or
-bun install
-```
-
-3. (Optional) Set up AI Integration:
-   - Copy `.env.example` to `.env`
-   - Get your Google Gemini API key from: https://makersuite.google.com/app/apikey
-   - Add your API key to `.env`:
-   ```
-   VITE_GEMINI_API_KEY=your_api_key_here
-   ```
-   
-   **Note**: If you don't provide an API key, the app will work with mock AI responses.
-
-4. Run the development server:
-```bash
-npm run dev
-# or
-bun dev
-```
-
-5. Open [http://localhost:3000](http://localhost:3000) in your browser
-
-## 📱 Usage
-
-1. **Start Journey**: Enter your name first, then your contact information
-2. **Plan Trip**: 
-   - Enter your name
-   - Select trip type (Solo, Honeymoon, Family, or Friends)
-   - Specify number of travelers
-   - Enter departure location and destination
-   - Choose travel date and optional budget
-   - Select travel mode
-3. **Voice Input**: Click the microphone button next to any field to use voice input
-4. **Language Selection**: Click the language selector in the navbar to change language
-5. **View AI Suggestions**: Get personalized recommendations based on your trip details
-
-## 🎨 Design Features
-
-- **Smooth Animations**: Framer Motion and GSAP for premium animations
-- **Pastel Color Scheme**: Calm, beautiful light theme
-- **Glassmorphism**: Modern frosted glass effects
-- **Scroll Animations**: Smooth color transitions and effects
-- **Full-Screen Menu**: Inspired by cabanana.pt
-
-## 🔧 Tech Stack
-
-- **Frontend**: React 18 + Vite
-- **Styling**: TailwindCSS with custom design system
-- **Animations**: Framer Motion + GSAP
-- **AI**: Google Gemini AI (or ChatGPT - configurable)
-- **Routing**: React Router DOM
-- **Icons**: Lucide React
-- **Voice**: Web Speech API
-
-## 🌐 Supported Languages
-
-The app supports language selection for:
-- English (🇺🇸)
-- Hindi (🇮🇳)
-- Spanish (🇪🇸)
-- French (🇫🇷)
-- German (🇩🇪)
-- Chinese (🇨🇳)
-- Japanese (🇯🇵)
-- Arabic (🇸🇦)
-- Portuguese (🇵🇹)
-- Russian (🇷🇺)
-
-*Note: Full translation requires i18n library implementation*
-
-## 🤖 AI Integration
-
-The app is designed to work with:
-
-1. **Google Gemini AI** (Currently implemented)
-   - Add `VITE_GEMINI_API_KEY` to your `.env` file
-   - Provides intelligent trip suggestions and local guides
-
-2. **OpenAI ChatGPT** (Ready for implementation)
-   - Can be configured using `VITE_OPENAI_API_KEY`
-   - Implementation available in `src/services/aiService.js`
-
-If no API key is provided, the app automatically falls back to mock responses.
+An AI-powered travel planning application with separate frontend and backend architectures.
 
 ## 📁 Project Structure
 
 ```
-src/
-├── components/       # Reusable UI components
-│   ├── Navbar.jsx   # Navigation with language selector
-│   ├── VoiceInput.jsx # Voice input component
-│   └── ...
-├── pages/           # Route pages
-│   ├── Home.jsx
-│   ├── IdentifyUser.jsx  # User identification (name + contact)
-│   ├── PlanTrip.jsx      # Main trip planning form
-│   ├── Booking.jsx
-│   ├── Payment.jsx
-│   └── LocalGuide.jsx
-├── services/        # API and AI services
-│   ├── api.js       # Main API service
-│   └── aiService.js # AI integration (Gemini/ChatGPT)
-├── hooks/           # Custom React hooks
-└── index.css        # Global styles and design system
+tripwise/
+│
+├── tripwise-frontend/        ← Vite + React (Frontend)
+│   ├── src/
+│   ├── public/
+│   ├── index.html
+│   ├── package.json
+│   ├── vite.config.js
+│   ├── .env
+│   └── README.md
+│
+├── tripwise-backend/         ← Java Spring Boot (Backend)
+│   ├── src/main/java/
+│   ├── src/main/resources/
+│   ├── pom.xml
+│   ├── .env
+│   └── README.md
+│
+└── README.md                 ← This file
 ```
 
-## 🎯 Key Improvements Made
+## 🚀 Quick Start
 
-1. ✅ Fixed input/delete functionality in PlanTrip form
-2. ✅ Integrated Google Gemini AI for intelligent suggestions
-3. ✅ Reordered form fields (name before phone/email)
-4. ✅ Made voice buttons more visible with better styling
-5. ✅ Added trip type selection (Solo, Honeymoon, Family, Friends)
-6. ✅ Added number of travelers field
-7. ✅ Fixed language selection functionality
-8. ✅ Added 10+ language options
+### Frontend (Port 3000)
 
-## 🚧 Future Enhancements
+```bash
+cd tripwise-frontend
+bun install
+bun dev
+```
 
-- Full i18n translation implementation
-- OpenAI ChatGPT integration as alternative AI provider
-- User authentication and trip history
-- Real booking API integration
-- Payment gateway integration
-- Social sharing features
-- Trip collaboration features
+### Backend (Port 8080)
+
+```bash
+cd tripwise-backend
+mvn clean package
+java -jar target/tripwise-backend-1.0.0.jar
+```
+
+Or use the provided run script:
+```bash
+cd tripwise-backend
+./run.sh
+```
+
+## 🎯 Architecture Overview
+
+### Frontend
+- **Technology**: React 18 + Vite
+- **Port**: 3000
+- **Purpose**: UI, animations, routing, displaying data
+- **Features**:
+  - AI-powered trip planning interface
+  - Voice input support
+  - Multi-language support (10+ languages)
+  - Beautiful glassmorphism UI with animations
+  - Responsive design
+
+### Backend
+- **Technology**: Java 21 + Spring Boot 3.3.5
+- **Port**: 8080
+- **Purpose**: Business logic, database operations, AI integration, APIs
+- **Features**:
+  - MongoDB integration
+  - JWT authentication
+  - RESTful APIs (auth, trips, bookings, users)
+  - AI integration (ChatGPT & Gemini)
+  - Google Maps integration (planned)
+  - Mocked booking and payment APIs
+
+## 🔧 Prerequisites
+
+- **Frontend**: Node.js 18+ or Bun
+- **Backend**: Java 21, Maven 3.6+
+- **Database**: MongoDB running on localhost:27017
+
+## 📝 Environment Variables
+
+### Frontend (.env)
+```
+VITE_OPENAI_API_KEY=your_openai_key
+VITE_GEMINI_API_KEY=your_gemini_key
+```
+
+### Backend (.env)
+```
+OPENAI_API_KEY=your_openai_key
+GEMINI_API_KEY=your_gemini_key
+GOOGLE_MAPS_API_KEY=your_google_maps_key
+MONGODB_URI=mongodb://localhost:27017/tripwise
+```
+
+## 🌐 API Endpoints (Backend)
+
+### Authentication
+- `POST /api/auth/register` - User registration
+- `POST /api/auth/login` - User login
+
+### Trips
+- `GET /api/trips` - Get all trips
+- `POST /api/trips` - Create trip
+- `GET /api/trips/{id}` - Get trip by ID
+
+### Bookings
+- `GET /api/bookings` - Get all bookings
+- `POST /api/bookings` - Create booking
+
+### Users
+- `GET /api/users/{id}` - Get user by ID
+
+## 🗄️ Database
+
+**MongoDB** (`localhost:27017`)
+- Database: `tripwise`
+- Collections: `users`, `trips`, `bookings`
+
+## 📦 Tech Stack
+
+### Frontend
+- React 18
+- Vite
+- TailwindCSS
+- Framer Motion + GSAP
+- React Router DOM
+- Lucide React (icons)
+- Web Speech API (voice input)
+
+### Backend
+- Spring Boot 3.3.5
+- Spring Data MongoDB
+- Spring Security + JWT
+- Java 21
+- Maven
+- MongoDB Driver
+
+## 🎨 Key Features
+
+- ✅ AI-powered trip planning (Gemini/ChatGPT)
+- ✅ Voice input for all form fields
+- ✅ Multi-language support
+- ✅ Trip customization (type, travelers, budget, mode)
+- ✅ Beautiful animations and glassmorphism UI
+- ✅ JWT authentication
+- ✅ MongoDB database
+- ✅ RESTful API architecture
+- 🚧 Google Maps integration (planned)
+- 🚧 Payment gateway integration (planned)
+
+## 📚 Documentation
+
+- [Frontend README](tripwise-frontend/README.md)
+- [Backend Architecture](BACKEND_ARCHITECTURE.md)
+- [Feature Summary](FEATURE_SUMMARY.md)
+- [Updates Summary](UPDATES_SUMMARY.md)
+
+## 🔄 Development Workflow
+
+1. **Start MongoDB**:
+   ```bash
+   mongod
+   ```
+
+2. **Start Backend** (Terminal 1):
+   ```bash
+   cd tripwise-backend
+   ./run.sh
+   ```
+
+3. **Start Frontend** (Terminal 2):
+   ```bash
+   cd tripwise-frontend
+   bun dev
+   ```
+
+4. Access:
+   - Frontend: http://localhost:3000
+   - Backend: http://localhost:8080
+
+## 🚧 Current Status
+
+- ✅ Frontend and backend separated into independent projects
+- ✅ Both projects running on different ports
+- ✅ MongoDB integration complete
+- ✅ JWT authentication configured
+- ✅ RESTful APIs implemented
+- ⏳ Integration between frontend and backend pending
 
 ## 📄 License
 
-MIT License - feel free to use this project for your own purposes.
-
-## 🤝 Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
-
-## 📞 Support
-
-For issues or questions, please open an issue on GitHub.
+MIT License
 
 ---
 
-Made with ❤️ using React, AI, and modern web technologies
+Made with ❤️ using React, Spring Boot, MongoDB, and AI

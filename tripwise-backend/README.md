@@ -1,137 +1,108 @@
-# TripWise Backend - Java Spring Boot
+# TripWise Backend
 
-## Architecture
-This backend implements a strict backend-first architecture where:
-- **All AI intelligence resides in the backend** (ChatGPT & Gemini)
-- **User recognition** (first-time vs returning) is handled by backend
-- **All travel suggestions** are dynamically generated using AI + Google Maps
-- Frontend only sends: user_id, text, and language preference
+Java Spring Boot backend for the TripWise AI Travel Companion.
 
-## Tech Stack
+## 🚀 Quick Start
+
+### Option 1: Using Maven
+```bash
+mvn clean package
+java -jar target/tripwise-backend-1.0.0.jar
+```
+
+### Option 2: Using run script
+```bash
+./run.sh
+```
+
+Backend runs on: http://localhost:8080
+
+## 🎯 Features
+
+- **MongoDB Integration**: Spring Data MongoDB for persistence
+- **JWT Authentication**: Secure user authentication
+- **RESTful APIs**: Auth, Trips, Bookings, Users
+- **AI Integration**: Ready for ChatGPT & Gemini APIs
+- **Google Maps Integration**: Planned for travel data
+- **CORS Enabled**: Configured for frontend communication
+
+## 🔧 Tech Stack
+
 - Java 21
-- Spring Boot 3.2.1
-- Spring Security + JWT Authentication
-- MySQL Database
-- OpenAI API (ChatGPT)
-- Google Gemini API
-- Google Maps API (optional, with mock fallback)
+- Spring Boot 3.3.5
+- Spring Data MongoDB
+- Spring Security + JWT
+- Maven
+- MongoDB Driver
 
-## Requirements
+## 📝 Environment Variables
 
-- Java 21 (required - Maven must use Java 21, not Java 24)
-- Maven 3.6+
-- MySQL 8.0+ (or configured H2 in-memory database)
+Create a `.env` file:
 
-## Prerequisites
-- Java 21+
-- Maven 3.9+
-- MySQL 8.0+ (or use H2 for development)
-
-## Setup
-
-### 1. Database Setup
-```bash
-# Create MySQL database
-mysql -u root -p
-CREATE DATABASE tripwise;
+```
+OPENAI_API_KEY=your_openai_key
+GEMINI_API_KEY=your_gemini_key
+GOOGLE_MAPS_API_KEY=your_google_maps_key
+MONGODB_URI=mongodb://localhost:27017/tripwise
 ```
 
-Or update `application.properties` to use H2 (in-memory):
-```properties
-spring.datasource.url=jdbc:h2:mem:tripwise
-spring.datasource.driver-class-name=org.h2.Driver
-spring.jpa.database-platform=org.hibernate.dialect.H2Dialect
-```
+## 🗄️ Database
 
-### 2. Environment Variables
-Create `.env` file in backend directory or set system environment variables:
-```
-VITE_OPENAI_API_KEY=your_openai_key
-VITE_GEMINI_API_KEY=your_gemini_key
-GOOGLE_MAPS_API_KEY=your_google_maps_key (optional)
-```
+**MongoDB** must be running on `localhost:27017`
 
-### 3. Install Dependencies
-```bash
-cd backend
-mvn clean install
-```
+Database name: `tripwise`
 
-### 4. Run Application
-```bash
-mvn spring-boot:run
-```
+Collections:
+- `users` - User accounts
+- `trips` - Trip records
+- `bookings` - Booking records
 
-Backend will start on `http://localhost:8080`
-
-## API Endpoints
+## 🌐 API Endpoints
 
 ### Authentication
-- `POST /api/auth/login` - Login (returns JWT + user recognition)
 - `POST /api/auth/register` - Register new user
-- `POST /api/auth/complete-profile` - Complete first-time user profile
+- `POST /api/auth/login` - User login
 
-### Chat (AI-Powered)
-- `POST /api/chat` - Send message (backend calls ChatGPT)
-  - Body: `{ "text": "string", "language": "string" }`
-  - All AI processing happens in backend
+### Trips
+- `GET /api/trips` - Get all trips
+- `POST /api/trips` - Create new trip
+- `GET /api/trips/{id}` - Get trip by ID
 
-### Local Guide (AI + Google Maps)
-- `POST /api/local-guide` - Get AI-generated local guide
-  - Body: `{ "location": "string", "language": "string" }`
-  - Backend merges Gemini AI + Google Maps data
-- `GET /api/local-guide/places?location=X&type=Y` - Search places
+### Bookings
+- `GET /api/bookings` - Get all bookings
+- `POST /api/bookings` - Create new booking
 
-## Key Features
+### Users
+- `GET /api/users/{id}` - Get user by ID
 
-### User Recognition
-Backend automatically detects:
-- **First-time users**: `isFirstTime: true` in response → Frontend requests phone & preferences
-- **Returning users**: `isFirstTime: false` → Personalized welcome with stored preferences
+## 📁 Project Structure
 
-### AI Integration
-- ChatGPT provides conversational travel advice
-- Gemini generates comprehensive local guides
-- Google Maps provides factual place data
-- Backend enriches AI responses with user preferences
-
-### Security
-- JWT-based authentication
-- Stateless sessions
-- Password encryption (BCrypt)
-- CORS configured for frontend
-
-## Database Schema
-
-### Users Table
-- id (PK)
-- email (unique)
-- password (encrypted)
-- phoneNumber
-- preferredLanguage
-- travelStyle
-- dietaryPreferences
-- interests
-- isFirstTime (boolean)
-- createdAt
-- lastLoginAt
-
-## Testing
-```bash
-# Test authentication
-curl -X POST http://localhost:8080/api/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"test@example.com","password":"password123"}'
-
-# Test chat (with JWT)
-curl -X POST http://localhost:8080/api/chat \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"text":"What should I do in Paris?","language":"English"}'
+```
+src/main/java/com/tripwise/
+├── config/           # Configuration classes
+├── controller/       # REST controllers
+├── dto/             # Data transfer objects
+├── model/           # Domain models
+├── repository/      # MongoDB repositories
+├── security/        # Security & JWT
+└── service/         # Business logic
 ```
 
-## Development Notes
-- Mock APIs are used when Google Maps API key is not provided
-- All AI calls include error handling
-- User preferences automatically enhance AI prompts
-- Database auto-creates tables on first run (ddl-auto=update)
+## 🔒 Security
+
+- JWT-based authentication
+- Password encryption with BCrypt
+- CORS configured for localhost:3000
+- Public endpoints: `/api/auth/**`
+
+## 📦 Build
+
+```bash
+mvn clean package
+```
+
+Generated JAR: `target/tripwise-backend-1.0.0.jar`
+
+## 📄 License
+
+MIT License
