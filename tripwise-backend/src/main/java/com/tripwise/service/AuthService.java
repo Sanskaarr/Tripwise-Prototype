@@ -3,7 +3,7 @@ package com.tripwise.service;
 import com.tripwise.dto.*;
 import com.tripwise.model.User;
 import com.tripwise.repository.UserRepository;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import com.tripwise.config.PasswordEncoderBean.SimplePasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -12,9 +12,9 @@ import java.time.LocalDateTime;
 public class AuthService {
 
     private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
+    private final SimplePasswordEncoder passwordEncoder;
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
+    public AuthService(UserRepository userRepository, SimplePasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
     }
