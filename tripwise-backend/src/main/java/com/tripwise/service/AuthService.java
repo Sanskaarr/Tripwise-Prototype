@@ -50,6 +50,7 @@ public class AuthService {
             user.getEmail(),
             user.getPhoneNumber(),
             user.getPreferredLanguage(),
+            user.getBudgetRange(),
             user.getTravelStyle(),
             user.getDietaryPreferences(),
             user.getInterests()
@@ -63,11 +64,16 @@ public class AuthService {
             throw new Exception("Email already exists");
         }
 
+        if (request.getPhoneNumber() != null && userRepository.existsByPhoneNumber(request.getPhoneNumber())) {
+            throw new Exception("Phone number already exists");
+        }
+
         User user = new User();
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setPhoneNumber(request.getPhoneNumber());
         user.setPreferredLanguage(request.getPreferredLanguage());
+        user.setBudgetRange(request.getBudgetRange());
         user.setTravelStyle(request.getTravelStyle());
         user.setDietaryPreferences(request.getDietaryPreferences());
         user.setInterests(request.getInterests());
@@ -82,6 +88,7 @@ public class AuthService {
             user.getEmail(),
             user.getPhoneNumber(),
             user.getPreferredLanguage(),
+            user.getBudgetRange(),
             user.getTravelStyle(),
             user.getDietaryPreferences(),
             user.getInterests()
@@ -97,6 +104,7 @@ public class AuthService {
 
         user.setPhoneNumber(request.getPhoneNumber());
         user.setPreferredLanguage(request.getPreferredLanguage());
+        user.setBudgetRange(request.getBudgetRange());
         user.setTravelStyle(request.getTravelStyle());
         user.setDietaryPreferences(request.getDietaryPreferences());
         user.setInterests(request.getInterests());

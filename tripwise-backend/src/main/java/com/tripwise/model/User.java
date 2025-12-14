@@ -18,6 +18,7 @@ public class User {
     private String password;
     private String phoneNumber;
     private String preferredLanguage;
+    private String budgetRange;
     private String travelStyle;
     private String dietaryPreferences;
     private String interests;

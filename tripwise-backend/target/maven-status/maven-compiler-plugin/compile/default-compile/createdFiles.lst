@@ -8,6 +8,7 @@ com/tripwise/repository/UserRepository.class
 com/tripwise/dto/LocalGuideRequest.class
 com/tripwise/service/GeminiService.class
 com/tripwise/dto/RegisterRequest.class
+com/tripwise/controller/HealthController.class
 com/tripwise/model/User.class
 com/tripwise/dto/ChatRequest.class
 com/tripwise/dto/UserDetailsDTO.class
