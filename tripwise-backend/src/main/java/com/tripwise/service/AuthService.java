@@ -3,7 +3,6 @@ package com.tripwise.service;
 import com.tripwise.dto.*;
 import com.tripwise.model.User;
 import com.tripwise.repository.UserRepository;
-import com.tripwise.security.JwtUtil;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -14,12 +13,10 @@ public class AuthService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
-    private final JwtUtil jwtUtil;
 
-    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder, JwtUtil jwtUtil) {
+    public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
-        this.jwtUtil = jwtUtil;
     }
 
     public AuthResponse login(LoginRequest request) throws Exception {
@@ -44,8 +41,6 @@ public class AuthService {
         
         userRepository.save(user);
 
-        String token = jwtUtil.generateToken(user.getEmail(), user.getId());
-
         UserDetailsDTO userDetails = new UserDetailsDTO(
             user.getEmail(),
             user.getPhoneNumber(),
@@ -56,7 +51,7 @@ public class AuthService {
             user.getInterests()
         );
 
-        return new AuthResponse(token, user.getId(), isFirstTime, message, userDetails);
+        return new AuthResponse(null, user.getId(), isFirstTime, message, userDetails);
     }
 
     public AuthResponse register(RegisterRequest request) throws Exception {
@@ -82,8 +77,6 @@ public class AuthService {
 
         user = userRepository.save(user);
 
-        String token = jwtUtil.generateToken(user.getEmail(), user.getId());
-
         UserDetailsDTO userDetails = new UserDetailsDTO(
             user.getEmail(),
             user.getPhoneNumber(),
@@ -94,7 +87,7 @@ public class AuthService {
             user.getInterests()
         );
 
-        return new AuthResponse(token, user.getId(), false, 
+        return new AuthResponse(null, user.getId(), false, 
             "Account created successfully! Let's start exploring.", userDetails);
     }
 
