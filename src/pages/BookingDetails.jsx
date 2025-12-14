@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { MapPin, Calendar, Users, Phone, Mail, Hotel, Plane, Train, Bus, CheckCircle, Download, Share2, Sparkles, Clock, DollarSign, Tag } from 'lucide-react';
+import { MapPin, Calendar, Users, Phone, Mail, Hotel, Plane, Train, Bus, CheckCircle, Download, Share2, Sparkles, Clock, DollarSign, Tag, Briefcase, Coffee, Key, Shield, AlertCircle, Info } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useUser } from '../contexts/UserContext';
@@ -110,44 +110,98 @@ export function BookingDetails() {
               </h3>
             </div>
 
-            <div className="grid md:grid-cols-2 gap-6 mb-6">
+            {/* Operator & Service Details */}
+            <div className="grid md:grid-cols-3 gap-6 mb-6">
               <div className="bg-white/80 rounded-xl p-5">
                 <p className="text-xs text-gray uppercase tracking-wider mb-2">Operator/Service</p>
-                <p className="text-xl font-bold text-charcoal">{booking.travel.name}</p>
+                <p className="text-xl font-bold text-charcoal">{booking.travel.operator || booking.travel.name}</p>
                 <p className="text-sm text-gray mt-1">{booking.travel.number || 'Service Number TBD'}</p>
               </div>
               <div className="bg-white/80 rounded-xl p-5">
-                <p className="text-xs text-gray uppercase tracking-wider mb-2">Travel Mode</p>
+                <p className="text-xs text-gray uppercase tracking-wider mb-2">Travel Mode & Class</p>
                 <p className="text-xl font-bold text-charcoal capitalize">{booking.travel.mode || booking.tripData.travelMode}</p>
                 <p className="text-sm text-gray mt-1">{booking.travel.class || 'Economy Class'}</p>
               </div>
+              <div className="bg-white/80 rounded-xl p-5">
+                <p className="text-xs text-gray uppercase tracking-wider mb-2">Booking Status</p>
+                <div className="flex items-center gap-2">
+                  <CheckCircle size={20} className="text-accent-sage" />
+                  <p className="text-xl font-bold text-accent-sage">{booking.travel.status || 'Confirmed'}</p>
+                </div>
+              </div>
             </div>
 
+            {/* Journey Details */}
             <div className="grid md:grid-cols-2 gap-6 mb-6">
-              <div className="bg-white/80 rounded-xl p-5">
+              <div className="bg-white/80 rounded-xl p-5 border-l-4 border-accent-coral">
                 <p className="text-xs text-gray uppercase tracking-wider mb-2">Departure</p>
                 <p className="text-lg font-bold text-charcoal">{booking.tripData.from}</p>
-                <p className="text-sm text-gray mt-1">Time: {booking.travel.departureTime || '09:00 AM'}</p>
-                <p className="text-xs text-gray">{booking.tripData.date}</p>
+                <div className="mt-3 space-y-1">
+                  <p className="text-sm text-gray flex items-center gap-2">
+                    <Clock size={16} /> Time: <span className="font-semibold text-charcoal">{booking.travel.departureTime || '09:00 AM'}</span>
+                  </p>
+                  <p className="text-sm text-gray flex items-center gap-2">
+                    <Calendar size={16} /> Date: <span className="font-semibold text-charcoal">{booking.tripData.date}</span>
+                  </p>
+                  {booking.travel.terminal && (
+                    <p className="text-sm text-gray flex items-center gap-2">
+                      <MapPin size={16} /> {booking.travel.terminal}
+                    </p>
+                  )}
+                </div>
               </div>
-              <div className="bg-white/80 rounded-xl p-5">
+              <div className="bg-white/80 rounded-xl p-5 border-l-4 border-accent-lavender">
                 <p className="text-xs text-gray uppercase tracking-wider mb-2">Arrival</p>
                 <p className="text-lg font-bold text-charcoal">{booking.tripData.destination}</p>
-                <p className="text-sm text-gray mt-1">Time: {booking.travel.arrivalTime || '12:00 PM'}</p>
-                <p className="text-xs text-gray">{booking.tripData.date}</p>
+                <div className="mt-3 space-y-1">
+                  <p className="text-sm text-gray flex items-center gap-2">
+                    <Clock size={16} /> Time: <span className="font-semibold text-charcoal">{booking.travel.arrivalTime || '12:00 PM'}</span>
+                  </p>
+                  <p className="text-sm text-gray flex items-center gap-2">
+                    <Calendar size={16} /> Date: <span className="font-semibold text-charcoal">{booking.tripData.date}</span>
+                  </p>
+                </div>
               </div>
             </div>
 
+            {/* Travel Essentials */}
             <div className="grid md:grid-cols-4 gap-4 mb-6">
               <InfoCard icon={<Clock size={20} />} label="Duration" value={booking.travel.duration || "3h 0m"} />
               <InfoCard icon={<Users size={20} />} label="Travelers" value={`${booking.tripData.travelers} Person(s)`} />
-              <InfoCard icon={<Tag size={20} />} label="Seat/Class" value={booking.travel.class || 'Economy'} />
+              <InfoCard icon={<Tag size={20} />} label="Seat/Berth" value={booking.travel.seats || 'TBA'} />
               <InfoCard icon={<DollarSign size={20} />} label="Travel Cost" value={`₹${booking.travel.price}`} accent />
             </div>
 
-            <div className="bg-white/80 rounded-xl p-5">
-              <p className="text-xs text-gray uppercase tracking-wider mb-2">Booking Reference</p>
-              <p className="text-sm font-mono font-semibold text-charcoal">{booking.travel.pnr || booking.bookingId}</p>
+            {/* PNR & Additional Details */}
+            <div className="grid md:grid-cols-2 gap-6 mb-4">
+              <div className="bg-white/80 rounded-xl p-5">
+                <p className="text-xs text-gray uppercase tracking-wider mb-2 flex items-center gap-2">
+                  <Key size={16} /> Booking Reference (PNR)
+                </p>
+                <p className="text-lg font-mono font-bold text-charcoal tracking-wide">{booking.travel.pnr || booking.bookingId}</p>
+              </div>
+              <div className="bg-white/80 rounded-xl p-5">
+                <p className="text-xs text-gray uppercase tracking-wider mb-2 flex items-center gap-2">
+                  <Briefcase size={16} /> Baggage Allowance
+                </p>
+                <p className="text-sm text-charcoal font-medium">{booking.travel.baggage || '15kg Check-in + 7kg Cabin'}</p>
+              </div>
+            </div>
+
+            {/* Meals & Cancellation */}
+            <div className="grid md:grid-cols-2 gap-6">
+              <div className="bg-white/80 rounded-xl p-5">
+                <p className="text-xs text-gray uppercase tracking-wider mb-2 flex items-center gap-2">
+                  <Coffee size={16} /> Meal Plan
+                </p>
+                <p className="text-sm text-charcoal">{booking.travel.meals || 'Available for purchase'}</p>
+              </div>
+              <div className="bg-white/80 rounded-xl p-5">
+                <p className="text-xs text-gray uppercase tracking-wider mb-2 flex items-center gap-2">
+                  <Shield size={16} /> Cancellation Policy
+                </p>
+                <p className="text-sm text-charcoal">{booking.travel.cancellation || 'Cancellation charges apply as per operator policy'}</p>
+              </div>
             </div>
           </div>
 
@@ -162,43 +216,96 @@ export function BookingDetails() {
               </h3>
             </div>
 
+            {/* Hotel Basic Info */}
             <div className="grid md:grid-cols-2 gap-6 mb-6">
               <div className="bg-white/80 rounded-xl p-5">
                 <p className="text-xs text-gray uppercase tracking-wider mb-2">Hotel Name</p>
                 <p className="text-xl font-bold text-charcoal">{booking.hotel.name}</p>
                 <p className="text-sm text-gray mt-1">⭐ {booking.hotel.rating || '4.5'} Star Rating</p>
+                {booking.hotel.confirmationNumber && (
+                  <p className="text-xs font-mono text-gray mt-2">Conf. #{booking.hotel.confirmationNumber}</p>
+                )}
               </div>
               <div className="bg-white/80 rounded-xl p-5">
                 <p className="text-xs text-gray uppercase tracking-wider mb-2">Location</p>
-                <p className="text-xl font-bold text-charcoal">{booking.tripData.destination}</p>
+                <p className="text-lg font-bold text-charcoal">{booking.tripData.destination}</p>
                 <p className="text-sm text-gray mt-1">{booking.hotel.address || 'City Center'}</p>
               </div>
             </div>
 
+            {/* Check-in/out Details */}
+            <div className="grid md:grid-cols-3 gap-4 mb-6">
+              <div className="bg-white/80 rounded-xl p-5 border-l-4 border-accent-sage">
+                <p className="text-xs text-gray uppercase tracking-wider mb-2 flex items-center gap-2">
+                  <Calendar size={16} /> Check-in
+                </p>
+                <p className="text-sm text-charcoal font-semibold">{booking.tripData.date}</p>
+                <p className="text-xs text-gray mt-1">After {booking.hotel.checkIn || '2:00 PM'}</p>
+              </div>
+              <div className="bg-white/80 rounded-xl p-5 border-l-4 border-accent-coral">
+                <p className="text-xs text-gray uppercase tracking-wider mb-2 flex items-center gap-2">
+                  <Calendar size={16} /> Check-out
+                </p>
+                <p className="text-sm text-charcoal font-semibold">{booking.tripData.date}</p>
+                <p className="text-xs text-gray mt-1">Before {booking.hotel.checkOut || '11:00 AM'}</p>
+              </div>
+              <div className="bg-white/80 rounded-xl p-5 border-l-4 border-accent-lavender">
+                <p className="text-xs text-gray uppercase tracking-wider mb-2 flex items-center gap-2">
+                  <Clock size={16} /> Nights
+                </p>
+                <p className="text-2xl font-bold text-charcoal">{booking.hotel.nights || 3}</p>
+                <p className="text-xs text-gray mt-1">Night(s)</p>
+              </div>
+            </div>
+
+            {/* Room Details */}
+            <div className="bg-white/80 rounded-xl p-6 mb-6">
+              <p className="text-sm text-gray uppercase tracking-wider mb-3 font-semibold">Room Details</p>
+              <div className="grid md:grid-cols-2 gap-4">
+                <div>
+                  <p className="text-xs text-gray mb-1">Room Type</p>
+                  <p className="text-base font-bold text-charcoal">{booking.hotel.roomType || 'Deluxe Double Room'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray mb-1">Bed Type</p>
+                  <p className="text-base font-semibold text-charcoal">{booking.hotel.bedType || 'King Size Bed'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray mb-1">Room Size</p>
+                  <p className="text-base font-semibold text-charcoal">{booking.hotel.roomSize || '300 sq ft'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-gray mb-1">Max Occupancy</p>
+                  <p className="text-base font-semibold text-charcoal">{booking.hotel.maxOccupancy || booking.tripData.travelers} Guest(s)</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Meal Plan & Parking */}
             <div className="grid md:grid-cols-2 gap-6 mb-6">
               <div className="bg-white/80 rounded-xl p-5">
-                <p className="text-xs text-gray uppercase tracking-wider mb-2">Room Type</p>
-                <p className="text-lg font-bold text-charcoal">{booking.hotel.roomType || 'Deluxe Double Room'}</p>
-                <p className="text-sm text-gray mt-1">Occupancy: {booking.tripData.travelers} Guest(s)</p>
+                <p className="text-xs text-gray uppercase tracking-wider mb-2 flex items-center gap-2">
+                  <Coffee size={16} /> Meal Plan
+                </p>
+                <p className="text-sm font-semibold text-charcoal">{booking.hotel.mealPlan || 'Breakfast Included'}</p>
               </div>
-              <div className="bg-white/80 rounded-xl p-5">
-                <p className="text-xs text-gray uppercase tracking-wider mb-2">Meal Plan</p>
-                <p className="text-lg font-bold text-charcoal">{booking.hotel.mealPlan || 'Breakfast Included'}</p>
-              </div>
+              {booking.hotel.parking && (
+                <div className="bg-white/80 rounded-xl p-5">
+                  <p className="text-xs text-gray uppercase tracking-wider mb-2 flex items-center gap-2">
+                    <MapPin size={16} /> Parking
+                  </p>
+                  <p className="text-sm font-semibold text-charcoal">{booking.hotel.parking}</p>
+                </div>
+              )}
             </div>
 
-            <div className="grid md:grid-cols-3 gap-4 mb-6">
-              <InfoCard icon={<Calendar size={20} />} label="Check-in" value={booking.tripData.date} />
-              <InfoCard icon={<Clock size={20} />} label="Nights" value={`${booking.hotel.nights || 3} Night(s)`} />
-              <InfoCard icon={<DollarSign size={20} />} label="Total Hotel Cost" value={`₹${booking.hotel.price}`} accent />
-            </div>
-
+            {/* Amenities */}
             {booking.hotel.amenities && booking.hotel.amenities.length > 0 && (
-              <div className="bg-white/80 rounded-xl p-5 mb-4">
-                <p className="text-xs text-gray uppercase tracking-wider mb-3">Amenities</p>
+              <div className="bg-white/80 rounded-xl p-5 mb-6">
+                <p className="text-xs text-gray uppercase tracking-wider mb-3 font-semibold">Room Amenities</p>
                 <div className="flex flex-wrap gap-2">
                   {booking.hotel.amenities.map((amenity, index) => (
-                    <span key={index} className="px-4 py-2 bg-accent-lavender/10 text-accent-lavender text-sm font-medium rounded-full">
+                    <span key={index} className="px-4 py-2 bg-accent-lavender/10 text-accent-lavender text-sm font-medium rounded-full border border-accent-lavender/20">
                       {amenity}
                     </span>
                   ))}
@@ -206,9 +313,65 @@ export function BookingDetails() {
               </div>
             )}
 
+            {/* Facilities */}
+            {booking.hotel.facilities && booking.hotel.facilities.length > 0 && (
+              <div className="bg-white/80 rounded-xl p-5 mb-6">
+                <p className="text-xs text-gray uppercase tracking-wider mb-3 font-semibold">Hotel Facilities</p>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                  {booking.hotel.facilities.map((facility, index) => (
+                    <div key={index} className="flex items-center gap-2 text-sm text-charcoal">
+                      <CheckCircle size={16} className="text-accent-sage" />
+                      <span>{facility}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Special Requests */}
+            {booking.hotel.specialRequests && (
+              <div className="bg-accent-sage/10 rounded-xl p-5 mb-6 border border-accent-sage/20">
+                <p className="text-xs text-gray uppercase tracking-wider mb-2 flex items-center gap-2">
+                  <Info size={16} /> Special Requests
+                </p>
+                <p className="text-sm text-charcoal">{booking.hotel.specialRequests}</p>
+              </div>
+            )}
+
+            {/* Hotel Policies */}
+            {booking.hotel.policies && booking.hotel.policies.length > 0 && (
+              <div className="bg-white/80 rounded-xl p-5 mb-4">
+                <p className="text-xs text-gray uppercase tracking-wider mb-3 font-semibold flex items-center gap-2">
+                  <AlertCircle size={16} /> Hotel Policies
+                </p>
+                <ul className="space-y-2">
+                  {booking.hotel.policies.map((policy, index) => (
+                    <li key={index} className="text-sm text-charcoal flex items-start gap-2">
+                      <span className="text-accent-coral mt-1">•</span>
+                      <span>{policy}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Cancellation */}
             <div className="bg-white/80 rounded-xl p-5">
-              <p className="text-xs text-gray uppercase tracking-wider mb-2">Cancellation Policy</p>
-              <p className="text-sm text-gray">{booking.hotel.cancellation || 'Free cancellation up to 24 hours before check-in. Cancellation charges apply after that.'}</p>
+              <p className="text-xs text-gray uppercase tracking-wider mb-2 flex items-center gap-2">
+                <Shield size={16} /> Cancellation Policy
+              </p>
+              <p className="text-sm text-charcoal">{booking.hotel.cancellation || 'Free cancellation up to 24 hours before check-in. Cancellation charges apply after that.'}</p>
+            </div>
+
+            {/* Total Hotel Cost */}
+            <div className="mt-6 bg-gradient-to-r from-accent-lavender/20 to-accent-sage/20 rounded-xl p-5 border border-accent-lavender/30">
+              <div className="flex justify-between items-center">
+                <div>
+                  <p className="text-xs text-gray uppercase tracking-wider mb-1">Total Hotel Cost</p>
+                  <p className="text-sm text-gray">₹{booking.hotel.price} × {booking.hotel.nights || 3} nights</p>
+                </div>
+                <p className="text-3xl font-display font-bold text-accent-lavender">₹{booking.hotel.price * (booking.hotel.nights || 3)}</p>
+              </div>
             </div>
           </div>
 
