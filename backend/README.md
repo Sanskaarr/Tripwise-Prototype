@@ -16,6 +16,12 @@ This backend implements a strict backend-first architecture where:
 - Google Gemini API
 - Google Maps API (optional, with mock fallback)
 
+## Requirements
+
+- Java 21 (required - Maven must use Java 21, not Java 24)
+- Maven 3.6+
+- MySQL 8.0+ (or configured H2 in-memory database)
+
 ## Prerequisites
 - Java 21+
 - Maven 3.9+
