@@ -38,7 +38,7 @@ public class AuthController {
     }
 
     @PostMapping("/complete-profile")
-    public ResponseEntity<?> completeProfile(@RequestAttribute("userId") Long userId, 
+    public ResponseEntity<?> completeProfile(@RequestAttribute("userId") String userId, 
                                               @RequestBody RegisterRequest request) {
         try {
             authService.completeProfile(userId, request);

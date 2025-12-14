@@ -91,7 +91,7 @@ public class AuthService {
             "Account created successfully! Let's start exploring.", userDetails);
     }
 
-    public void completeProfile(Long userId, RegisterRequest request) throws Exception {
+    public void completeProfile(String userId, RegisterRequest request) throws Exception {
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new Exception("User not found"));
 

@@ -29,7 +29,7 @@ public class LocalGuideController {
     }
 
     @PostMapping
-    public ResponseEntity<?> getLocalGuide(@RequestAttribute("userId") Long userId,
+    public ResponseEntity<?> getLocalGuide(@RequestAttribute("userId") String userId,
                                             @RequestBody LocalGuideRequest request) {
         try {
             User user = userRepository.findById(userId)

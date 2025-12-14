@@ -23,7 +23,7 @@ public class ChatController {
     }
 
     @PostMapping
-    public ResponseEntity<?> chat(@RequestAttribute("userId") Long userId,
+    public ResponseEntity<?> chat(@RequestAttribute("userId") String userId,
                                    @RequestBody ChatRequest request) {
         try {
             User user = userRepository.findById(userId)
