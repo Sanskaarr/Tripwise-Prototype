@@ -5,6 +5,7 @@ import com.tripwise.model.User;
 import com.tripwise.repository.UserRepository;
 import com.tripwise.config.PasswordEncoderBean.SimplePasswordEncoder;
 import com.tripwise.util.PhoneNumberUtil;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -22,9 +23,9 @@ public class AuthService {
         this.jwtUtil = jwtUtil;
     }
 
-    public AuthResponse login(LoginRequest request) throws Exception {
+    public AuthResponse login(LoginRequest request) {
         if (request.getPhoneNumber() == null || request.getPhoneNumber().isEmpty()) {
-            throw new Exception("Phone number is required");
+            return new AuthResponse(null, null, false, "Phone number is required", null);
         }
         
         String normalizedPhone = PhoneNumberUtil.normalizePhoneNumber(request.getPhoneNumber());
@@ -32,21 +33,28 @@ public class AuthService {
         User user = userRepository.findByPhoneNumber(normalizedPhone).orElse(null);
         
         if (user == null) {
-            User newUser = new User();
-            newUser.setPhoneNumber(normalizedPhone);
-            newUser.setPassword(passwordEncoder.encode("default"));
-            newUser.setIsFirstTime(true);
-            newUser.setLastLoginAt(LocalDateTime.now());
-            user = userRepository.save(newUser);
-            
-            UserDetailsDTO userDetails = new UserDetailsDTO(
-                null,
-                newUser.getPhoneNumber(),
-                null, null, null, null, null
-            );
-            
-            return new AuthResponse(null, user.getId(), true, 
-                "Welcome to TripWise! Please complete your profile.", userDetails);
+            try {
+                User newUser = new User();
+                newUser.setPhoneNumber(normalizedPhone);
+                newUser.setPassword(passwordEncoder.encode("default"));
+                newUser.setIsFirstTime(true);
+                newUser.setLastLoginAt(LocalDateTime.now());
+                user = userRepository.save(newUser);
+                
+                UserDetailsDTO userDetails = new UserDetailsDTO(
+                    null,
+                    user.getPhoneNumber(),
+                    null, null, null, null, null
+                );
+                
+                return new AuthResponse(null, user.getId(), true, 
+                    "Welcome to TripWise! Please complete your profile.", userDetails);
+            } catch (DuplicateKeyException e) {
+                user = userRepository.findByPhoneNumber(normalizedPhone).orElse(null);
+                if (user == null) {
+                    return new AuthResponse(null, null, false, "Unable to create or find user", null);
+                }
+            }
         }
 
         user.setLastLoginAt(LocalDateTime.now());
