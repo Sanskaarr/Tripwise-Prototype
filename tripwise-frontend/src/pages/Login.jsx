@@ -1,12 +1,14 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { authAPI } from '../services/api';
+import { useUser } from '../contexts/UserContext';
 
 export function Login() {
   const [phoneNumber, setPhoneNumber] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
+  const { login } = useUser();
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -20,10 +22,19 @@ export function Login() {
       const response = await authAPI.loginWithPhone(trimmedPhone);
       console.log('Login response:', response);
 
+      const phoneFromResponse = response?.userDetails?.phoneNumber || trimmedPhone;
+      const userPayload = {
+        identifier: phoneFromResponse,
+        name: '',
+        userId: response?.userId,
+        phoneNumber: phoneFromResponse,
+      };
+      login(userPayload);
+
       if (response?.isFirstTime) {
-        navigate('/plan-trip');
+        navigate('/onboarding');
       } else {
-        navigate('/user-dashboard');
+        navigate('/plan-trip');
       }
     } catch (err) {
       console.error('Login error:', err);

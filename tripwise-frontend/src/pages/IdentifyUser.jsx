@@ -31,31 +31,38 @@ export function IdentifyUser() {
         setError('');
         
         try {
-          const response = await authAPI.loginWithPhone(identifier);
-        
-        setIsReturning(response.isFirstTime === false);
-        login(identifier, name);
-        
-        setTimeout(() => {
-          if (response.isFirstTime) {
-            navigate('/plan-trip');
-          } else {
-            navigate('/user-dashboard');
-          }
-        }, 1500);
-      } catch (err) {
-        console.log('User not found, treating as new user');
-        setIsReturning(false);
-        login(identifier, name);
-        
-        setTimeout(() => {
-          navigate('/plan-trip');
-        }, 1500);
-      } finally {
-        setLoading(false);
+          const response = await authAPI.loginWithPhone(identifier.trim());
+          const phoneFromResponse = response?.userDetails?.phoneNumber || identifier.trim();
+
+          setIsReturning(response.isFirstTime === false);
+          login({
+            identifier: phoneFromResponse,
+            name,
+            userId: response?.userId,
+            phoneNumber: phoneFromResponse,
+          });
+          
+          setTimeout(() => {
+            if (response.isFirstTime) {
+              navigate('/onboarding');
+            } else {
+              navigate('/plan-trip');
+            }
+          }, 800);
+        } catch (err) {
+          console.log('User not found, treating as new user');
+          setIsReturning(false);
+          login({ identifier, name, phoneNumber: identifier });
+          
+          setTimeout(() => {
+            navigate('/onboarding');
+          }, 800);
+        } finally {
+          setLoading(false);
+        }
       }
-    }
-  };
+    };
+
 
   return (
     <div className="min-h-screen section-bg-cream flex items-center justify-center px-4 pt-24">

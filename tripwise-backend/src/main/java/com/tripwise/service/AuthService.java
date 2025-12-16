@@ -1,6 +1,7 @@
 package com.tripwise.service;
 
 import com.tripwise.dto.*;
+import com.tripwise.dto.OnboardingRequest;
 import com.tripwise.model.User;
 import com.tripwise.repository.UserRepository;
 import com.tripwise.config.PasswordEncoderBean.SimplePasswordEncoder;
@@ -63,20 +64,18 @@ public class AuthService {
 
         user.setLastLoginAt(LocalDateTime.now());
         
-        boolean isFirstTime = Boolean.TRUE.equals(user.getIsFirstTime());
-        String message;
-        
-        if (isFirstTime) {
-            message = "Welcome to TripWise! Please complete your profile.";
-            user.setIsFirstTime(false);
-        } else {
-            message = String.format("Welcome back! Ready for your next adventure in %s?", 
-                user.getPreferredLanguage() != null ? user.getPreferredLanguage() : "English");
-        }
-        
+          boolean isFirstTime = Boolean.TRUE.equals(user.getIsFirstTime());
+          String displayName = user.getEmail() != null ? user.getEmail() : user.getPhoneNumber();
+          String message;
+          
+            if (isFirstTime) {
+                message = String.format("Welcome to TripWise, %s! Let's get started.", displayName);
+            } else {
+                message = String.format("Welcome back, %s! Ready to plan your next trip?", displayName);
+            }
+ 
         userRepository.save(user);
 
-        String token = jwtUtil.generateToken(user.getEmail(), user.getId());
 
         UserDetailsDTO userDetails = new UserDetailsDTO(
             user.getEmail(),
@@ -125,11 +124,10 @@ public class AuthService {
             "Account created successfully! Let's start exploring.", userDetails);
     }
 
-    public void completeProfile(String userId, RegisterRequest request) throws Exception {
-        User user = userRepository.findById(userId)
+    public AuthResponse completeOnboarding(OnboardingRequest request) throws Exception {
+        User user = userRepository.findById(request.getUserId())
                 .orElseThrow(() -> new Exception("User not found"));
 
-        user.setPhoneNumber(request.getPhoneNumber());
         user.setPreferredLanguage(request.getPreferredLanguage());
         user.setTravelStyle(request.getTravelStyle());
         user.setDietaryPreferences(request.getDietaryPreferences());
@@ -137,5 +135,18 @@ public class AuthService {
         user.setIsFirstTime(false);
 
         userRepository.save(user);
+
+        UserDetailsDTO userDetails = new UserDetailsDTO(
+                user.getEmail(),
+                user.getPhoneNumber(),
+                user.getPreferredLanguage(),
+                user.getBudgetRange(),
+                user.getTravelStyle(),
+                user.getDietaryPreferences(),
+                user.getInterests()
+        );
+
+        return new AuthResponse(null, user.getId(), false,
+                "Onboarding completed successfully.", userDetails);
     }
 }

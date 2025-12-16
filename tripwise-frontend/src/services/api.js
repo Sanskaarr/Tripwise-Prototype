@@ -32,6 +32,16 @@ export const authAPI = {
     }
   },
 
+  completeOnboarding: async (onboardingData) => {
+    try {
+      const response = await apiClient.post('/auth/onboarding', onboardingData);
+      return response.data;
+    } catch (error) {
+      console.error('Onboarding failed:', error);
+      throw error;
+    }
+  },
+
   register: async (userData) => {
     try {
       const response = await apiClient.post('/auth/register', userData);
@@ -42,6 +52,7 @@ export const authAPI = {
     }
   },
 };
+
 
 export const tripAPI = {
   planTrip: async (userId, destination, duration, budget, preferences = '') => {

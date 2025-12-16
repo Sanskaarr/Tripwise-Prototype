@@ -3,6 +3,7 @@ package com.tripwise.controller;
 import com.tripwise.dto.AuthResponse;
 import com.tripwise.dto.LoginRequest;
 import com.tripwise.dto.RegisterRequest;
+import com.tripwise.dto.OnboardingRequest;
 import com.tripwise.service.AuthService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -33,14 +34,13 @@ public class AuthController {
         }
     }
 
-    @PostMapping("/complete-profile")
-    public ResponseEntity<?> completeProfile(@RequestAttribute("userId") String userId, 
-                                              @RequestBody RegisterRequest request) {
+    @PostMapping("/onboarding")
+    public ResponseEntity<AuthResponse> completeOnboarding(@RequestBody OnboardingRequest request) {
         try {
-            authService.completeProfile(userId, request);
-            return ResponseEntity.ok("Profile completed successfully");
+            AuthResponse response = authService.completeOnboarding(request);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
-            return ResponseEntity.badRequest().body(e.getMessage());
+            return ResponseEntity.badRequest().build();
         }
     }
 }

@@ -4,6 +4,7 @@ import { Navbar } from './components/Navbar';
 import { Home } from './pages/Home';
 import { Login } from './pages/Login';
 import { IdentifyUser } from './pages/IdentifyUser';
+import { Onboarding } from './pages/Onboarding';
 import { PlanTrip } from './pages/PlanTrip';
 import { Booking } from './pages/Booking';
 import { Payment } from './pages/Payment';
@@ -42,6 +43,7 @@ export function App() {
                 <Route path="/" element={<Home />} />
                 <Route path="/login" element={<Login />} />
                 <Route path="/identify" element={<IdentifyUser />} />
+                <Route path="/onboarding" element={<Onboarding />} />
                 <Route path="/plan-trip" element={<PlanTrip />} />
                 <Route path="/booking" element={<Booking />} />
                 <Route path="/payment" element={<Payment />} />
