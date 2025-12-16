@@ -32,26 +32,6 @@ export const authAPI = {
     }
   },
 
-  login: async (email, password) => {
-    try {
-      const response = await apiClient.post('/auth/login', { phoneNumber });
-      return response.data;
-    } catch (error) {
-      console.error('Login failed:', error);
-      throw error;
-    }
-  },
-
-  completeOnboarding: async (onboardingData) => {
-    try {
-      const response = await apiClient.post('/auth/onboarding', onboardingData);
-      return response.data;
-    } catch (error) {
-      console.error('Onboarding failed:', error);
-      throw error;
-    }
-  },
-
   register: async (userData) => {
     try {
       const response = await apiClient.post('/auth/register', userData);

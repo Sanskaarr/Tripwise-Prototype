@@ -3,8 +3,8 @@ package com.tripwise.service;
 import com.tripwise.dto.*;
 import com.tripwise.model.User;
 import com.tripwise.repository.UserRepository;
-import com.tripwise.security.JwtUtil;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import com.tripwise.config.PasswordEncoderBean.SimplePasswordEncoder;
+import com.tripwise.util.PhoneNumberUtil;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -23,37 +23,30 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request) throws Exception {
-        User user = null;
+        if (request.getPhoneNumber() == null || request.getPhoneNumber().isEmpty()) {
+            throw new Exception("Phone number is required");
+        }
         
-        if (request.getPhoneNumber() != null && !request.getPhoneNumber().isEmpty()) {
-            user = userRepository.findByPhoneNumber(request.getPhoneNumber()).orElse(null);
+        String normalizedPhone = PhoneNumberUtil.normalizePhoneNumber(request.getPhoneNumber());
+        
+        User user = userRepository.findByPhoneNumber(normalizedPhone).orElse(null);
+        
+        if (user == null) {
+            User newUser = new User();
+            newUser.setPhoneNumber(normalizedPhone);
+            newUser.setPassword(passwordEncoder.encode("default"));
+            newUser.setIsFirstTime(true);
+            newUser.setLastLoginAt(LocalDateTime.now());
+            user = userRepository.save(newUser);
             
-            if (user == null) {
-                User newUser = new User();
-                newUser.setPhoneNumber(request.getPhoneNumber());
-                newUser.setPassword(passwordEncoder.encode("default"));
-                newUser.setIsFirstTime(true);
-                newUser.setLastLoginAt(LocalDateTime.now());
-                user = userRepository.save(newUser);
-                
-                UserDetailsDTO userDetails = new UserDetailsDTO(
-                    null,
-                    newUser.getPhoneNumber(),
-                    null, null, null, null, null
-                );
-                
-                return new AuthResponse(null, user.getId(), true, 
-                    "Welcome to TripWise! Please complete your profile.", userDetails);
-            }
-        } else if (request.getEmail() != null && !request.getEmail().isEmpty()) {
-            user = userRepository.findByEmail(request.getEmail())
-                    .orElseThrow(() -> new Exception("Invalid credentials"));
-
-            if (request.getPassword() != null && !passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-                throw new Exception("Invalid credentials");
-            }
-        } else {
-            throw new Exception("Phone number or email required");
+            UserDetailsDTO userDetails = new UserDetailsDTO(
+                null,
+                newUser.getPhoneNumber(),
+                null, null, null, null, null
+            );
+            
+            return new AuthResponse(null, user.getId(), true, 
+                "Welcome to TripWise! Please complete your profile.", userDetails);
         }
 
         user.setLastLoginAt(LocalDateTime.now());

@@ -14,6 +14,8 @@ public class User {
     private String email;
 
     private String password;
+    
+    @Indexed(unique = true, sparse = true)
     private String phoneNumber;
     private String preferredLanguage;
     private String budgetRange;
