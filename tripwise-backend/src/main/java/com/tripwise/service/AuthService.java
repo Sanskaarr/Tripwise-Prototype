@@ -24,11 +24,15 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request) {
+        System.out.println("=== LOGIN REQUEST RECEIVED ===");
+        System.out.println("Raw phone number: " + request.getPhoneNumber());
+        
         if (request.getPhoneNumber() == null || request.getPhoneNumber().isEmpty()) {
             return new AuthResponse(null, null, false, "Phone number is required", null);
         }
         
         String normalizedPhone = PhoneNumberUtil.normalizePhoneNumber(request.getPhoneNumber());
+        System.out.println("Normalized phone: " + normalizedPhone);
         
         User user = userRepository.findByPhoneNumber(normalizedPhone).orElse(null);
         
