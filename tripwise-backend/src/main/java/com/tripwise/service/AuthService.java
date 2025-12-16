@@ -23,11 +23,37 @@ public class AuthService {
     }
 
     public AuthResponse login(LoginRequest request) throws Exception {
-        User user = userRepository.findByEmail(request.getEmail())
-                .orElseThrow(() -> new Exception("Invalid credentials"));
+        User user = null;
+        
+        if (request.getPhoneNumber() != null && !request.getPhoneNumber().isEmpty()) {
+            user = userRepository.findByPhoneNumber(request.getPhoneNumber()).orElse(null);
+            
+            if (user == null) {
+                User newUser = new User();
+                newUser.setPhoneNumber(request.getPhoneNumber());
+                newUser.setPassword(passwordEncoder.encode("default"));
+                newUser.setIsFirstTime(true);
+                newUser.setLastLoginAt(LocalDateTime.now());
+                user = userRepository.save(newUser);
+                
+                UserDetailsDTO userDetails = new UserDetailsDTO(
+                    null,
+                    newUser.getPhoneNumber(),
+                    null, null, null, null, null
+                );
+                
+                return new AuthResponse(null, user.getId(), true, 
+                    "Welcome to TripWise! Please complete your profile.", userDetails);
+            }
+        } else if (request.getEmail() != null && !request.getEmail().isEmpty()) {
+            user = userRepository.findByEmail(request.getEmail())
+                    .orElseThrow(() -> new Exception("Invalid credentials"));
 
-        if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
-            throw new Exception("Invalid credentials");
+            if (request.getPassword() != null && !passwordEncoder.matches(request.getPassword(), user.getPassword())) {
+                throw new Exception("Invalid credentials");
+            }
+        } else {
+            throw new Exception("Phone number or email required");
         }
 
         user.setLastLoginAt(LocalDateTime.now());

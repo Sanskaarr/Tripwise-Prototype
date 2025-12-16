@@ -1,0 +1,80 @@
+# ===============================
+# Environment variables
+# ===============================
+.env
+.env.*
+!.env.example
+
+# ===============================
+# Build outputs
+# ===============================
+# Maven
+target/
+
+# Gradle
+build/
+.gradle/
+
+# ===============================
+# Compiled files
+# ===============================
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+*.original
+
+# ===============================
+# Logs
+# ===============================
+*.log
+logs/
+
+# ===============================
+# IDE / Editor files
+# ===============================
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+
+# VS Code
+.vscode/
+
+# Eclipse
+.project
+.classpath
+.settings/
+
+# NetBeans
+nbproject/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+# ===============================
+# OS files
+# ===============================
+.DS_Store
+Thumbs.db
+
+# ===============================
+# Temporary files
+# ===============================
+tmp/
+temp/
+*.swp
+*~
+
+# ===============================
+# Node (if backend uses tools like Vite, Prisma, etc.)
+# ===============================
+node_modules/
+
+# ===============================
+# Test & coverage
+# ===============================
+coverage/
+jacoco/

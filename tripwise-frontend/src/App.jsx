@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { useEffect, useState } from 'react';
 import { Navbar } from './components/Navbar';
 import { Home } from './pages/Home';
+import { Login } from './pages/Login';
 import { IdentifyUser } from './pages/IdentifyUser';
 import { PlanTrip } from './pages/PlanTrip';
 import { Booking } from './pages/Booking';
@@ -37,16 +38,17 @@ export function App() {
         <Router>
           <div className="min-h-screen">
             <Navbar />
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/identify" element={<IdentifyUser />} />
-              <Route path="/plan-trip" element={<PlanTrip />} />
-              <Route path="/booking" element={<Booking />} />
-              <Route path="/payment" element={<Payment />} />
-              <Route path="/booking-details" element={<BookingDetails />} />
-              <Route path="/user-dashboard" element={<UserDashboard />} />
-              <Route path="/local-guide" element={<LocalGuide />} />
-            </Routes>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/identify" element={<IdentifyUser />} />
+                <Route path="/plan-trip" element={<PlanTrip />} />
+                <Route path="/booking" element={<Booking />} />
+                <Route path="/payment" element={<Payment />} />
+                <Route path="/booking-details" element={<BookingDetails />} />
+                <Route path="/user-dashboard" element={<UserDashboard />} />
+                <Route path="/local-guide" element={<LocalGuide />} />
+              </Routes>
           </div>
         </Router>
       </UserProvider>
