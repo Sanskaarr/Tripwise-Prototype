@@ -1,5 +1,7 @@
 /Users/sanskaarr/orchids-projects/tripwise-ai-travel-companion/tripwise-backend/src/main/java/com/tripwise/TripWiseApplication.java
-/Users/sanskaarr/orchids-projects/tripwise-ai-travel-companion/tripwise-backend/src/main/java/com/tripwise/config/SecurityConfig.java
+/Users/sanskaarr/orchids-projects/tripwise-ai-travel-companion/tripwise-backend/src/main/java/com/tripwise/config/CorsConfig.java
+/Users/sanskaarr/orchids-projects/tripwise-ai-travel-companion/tripwise-backend/src/main/java/com/tripwise/config/PasswordEncoderBean.java
+/Users/sanskaarr/orchids-projects/tripwise-ai-travel-companion/tripwise-backend/src/main/java/com/tripwise/config/RestTemplateConfig.java
 /Users/sanskaarr/orchids-projects/tripwise-ai-travel-companion/tripwise-backend/src/main/java/com/tripwise/controller/AuthController.java
 /Users/sanskaarr/orchids-projects/tripwise-ai-travel-companion/tripwise-backend/src/main/java/com/tripwise/controller/ChatController.java
 /Users/sanskaarr/orchids-projects/tripwise-ai-travel-companion/tripwise-backend/src/main/java/com/tripwise/controller/LocalGuideController.java
