@@ -58,11 +58,12 @@ public class AuthService {
 
         user.setLastLoginAt(LocalDateTime.now());
         
-        boolean isFirstTime = user.getIsFirstTime();
+        boolean isFirstTime = Boolean.TRUE.equals(user.getIsFirstTime());
         String message;
         
         if (isFirstTime) {
             message = "Welcome to TripWise! Please complete your profile.";
+            user.setIsFirstTime(false);
         } else {
             message = String.format("Welcome back! Ready for your next adventure in %s?", 
                 user.getPreferredLanguage() != null ? user.getPreferredLanguage() : "English");
