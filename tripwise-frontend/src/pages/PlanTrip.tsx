@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
-import { aiService } from "@/services/aiService";
+import { tripAPI } from "@/services/api";
 
 const PlanTripPage = () => {
   const [from, setFrom] = useState("");
@@ -53,13 +53,22 @@ const PlanTripPage = () => {
     toast({ title: "Planning your trip", description: "Fetching personalized options for you..." });
 
     try {
-      // We pass the data to the next page where AI will generate the suggestions
-      // or we can generate them here. For now, we'll navigate with the state.
-      setTimeout(() => {
-        navigate("/options", { state: { from, to, date, budget, mode } });
-      }, 800);
+      const response = await tripAPI.planTrip({
+        destination: to,
+        startDate: date,
+        endDate: date, // For simplicity using same date
+        interests: ["Sightseeing", "Food"],
+        budget: budget || "Moderate",
+        travelers: 1
+      });
+
+      if (response.success) {
+        navigate("/options", { state: { from, to, date, budget, mode, aiSuggestions: response.data.aiSuggestions } });
+      } else {
+        toast({ variant: "destructive", title: "Planning failed", description: response.message });
+      }
     } catch (error) {
-      toast({ variant: "destructive", title: "Error", description: "Failed to plan trip. Please try again." });
+      toast({ variant: "destructive", title: "Error", description: "Failed to plan trip. Please check your connection." });
     } finally {
       setLoading(false);
     }
