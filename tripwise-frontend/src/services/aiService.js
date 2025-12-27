@@ -18,7 +18,7 @@ export const aiService = {
     }
 
     try {
-      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
       
       const prompt = `You are a travel expert AI. Based on the following trip details, provide personalized travel suggestions:
       
@@ -63,7 +63,7 @@ Format the response in a clear, concise manner.`;
     }
 
     try {
-      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
       
       const prompt = `Provide a comprehensive local guide for ${city}. Include:
       
@@ -99,7 +99,7 @@ Format the response in a structured, easy-to-read manner.`;
     }
 
     try {
-      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+      const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
       
       const prompt = `You are a travel expert AI. Generate detailed travel suggestions for this confirmed booking:
 
