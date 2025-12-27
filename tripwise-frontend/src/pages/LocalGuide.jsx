@@ -7,6 +7,7 @@ import { localGuideAPI } from '../services/api';
 export function LocalGuide() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { user } = useUser();
   const destination = location.state?.destination || 'Your Destination';
 
   const [guide, setGuide] = useState(null);
@@ -15,9 +16,14 @@ export function LocalGuide() {
   useEffect(() => {
     const fetchGuide = async () => {
       try {
-        const response = await localGuideAPI.getGuide(destination);
+        const userId = user?.userId || localStorage.getItem('tripwise_userId') || 'anonymous';
+        const response = await localGuideAPI.getGuide(userId, destination);
         if (response.success) {
-          setGuide(response.data);
+          // Note: The backend returns 'recommendations' as a string, 
+          // but the Escape Echoes UI expects an object with attractions, food, tips, etc.
+          // Since we are discarding Escape Echoes logic, we should probably update the UI 
+          // to show the AI-generated text properly.
+          setGuide(response.recommendations);
         }
       } catch (error) {
         console.error('Error fetching guide:', error);
@@ -27,7 +33,7 @@ export function LocalGuide() {
     };
 
     fetchGuide();
-  }, [destination]);
+  }, [destination, user?.userId]);
 
   if (loading) {
     return (
@@ -88,84 +94,52 @@ export function LocalGuide() {
             </p>
           </motion.div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-            {/* Left Column - Main Info */}
-            <div className="lg:col-span-8 space-y-8">
-              <Section 
-                title="Top Attractions" 
-                icon={<MapPin className="text-primary" />} 
-                variants={itemVariants}
-              >
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {guide?.attractions.map((item, i) => (
-                    <GuideCard key={i} title={item.name} description={item.description} icon={<Star size={14} className="text-accent" />} />
-                  ))}
+            <div className="grid grid-cols-1 gap-8">
+              <motion.div variants={itemVariants} className="glass-card p-8">
+                <div className="flex items-center gap-4 mb-8">
+                  <div className="p-3 bg-white/5 rounded-xl border border-white/10">
+                    <Compass size={24} className="text-primary" />
+                  </div>
+                  <h2 className="text-2xl font-bold tracking-tight">Personalized Guide</h2>
                 </div>
-              </Section>
-
-              <Section 
-                title="Culinary Experiences" 
-                icon={<Utensils className="text-accent" />} 
-                variants={itemVariants}
-              >
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {guide?.food.map((item, i) => (
-                    <GuideCard key={i} title={item.name} description={item.description} />
-                  ))}
+                <div className="prose prose-invert max-w-none">
+                  <div className="text-gray-300 leading-relaxed whitespace-pre-wrap text-lg">
+                    {guide}
+                  </div>
                 </div>
-              </Section>
-
-              <Section 
-                title="Strategic Advice" 
-                icon={<Navigation className="text-primary" />} 
-                variants={itemVariants}
-              >
-                <div className="space-y-4">
-                  {guide?.tips.map((tip, i) => (
-                    <div key={i} className="flex gap-4 p-4 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
-                      <div className="text-primary mt-1">•</div>
-                      <p className="text-gray-300 text-sm leading-relaxed">{tip}</p>
-                    </div>
-                  ))}
-                </div>
-              </Section>
-            </div>
-
-            {/* Right Column - Emergency & Quick Links */}
-            <div className="lg:col-span-4 space-y-8">
-              <Section 
-                title="Emergency Services" 
-                icon={<AlertCircle className="text-destructive" />} 
-                variants={itemVariants}
-              >
-                <div className="space-y-4">
-                  <EmergencyItem label="Police" number={guide?.emergency.police} />
-                  <EmergencyItem label="Ambulance" number={guide?.emergency.ambulance} />
-                  <EmergencyItem label="Helpline" number={guide?.emergency.helpline} />
-                </div>
-              </Section>
-
-              <motion.div variants={itemVariants} className="glass-card p-8 text-center space-y-6">
-                <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto shadow-glow">
-                  <Compass size={32} className="text-primary" />
-                </div>
-                <h3 className="text-xl font-bold">Ready to Move?</h3>
-                <p className="text-gray-400 text-sm">Need a ride or looking for a place to stay nearby?</p>
-                <button 
-                  onClick={() => navigate('/plan-trip')}
-                  className="btn-primary w-full py-3"
-                >
-                  Modify Itinerary
-                </button>
-                <button 
-                  onClick={() => navigate('/')}
-                  className="btn-secondary w-full py-3 flex items-center justify-center gap-2"
-                >
-                  <Home size={18} /> Exit Guide
-                </button>
               </motion.div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <motion.div variants={itemVariants} className="glass-card p-8 text-center space-y-6">
+                  <div className="w-16 h-16 bg-primary/10 rounded-2xl flex items-center justify-center mx-auto shadow-glow">
+                    <Navigation size={32} className="text-primary" />
+                  </div>
+                  <h3 className="text-xl font-bold">Plan Your Route</h3>
+                  <p className="text-gray-400 text-sm">Need a custom itinerary based on these recommendations?</p>
+                  <button 
+                    onClick={() => navigate('/plan-trip')}
+                    className="btn-primary w-full py-3"
+                  >
+                    Generate Detailed Plan
+                  </button>
+                </motion.div>
+
+                <motion.div variants={itemVariants} className="glass-card p-8 text-center space-y-6">
+                  <div className="w-16 h-16 bg-accent/10 rounded-2xl flex items-center justify-center mx-auto shadow-glow">
+                    <Home size={32} className="text-accent" />
+                  </div>
+                  <h3 className="text-xl font-bold">Go Back</h3>
+                  <p className="text-gray-400 text-sm">Return to your dashboard or explore more destinations.</p>
+                  <button 
+                    onClick={() => navigate('/')}
+                    className="btn-secondary w-full py-3 flex items-center justify-center gap-2"
+                  >
+                    Exit Guide
+                  </button>
+                </motion.div>
+              </div>
             </div>
-          </div>
+
         </motion.div>
       </div>
     </div>
