@@ -2,8 +2,7 @@
   "name": "tripwise-root",
   "version": "1.0.0",
   "scripts": {
-    "dev": "npm run dev --prefix tripwise-frontend & cd tripwise-backend && ./run.sh",
-    "frontend": "npm run dev --prefix tripwise-frontend",
-    "backend": "cd tripwise-backend && ./run.sh"
+    "dev": "npm run dev --prefix tripwise-frontend",
+    "frontend": "npm run dev --prefix tripwise-frontend"
   }
 }
