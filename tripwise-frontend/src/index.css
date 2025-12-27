@@ -33,15 +33,26 @@
     --ring: 212.7 26.8% 83.9%;
 
     --radius: 0.75rem;
+
+    --cream: 45 33% 97%;
+    --peach: 30 100% 97%;
+    --sky: 200 80% 97%;
+    --charcoal: 220 20% 20%;
+    --gray: 220 10% 50%;
+    --accent-sage: 150 30% 50%;
+    --accent-coral: 16 80% 65%;
+    --accent-lavender: 270 50% 70%;
+    --ice-white: 210 40% 98%;
   }
 }
 
 @layer base {
   * {
-    @apply border-border;
+    border-color: hsl(var(--border));
   }
   body {
-    @apply bg-background text-foreground;
+    background-color: hsl(var(--background));
+    color: hsl(var(--foreground));
     font-feature-settings: "rlig" 1, "calt" 1;
     background-image: radial-gradient(circle at top right, rgba(16, 185, 129, 0.1), transparent 400px),
                       radial-gradient(circle at bottom left, rgba(15, 23, 42, 1), transparent 400px);
@@ -55,7 +66,7 @@
   }
   
   .btn-primary {
-    @apply bg-primary hover:bg-emerald-600 text-white font-medium py-2 px-6 rounded-lg transition-all duration-300 shadow-glow hover:scale-105 active:scale-95;
+    @apply bg-primary hover:bg-primary/90 text-white font-medium py-2 px-6 rounded-lg transition-all duration-300 shadow-glow hover:scale-105 active:scale-95;
   }
 
   .btn-secondary {
@@ -64,6 +75,58 @@
 
   .text-gradient {
     @apply bg-clip-text text-transparent bg-gradient-to-r from-primary to-accent;
+  }
+
+  .glassmorphism {
+    @apply bg-white/5 backdrop-blur-lg border border-white/10;
+  }
+
+  .section-bg-cream {
+    background: linear-gradient(135deg, hsl(var(--cream)) 0%, hsl(var(--peach)) 100%);
+  }
+
+  .section-bg-peach {
+    background: linear-gradient(135deg, hsl(var(--peach)) 0%, hsl(var(--cream)) 100%);
+  }
+
+  .section-bg-sky {
+    background: linear-gradient(135deg, hsl(var(--sky)) 0%, hsl(var(--cream)) 100%);
+  }
+
+  .text-gradient-pastel {
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500;
+  }
+
+  .text-charcoal {
+    color: hsl(var(--charcoal));
+  }
+
+  .text-gray {
+    color: hsl(var(--gray));
+  }
+
+  .text-cream {
+    color: hsl(var(--cream));
+  }
+
+  .text-ice-white {
+    color: hsl(var(--ice-white));
+  }
+
+  .bg-accent-sage {
+    background-color: hsl(var(--accent-sage));
+  }
+
+  .text-accent-sage {
+    color: hsl(var(--accent-sage));
+  }
+
+  .text-accent-coral {
+    color: hsl(var(--accent-coral));
+  }
+
+  .text-accent-lavender {
+    color: hsl(var(--accent-lavender));
   }
 }
 
@@ -79,6 +142,16 @@
   z-index: -1;
 }
 
-.page-shell {
-  @apply relative min-h-screen overflow-x-hidden bg-background;
+@keyframes aurora-shift {
+  0%, 100% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+}
+
+.animate-aurora-shift {
+  animation: aurora-shift 3s ease-in-out infinite;
+  background-size: 200% 200%;
 }

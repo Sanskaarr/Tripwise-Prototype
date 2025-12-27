@@ -3,10 +3,10 @@ package com.tripwise.dto;
 public class TripIntentResponse {
     private String suggestion;
     private String message;
-    private String overview;
-    private String duration;
-    private String budget;
-    private String itinerary;
+    private String tripOverview;
+    private String suggestedDuration;
+    private String budgetRange;
+    private String itineraryOutline;
     private String recommendations;
 
     public TripIntentResponse() {}
@@ -16,13 +16,19 @@ public class TripIntentResponse {
         this.message = message;
     }
 
-    public TripIntentResponse(String suggestion, String message, String overview, String duration, String budget, String itinerary, String recommendations) {
+    public TripIntentResponse(String suggestion,
+                             String message,
+                             String tripOverview,
+                             String suggestedDuration,
+                             String budgetRange,
+                             String itineraryOutline,
+                             String recommendations) {
         this.suggestion = suggestion;
         this.message = message;
-        this.overview = overview;
-        this.duration = duration;
-        this.budget = budget;
-        this.itinerary = itinerary;
+        this.tripOverview = tripOverview;
+        this.suggestedDuration = suggestedDuration;
+        this.budgetRange = budgetRange;
+        this.itineraryOutline = itineraryOutline;
         this.recommendations = recommendations;
     }
 
@@ -42,36 +48,36 @@ public class TripIntentResponse {
         this.message = message;
     }
 
-    public String getOverview() {
-        return overview;
+    public String getTripOverview() {
+        return tripOverview;
     }
 
-    public void setOverview(String overview) {
-        this.overview = overview;
+    public void setTripOverview(String tripOverview) {
+        this.tripOverview = tripOverview;
     }
 
-    public String getDuration() {
-        return duration;
+    public String getSuggestedDuration() {
+        return suggestedDuration;
     }
 
-    public void setDuration(String duration) {
-        this.duration = duration;
+    public void setSuggestedDuration(String suggestedDuration) {
+        this.suggestedDuration = suggestedDuration;
     }
 
-    public String getBudget() {
-        return budget;
+    public String getBudgetRange() {
+        return budgetRange;
     }
 
-    public void setBudget(String budget) {
-        this.budget = budget;
+    public void setBudgetRange(String budgetRange) {
+        this.budgetRange = budgetRange;
     }
 
-    public String getItinerary() {
-        return itinerary;
+    public String getItineraryOutline() {
+        return itineraryOutline;
     }
 
-    public void setItinerary(String itinerary) {
-        this.itinerary = itinerary;
+    public void setItineraryOutline(String itineraryOutline) {
+        this.itineraryOutline = itineraryOutline;
     }
 
     public String getRecommendations() {

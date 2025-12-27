@@ -14,14 +14,15 @@ public class User {
     private String email;
 
     private String password;
-    
-    @Indexed(unique = true)
     private String phoneNumber;
     private String preferredLanguage;
     private String budgetRange;
     private String travelStyle;
     private String dietaryPreferences;
     private String interests;
+    private String pastTravelExperience;
+    private String communicationPreference;
+    private Boolean documentsReady;
     private Boolean isFirstTime = true;
     private LocalDateTime createdAt = LocalDateTime.now();
     private LocalDateTime lastLoginAt;
@@ -98,6 +99,30 @@ public class User {
         this.interests = interests;
     }
 
+    public String getPastTravelExperience() {
+        return pastTravelExperience;
+    }
+
+    public void setPastTravelExperience(String pastTravelExperience) {
+        this.pastTravelExperience = pastTravelExperience;
+    }
+
+    public String getCommunicationPreference() {
+        return communicationPreference;
+    }
+
+    public void setCommunicationPreference(String communicationPreference) {
+        this.communicationPreference = communicationPreference;
+    }
+
+    public Boolean getDocumentsReady() {
+        return documentsReady;
+    }
+
+    public void setDocumentsReady(Boolean documentsReady) {
+        this.documentsReady = documentsReady;
+    }
+
     public Boolean getIsFirstTime() {
         return isFirstTime;
     }
@@ -120,9 +145,5 @@ public class User {
 
     public void setLastLoginAt(LocalDateTime lastLoginAt) {
         this.lastLoginAt = lastLoginAt;
-    }
-
-    public String getPastTravelExperience() {
-        return "Budget traveler, prefers cultural experiences and local food.";
     }
 }

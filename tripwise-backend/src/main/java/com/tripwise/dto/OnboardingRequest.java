@@ -7,6 +7,10 @@ public class OnboardingRequest {
     private String travelStyle;
     private String dietaryPreferences;
     private String interests;
+    private String pastTravelExperience;
+    private String communicationPreference;
+    private String documentsReady;
+    private String email;
 
     public String getUserId() {
         return userId;
@@ -54,5 +58,37 @@ public class OnboardingRequest {
 
     public void setInterests(String interests) {
         this.interests = interests;
+    }
+
+    public String getPastTravelExperience() {
+        return pastTravelExperience;
+    }
+
+    public void setPastTravelExperience(String pastTravelExperience) {
+        this.pastTravelExperience = pastTravelExperience;
+    }
+
+    public String getCommunicationPreference() {
+        return communicationPreference;
+    }
+
+    public void setCommunicationPreference(String communicationPreference) {
+        this.communicationPreference = communicationPreference;
+    }
+
+    public String getDocumentsReady() {
+        return documentsReady;
+    }
+
+    public void setDocumentsReady(String documentsReady) {
+        this.documentsReady = documentsReady;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
     }
 }

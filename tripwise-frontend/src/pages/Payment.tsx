@@ -19,24 +19,29 @@ const PaymentPage = () => {
   const handlePayment = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    try {
-      const response = await paymentAPI.processPayment({
-        bookingId: Math.random().toString(36).substr(2, 9),
-        amount: typeof total === 'number' ? total : 7200,
-        paymentMethod: "Card",
-      });
+      try {
+        const numericAmount = typeof total === 'string' 
+          ? parseInt(total.replace(/[^\d]/g, '')) 
+          : (typeof total === 'number' ? total : 7200);
+        
+        const response = await paymentAPI.processPayment({
+          bookingId: Math.random().toString(36).substr(2, 9),
+          amount: numericAmount,
+          paymentMethod: "Card",
+        });
 
-      if (response.success) {
-        toast({ title: "Payment Successful", description: `Transaction ID: ${response.transactionId}` });
-        navigate("/guide", { state: { city: trip?.to || "Goa" } });
-      } else {
-        toast({ title: "Payment Failed", description: response.message, variant: "destructive" });
+        if (response.success) {
+          const txnId = response.transactionId || response.paymentId || 'TXN-MOCK';
+          toast({ title: "Payment Successful", description: `Transaction ID: ${txnId}` });
+          navigate("/guide", { state: { city: trip?.to || "Goa" } });
+        } else {
+          toast({ title: "Payment Failed", description: response.message, variant: "destructive" });
+        }
+      } catch (error) {
+        toast({ title: "Error", description: "Something went wrong", variant: "destructive" });
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      toast({ title: "Error", description: "Something went wrong", variant: "destructive" });
-    } finally {
-      setLoading(false);
-    }
   };
 
   return (

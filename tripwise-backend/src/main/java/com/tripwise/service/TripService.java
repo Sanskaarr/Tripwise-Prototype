@@ -16,7 +16,7 @@ public class TripService {
     private UserRepository userRepository;
 
     @Autowired
-    private OpenAIService openAIService;
+    private GeminiIntentService geminiIntentService;
 
     public TripIntentResponse processTravelIntent(TripIntentRequest request) {
         Optional<User> userOpt = userRepository.findById(request.getUserId());
@@ -27,15 +27,14 @@ public class TripService {
 
         User user = userOpt.get();
         String userContext = buildUserContext(user);
-        String language = request.getLanguage() != null ? request.getLanguage() : "English";
+        String language = request.getLanguage() != null ? request.getLanguage() :
+                (user.getPreferredLanguage() != null ? user.getPreferredLanguage() : "English");
 
-        String aiSuggestion = openAIService.generateTravelSuggestion(
+        return geminiIntentService.generateTravelSuggestion(
                 request.getUserInput(),
                 userContext,
                 language
         );
-
-        return new TripIntentResponse(aiSuggestion, "Trip suggestion generated successfully");
     }
 
     private String buildUserContext(User user) {
@@ -58,6 +57,12 @@ public class TripService {
         }
         if (user.getPastTravelExperience() != null) {
             context.append("Past Travel Experience: ").append(user.getPastTravelExperience()).append("\n");
+        }
+        if (user.getCommunicationPreference() != null) {
+            context.append("Communication Preference: ").append(user.getCommunicationPreference()).append("\n");
+        }
+        if (user.getDocumentsReady() != null) {
+            context.append("Travel Documents Ready: ").append(user.getDocumentsReady()).append("\n");
         }
         
         return context.toString();

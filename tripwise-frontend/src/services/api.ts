@@ -18,98 +18,22 @@ apiClient.interceptors.request.use((config) => {
   return config;
 });
 
-export const healthAPI = {
-  checkHealth: async () => {
-    try {
-      const response = await apiClient.get('/health');
-      return response.data;
-    } catch (error) {
-      console.error('Health check failed:', error);
-      throw error;
-    }
-  },
-};
-
-export const authAPI = {
-  loginWithPhone: async (phoneNumber: string) => {
-    try {
-      const response = await apiClient.post('/auth/login', { phoneNumber });
-      return response.data;
-    } catch (error) {
-      console.error('Login failed:', error);
-      throw error;
-    }
-  },
-
-  completeOnboarding: async (onboardingData: any) => {
-    try {
-      const response = await apiClient.post('/auth/onboarding', onboardingData);
-      return response.data;
-    } catch (error) {
-      console.error('Onboarding failed:', error);
-      throw error;
-    }
-  },
-
-  register: async (userData: any) => {
-    try {
-      const response = await apiClient.post('/auth/register', userData);
-      return response.data;
-    } catch (error) {
-      console.error('Registration failed:', error);
-      throw error;
-    }
-  },
-};
-
 export const tripAPI = {
-  planTrip: async (tripData: any) => {
-    try {
-      const response = await apiClient.post('/travel/plan', tripData);
-      return response.data;
-    } catch (error) {
-      console.error('Trip planning failed:', error);
-      throw error;
-    }
-  },
-
-  getAIIntent: async (userId: string, userInput: string, language: string) => {
-    try {
-      const response = await apiClient.post('/trip/ai-intent', {
-        userId,
-        userInput,
-        language
-      });
-      return response.data;
-    } catch (error) {
-      console.error('AI Intent failed:', error);
-      throw error;
-    }
+  planTrip: async (tripData) => {
+    const response = await apiClient.post('/trip/plan', tripData);
+    return response.data;
   },
 };
 
 export const bookingAPI = {
-  searchOptions: async (type: string, searchData: any) => {
-    try {
-      const response = await apiClient.post(`/bookings/${type}/search`, searchData);
-      return response.data;
-    } catch (error) {
-      console.error(`Search ${type} failed:`, error);
-      throw error;
-    }
+  confirmBooking: async (bookingData) => {
+    const response = await apiClient.post('/booking/confirm', bookingData);
+    return response.data;
   },
 
-  confirmBooking: async (bookingData: any) => {
-    try {
-      const response = await apiClient.post('/booking/confirm', bookingData);
-      return response.data;
-    } catch (error) {
-      console.error('Booking confirmation failed:', error);
-      throw error;
-    }
-  },
-
-  getOptions: async (destination: string, mode: string) => {
+  getOptions: async (destination, mode) => {
+    // Mocking options since backend doesn't have a specific endpoint yet, 
+    // but in a real scenario this would call a backend service.
     return {
       success: true,
       data: {
@@ -140,26 +64,16 @@ export const bookingAPI = {
 };
 
 export const localGuideAPI = {
-  getGuide: async (location: string) => {
-    try {
-      const response = await apiClient.post('/local-guide', { location });
-      return response.data;
-    } catch (error) {
-      console.error('Local guide failed:', error);
-      throw error;
-    }
+  getGuide: async (location) => {
+    const response = await apiClient.post('/local-guide', { location });
+    return response.data;
   },
 };
 
 export const paymentAPI = {
-  processPayment: async (paymentData: any) => {
-    try {
-      const response = await apiClient.post('/payment/process', paymentData);
-      return response.data;
-    } catch (error) {
-      console.error('Payment processing failed:', error);
-      throw error;
-    }
+  processPayment: async (paymentData) => {
+    const response = await apiClient.post('/payment/process', paymentData);
+    return response.data;
   },
 };
 
