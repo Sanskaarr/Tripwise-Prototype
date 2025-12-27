@@ -16,10 +16,20 @@ public class GeminiService {
     @Value("${gemini.api.key}")
     private String apiKey;
 
+    @Value("${gemini.api.url}")
+    private String apiUrlTemplate;
+
+    @Value("${gemini.model}")
+    private String model;
+
     private final HttpClient httpClient = HttpClient.newHttpClient();
     private final Gson gson = new Gson();
 
     public String generateLocalGuide(String location, String language) throws Exception {
+        if (apiKey == null || apiKey.isEmpty()) {
+            throw new RuntimeException("GEMINI_API_KEY is not configured");
+        }
+
         String prompt = String.format(
             "Provide a comprehensive local guide for %s in %s language. Include: " +
             "1) Top places to visit (5-7 recommendations) " +
@@ -39,10 +49,7 @@ public class GeminiService {
         JsonObject requestBody = new JsonObject();
         requestBody.add("contents", gson.toJsonTree(new JsonObject[]{content}));
 
-        String url = String.format(
-            "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=%s",
-            apiKey
-        );
+        String url = String.format(apiUrlTemplate, model, apiKey);
 
         HttpRequest request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
@@ -52,6 +59,10 @@ public class GeminiService {
 
         HttpResponse<String> response = httpClient.send(request, HttpResponse.BodyHandlers.ofString());
         
+        if (response.statusCode() != 200) {
+            throw new RuntimeException("Gemini API error: " + response.statusCode() + " - " + response.body());
+        }
+
         JsonObject jsonResponse = gson.fromJson(response.body(), JsonObject.class);
         return jsonResponse.getAsJsonArray("candidates")
                 .get(0).getAsJsonObject()
