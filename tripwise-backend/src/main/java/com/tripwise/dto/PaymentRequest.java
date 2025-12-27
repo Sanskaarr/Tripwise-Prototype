@@ -2,6 +2,7 @@ package com.tripwise.dto;
 
 public class PaymentRequest {
     private String bookingId;
+    private String userId;
     private double amount;
     private String paymentMethod;
     private String upiId;

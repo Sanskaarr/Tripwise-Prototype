@@ -50,6 +50,7 @@ public class AuthService {
             user.getEmail(),
             user.getPhoneNumber(),
             user.getPreferredLanguage(),
+            user.getBudgetRange(),
             user.getTravelStyle(),
             user.getDietaryPreferences(),
             user.getInterests()
@@ -82,6 +83,7 @@ public class AuthService {
             user.getEmail(),
             user.getPhoneNumber(),
             user.getPreferredLanguage(),
+            user.getBudgetRange(),
             user.getTravelStyle(),
             user.getDietaryPreferences(),
             user.getInterests()

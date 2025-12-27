@@ -76,10 +76,10 @@ const PlanTripPage = () => {
 
   return (
     <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-16 md:py-20">
-      <div className="w-full max-w-2xl rounded-3xl bg-card p-6 shadow-lg md:p-8">
-        <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">Step 2</p>
-        <h1 className="mb-4 text-2xl font-semibold">Tell TripWise about your trip</h1>
-        <form onSubmit={handleSubmit} className="grid gap-4 md:grid-cols-2">
+      <div className="w-full max-w-2xl glass-card p-6 md:p-8">
+        <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-primary">Step 2</p>
+        <h1 className="mb-6 text-3xl font-bold tracking-tight text-white">Tell TripWise about your trip</h1>
+        <form onSubmit={handleSubmit} className="grid gap-6 md:grid-cols-2">
           <div className="md:col-span-1">
             <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
               From

@@ -45,48 +45,50 @@ const BookingOptionsPage = () => {
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-14 md:py-16">
-      <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">Step 3</p>
-      <h1 className="mb-1 text-2xl font-semibold">Choose how you&apos;d like to travel</h1>
-      <p className="mb-6 text-sm text-muted-foreground">
-        {trip.from && trip.to
-          ? `For this demo, here are some example options from ${trip.from} to ${trip.to}.`
-          : "Here are some sample options TripWise might show you."}
-      </p>
+      <div className="glass-card p-6 md:p-8">
+        <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-primary">Step 3</p>
+        <h1 className="mb-1 text-3xl font-bold tracking-tight text-white">Choose how you&apos;d like to travel</h1>
+        <p className="mb-8 text-sm text-gray-400">
+          {trip.from && trip.to
+            ? `For this demo, here are some example options from ${trip.from} to ${trip.to}.`
+            : "Here are some sample options TripWise might show you."}
+        </p>
 
-      <section className="mb-8 grid gap-4 md:grid-cols-2">
-        {mockOptions.map((opt) => (
-          <Card
-            key={opt.id}
-            className={`cursor-pointer p-4 transition hover:border-primary/60 ${
-              selectedId === opt.id ? "border-primary shadow-md" : ""
-            }`}
-            onClick={() => setSelectedId(opt.id)}
-          >
-            <h2 className="mb-1 text-sm font-semibold">{opt.title}</h2>
-            <p className="text-xs text-muted-foreground">{opt.subtitle}</p>
-            <p className="mt-3 text-xs uppercase tracking-[0.2em] text-muted-foreground">{opt.time}</p>
-            <p className="mt-3 text-sm font-semibold">{opt.price}</p>
-          </Card>
-        ))}
-      </section>
-
-      <section className="mb-8">
-        <h2 className="mb-3 text-sm font-semibold">Suggested stays</h2>
-        <div className="grid gap-3 md:grid-cols-2">
-          {mockHotels.map((hotel) => (
-            <Card key={hotel.id} className="p-4 text-sm">
-              <p className="font-semibold">{hotel.name}</p>
-              <p className="text-xs text-muted-foreground">{hotel.details}</p>
-              <p className="mt-2 text-xs uppercase tracking-[0.2em] text-muted-foreground">{hotel.price}</p>
-            </Card>
+        <section className="mb-10 grid gap-6 md:grid-cols-2">
+          {mockOptions.map((opt) => (
+            <div
+              key={opt.id}
+              className={`cursor-pointer glassmorphism p-6 rounded-xl transition-all duration-300 hover:border-primary/60 ${
+                selectedId === opt.id ? "border-primary ring-1 ring-primary shadow-glow" : ""
+              }`}
+              onClick={() => setSelectedId(opt.id)}
+            >
+              <h2 className="mb-1 text-base font-bold text-white">{opt.title}</h2>
+              <p className="text-sm text-gray-400">{opt.subtitle}</p>
+              <p className="mt-4 text-[10px] font-semibold uppercase tracking-[0.24em] text-gray-500">{opt.time}</p>
+              <p className="mt-2 text-lg font-bold text-primary">{opt.price}</p>
+            </div>
           ))}
-        </div>
-      </section>
+        </section>
 
-      <div className="flex justify-end">
-        <Button onClick={handleContinue} className="text-xs uppercase tracking-[0.24em]">
-          Continue to payment
-        </Button>
+        <section className="mb-10">
+          <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-gray-400">Suggested stays</h2>
+          <div className="grid gap-4 md:grid-cols-2">
+            {mockHotels.map((hotel) => (
+              <div key={hotel.id} className="glassmorphism p-4 rounded-xl">
+                <p className="font-bold text-white">{hotel.name}</p>
+                <p className="text-xs text-gray-400">{hotel.details}</p>
+                <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.24em] text-gray-500">{hotel.price}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <div className="flex justify-end">
+          <Button onClick={handleContinue} className="btn-primary">
+            Continue to payment
+          </Button>
+        </div>
       </div>
     </main>
   );

@@ -3,8 +3,22 @@ package com.tripwise.dto;
 public class PaymentResponse {
     private boolean success;
     private String message;
+    private String paymentId;
+    private String bookingId;
+    private String status;
+    private Double amount;
+    private String currency;
+    private String paymentMethod;
+    private String qrCode;
+    private String upiDeepLink;
 
     public PaymentResponse() {}
+
+    public PaymentResponse(boolean success, String message, String paymentId) {
+        this.success = success;
+        this.message = message;
+        this.paymentId = paymentId;
+    }
 
     public PaymentResponse(String paymentId, String bookingId, String status, Double amount,
                           String currency, String paymentMethod, String qrCode, 

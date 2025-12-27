@@ -31,10 +31,10 @@ const IdentifyPage = () => {
 
   return (
     <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-16 md:py-20">
-      <div className="w-full max-w-md rounded-3xl bg-card p-6 shadow-lg md:p-8">
-        <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">Step 1</p>
-        <h1 className="mb-3 text-2xl font-semibold">Who&apos;s planning this trip?</h1>
-        <p className="mb-6 text-sm text-muted-foreground">
+      <div className="w-full max-w-md glass-card p-6 md:p-8">
+        <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-primary">Step 1</p>
+        <h1 className="mb-3 text-3xl font-bold tracking-tight text-white">Who&apos;s planning this trip?</h1>
+        <p className="mb-6 text-sm text-gray-400">
           Add a phone number or email so TripWise can remember this demo session.
         </p>
         <form onSubmit={handleContinue} className="space-y-4">

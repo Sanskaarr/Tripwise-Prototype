@@ -41,47 +41,49 @@ const PaymentPage = () => {
 
   return (
     <main className="mx-auto max-w-xl px-4 py-14 md:py-16">
-      <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-muted-foreground">Step 4</p>
-      <h1 className="mb-4 text-2xl font-semibold">Payment</h1>
+      <div className="glass-card p-6 md:p-8">
+        <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-primary">Step 4</p>
+        <h1 className="mb-6 text-3xl font-bold tracking-tight text-white">Secure payment</h1>
 
-      <Card className="mb-6 space-y-3 p-5 text-sm">
-        <p className="font-semibold">Trip summary</p>
-        <p className="text-muted-foreground">
-          {trip?.from && trip?.to
-            ? `${trip.from} → ${trip.to} on ${trip.date || "your selected date"}`
-            : "Sample journey for this demo"}
-        </p>
-        {chosen && (
-          <p className="text-xs text-muted-foreground">{chosen.title}</p>
-        )}
-        <p className="pt-2 text-xs uppercase tracking-[0.2em] text-muted-foreground">Total</p>
-        <p className="text-lg font-semibold">₹ {total}</p>
-      </Card>
+        <div className="mb-8 glassmorphism p-5 rounded-xl space-y-3">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-gray-400">Trip summary</p>
+          <p className="text-white font-medium">
+            {trip?.from && trip?.to
+              ? `${trip.from} → ${trip.to}`
+              : "Sample journey for this demo"}
+          </p>
+          {chosen && (
+            <p className="text-sm text-gray-400">{chosen.title}</p>
+          )}
+          <div className="pt-2">
+            <p className="text-[10px] font-semibold uppercase tracking-[0.24em] text-gray-500">Total amount</p>
+            <p className="text-2xl font-bold text-primary">{total}</p>
+          </div>
+        </div>
 
-      <form onSubmit={handlePayment} className="space-y-4">
-        <Card className="p-6">
+        <form onSubmit={handlePayment} className="space-y-6">
           <div className="grid gap-4">
             <div className="grid gap-2">
-              <Label htmlFor="cardNumber">Card Number</Label>
-              <Input id="cardNumber" placeholder="0000 0000 0000 0000" required />
+              <label htmlFor="cardNumber" className="text-[10px] font-semibold uppercase tracking-[0.24em] text-gray-400">Card Number</label>
+              <Input id="cardNumber" placeholder="0000 0000 0000 0000" className="bg-white/5 border-white/10" required />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="expiry">Expiry Date</Label>
-                <Input id="expiry" placeholder="MM/YY" required />
+                <label htmlFor="expiry" className="text-[10px] font-semibold uppercase tracking-[0.24em] text-gray-400">Expiry Date</label>
+                <Input id="expiry" placeholder="MM/YY" className="bg-white/5 border-white/10" required />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="cvv">CVV</Label>
-                <Input id="cvv" placeholder="123" required />
+                <label htmlFor="cvv" className="text-[10px] font-semibold uppercase tracking-[0.24em] text-gray-400">CVV</label>
+                <Input id="cvv" placeholder="123" className="bg-white/5 border-white/10" required />
               </div>
             </div>
           </div>
-        </Card>
 
-        <Button type="submit" disabled={loading} className="w-full text-xs uppercase tracking-[0.24em]">
-          {loading ? "Processing..." : "Pay Now"}
-        </Button>
-      </form>
+          <Button type="submit" disabled={loading} className="w-full btn-primary mt-4">
+            {loading ? "Processing..." : "Pay Now"}
+          </Button>
+        </form>
+      </div>
     </main>
   );
 };
