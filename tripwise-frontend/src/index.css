@@ -125,7 +125,8 @@
 
 @layer components {
   .page-shell {
-    @apply min-h-screen text-foreground;
+    min-height: 100vh;
+    color: hsl(var(--foreground));
     background: radial-gradient(circle at top, hsl(var(--hero-from)), hsl(var(--hero-to)));
   }
 
