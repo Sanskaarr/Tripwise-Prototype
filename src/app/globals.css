@@ -1,0 +1,187 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Caveat:wght@400;600&display=swap');
+@import "tailwindcss";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme {
+  --color-background: #F1F5F9;
+  --color-foreground: #0F172A;
+
+  --color-card: rgba(255, 255, 255, 0.7);
+  --color-card-foreground: #0F172A;
+
+  --color-popover: #ffffff;
+  --color-popover-foreground: #0F172A;
+
+  --color-primary: #0D9488;
+  --color-primary-foreground: #ffffff;
+
+  --color-secondary: #ffffff;
+  --color-secondary-foreground: #0F172A;
+
+  --color-muted: #F1F5F9;
+  --color-muted-foreground: #64748B;
+
+  --color-accent: rgba(255, 255, 255, 0.2);
+  --color-accent-foreground: #0D9488;
+
+  --color-destructive: #ef4444;
+  --color-destructive-foreground: #fafafa;
+
+  --color-border: rgba(148, 163, 184, 0.2);
+  --color-input: rgba(148, 163, 184, 0.2);
+  --color-ring: #0D9488;
+
+  --color-chart-1: #0D9488;
+  --color-chart-2: #0F172A;
+  --color-chart-3: #64748B;
+  --color-chart-4: #94A3B8;
+  --color-chart-5: #CBD5E1;
+
+  --color-sidebar: #ffffff;
+  --color-sidebar-foreground: #64748B;
+  --color-sidebar-primary: #0D9488;
+  --color-sidebar-primary-foreground: #ffffff;
+  --color-sidebar-accent: #F1F5F9;
+  --color-sidebar-accent-foreground: #0F172A;
+  --color-sidebar-border: rgba(148, 163, 184, 0.1);
+  --color-sidebar-ring: #0D9488;
+
+  --font-sans: "Inter", sans-serif;
+  --font-display: "Inter", sans-serif;
+  --font-accent: "Caveat", cursive;
+
+  --radius-lg: 1.5rem;
+  --radius-md: 1rem;
+  --radius-sm: 0.5rem;
+  --radius-full: 9999px;
+
+  --shadow-glass: 0 10px 30px -15px rgba(0, 0, 0, 0.1);
+
+  --animate-accordion-down: accordion-down 0.2s ease-out;
+  --animate-accordion-up: accordion-up 0.2s ease-out;
+
+  @keyframes accordion-down {
+    from {
+      height: 0;
+    }
+    to {
+      height: var(--radix-accordion-content-height);
+    }
+  }
+  @keyframes accordion-up {
+    from {
+      height: var(--radix-accordion-content-height);
+    }
+    to {
+      height: 0;
+    }
+  }
+}
+
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: rgba(148, 163, 184, 0.2);
+  }
+}
+
+@layer base {
+  :root {
+    --background: #F1F5F9;
+    --foreground: #0F172A;
+    --card: rgba(255, 255, 255, 0.7);
+    --card-foreground: #0F172A;
+    --popover: #ffffff;
+    --popover-foreground: #0F172A;
+    --primary: #0D9488;
+    --primary-foreground: #ffffff;
+    --secondary: #ffffff;
+    --secondary-foreground: #0F172A;
+    --muted: #F1F5F9;
+    --muted-foreground: #64748B;
+    --accent: rgba(255, 255, 255, 0.2);
+    --accent-foreground: #0D9488;
+    --destructive: #ef4444;
+    --destructive-foreground: #fafafa;
+    --border: rgba(148, 163, 184, 0.2);
+    --input: rgba(148, 163, 184, 0.2);
+    --ring: #0D9488;
+    --radius: 1.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-size: 15px;
+    line-height: 1.6;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-display font-semibold tracking-tight text-balance;
+    color: var(--foreground);
+  }
+
+  h1 {
+    font-size: 3.75rem;
+    line-height: 1.1;
+  }
+
+  h2 {
+    font-size: 2.3rem;
+    line-height: 1.2;
+  }
+
+  .font-accent {
+    font-family: var(--font-accent);
+  }
+
+  .glass-panel {
+    background: var(--card);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: var(--shadow-glass);
+    transition: transform 0.3s ease;
+  }
+
+  .glass-panel:hover {
+    transform: translateY(-4px);
+  }
+
+  .container {
+    max-width: 1024px;
+    margin-left: auto;
+    margin-right: auto;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+
+  .section-label {
+    font-size: 11px;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.25em;
+    color: var(--muted-foreground);
+  }
+
+  .btn-cinematic {
+    @apply h-12 px-7 inline-flex items-center justify-center rounded-full font-medium uppercase tracking-widest transition-all;
+  }
+
+  .hero-overlay {
+    background: linear-gradient(to top, rgba(0,0,0,0.4), transparent);
+  }
+}
