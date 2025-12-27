@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
+import { aiService } from "@/services/aiService";
 
 const PlanTripPage = () => {
   const [from, setFrom] = useState("");
@@ -11,6 +12,7 @@ const PlanTripPage = () => {
   const [date, setDate] = useState("");
   const [budget, setBudget] = useState("");
   const [mode, setMode] = useState("train");
+  const [loading, setLoading] = useState(false);
   const [listening, setListening] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -18,7 +20,7 @@ const PlanTripPage = () => {
   const handleVoice = () => {
     const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
     if (!SpeechRecognition) {
-      toast({ title: "Voice not available", description: "Your browser doesn&apos;t support speech input yet." });
+      toast({ title: "Voice not available", description: "Your browser doesn't support speech input yet." });
       return;
     }
 
@@ -40,18 +42,27 @@ const PlanTripPage = () => {
     recognition.start();
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!from || !to || !date) {
       toast({ title: "Add your trip details", description: "From, destination, and date are required." });
       return;
     }
 
-    toast({ title: "Planning your trip", description: "Fetching mock options for this demo..." });
+    setLoading(true);
+    toast({ title: "Planning your trip", description: "Fetching personalized options for you..." });
 
-    setTimeout(() => {
-      navigate("/options", { state: { from, to, date, budget, mode } });
-    }, 800);
+    try {
+      // We pass the data to the next page where AI will generate the suggestions
+      // or we can generate them here. For now, we'll navigate with the state.
+      setTimeout(() => {
+        navigate("/options", { state: { from, to, date, budget, mode } });
+      }, 800);
+    } catch (error) {
+      toast({ variant: "destructive", title: "Error", description: "Failed to plan trip. Please try again." });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
