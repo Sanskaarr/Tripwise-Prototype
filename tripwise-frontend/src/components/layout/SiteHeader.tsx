@@ -8,7 +8,7 @@ const NAV_ITEMS = [
   { id: "home", label: "Home" },
   { id: "start-trip", label: "Start Journey" },
   { id: "journeys", label: "Plan Trip" },
-  { id: "journeys", label: "Local Guide" },
+  { id: "guide", label: "Local Guide" },
 ];
 
 const scrollToSection = (id: string) => {

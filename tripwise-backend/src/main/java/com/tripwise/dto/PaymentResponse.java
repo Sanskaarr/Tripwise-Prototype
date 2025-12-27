@@ -18,7 +18,12 @@ public class PaymentResponse {
         this.success = success;
         this.message = message;
         this.paymentId = paymentId;
+        this.status = success ? "SUCCESS" : "FAILED";
     }
+
+    public boolean isSuccess() { return success; }
+    public void setSuccess(boolean success) { this.success = success; }
+    public String getTransactionId() { return paymentId; }
 
     public PaymentResponse(String paymentId, String bookingId, String status, Double amount,
                           String currency, String paymentMethod, String qrCode, 

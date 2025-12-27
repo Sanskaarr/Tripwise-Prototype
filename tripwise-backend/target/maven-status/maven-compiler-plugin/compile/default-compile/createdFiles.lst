@@ -10,6 +10,7 @@ com/tripwise/service/GeminiService.class
 com/tripwise/dto/PaymentRequest.class
 com/tripwise/model/User.class
 com/tripwise/dto/ChatRequest.class
+com/tripwise/config/SecurityConfig.class
 com/tripwise/service/OpenAIService.class
 com/tripwise/dto/AuthResponse.class
 com/tripwise/service/GoogleMapsService.class
@@ -26,4 +27,7 @@ com/tripwise/dto/ChatResponse.class
 com/tripwise/dto/UserDetailsDTO.class
 com/tripwise/controller/AuthController.class
 com/tripwise/controller/TripController.class
+com/tripwise/dto/PaymentResponse.class
+com/tripwise/dto/BookingResponse.class
 com/tripwise/security/JwtUtil.class
+com/tripwise/dto/LoginRequest.class
