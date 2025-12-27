@@ -121,4 +121,8 @@ public class User {
     public void setLastLoginAt(LocalDateTime lastLoginAt) {
         this.lastLoginAt = lastLoginAt;
     }
+
+    public String getPastTravelExperience() {
+        return "Budget traveler, prefers cultural experiences and local food.";
+    }
 }

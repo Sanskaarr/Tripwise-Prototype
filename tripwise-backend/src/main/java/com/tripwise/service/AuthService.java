@@ -4,9 +4,10 @@ import com.tripwise.dto.*;
 import com.tripwise.dto.OnboardingRequest;
 import com.tripwise.model.User;
 import com.tripwise.repository.UserRepository;
-import com.tripwise.config.PasswordEncoderBean.SimplePasswordEncoder;
+import com.tripwise.security.JwtUtil;
 import com.tripwise.util.PhoneNumberUtil;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
@@ -76,6 +77,7 @@ public class AuthService {
  
         userRepository.save(user);
 
+        String token = jwtUtil.generateToken(user.getEmail() != null ? user.getEmail() : user.getPhoneNumber(), user.getId());
 
         UserDetailsDTO userDetails = new UserDetailsDTO(
             user.getEmail(),

@@ -90,6 +90,10 @@ public class OpenAIService {
         }
     }
 
+    public String getChatResponse(String userInput, String language) {
+        return generateTravelSuggestion(userInput, null, language);
+    }
+
     private String buildSystemPrompt(String language) {
         return String.format(
                 "You are TripWise AI, a friendly and knowledgeable travel planning assistant. " +
