@@ -1,11 +1,9 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, Send, Loader2 } from 'lucide-react';
+import { Sparkles, Send, Loader2, Mic, MicOff, ArrowRight, Compass, MapPin, Calendar, Wallet } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUser } from '../contexts/UserContext';
-import axios from 'axios';
-
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8080/api';
+import { tripAPI } from '../services/api';
 
 export function PlanTrip() {
   const navigate = useNavigate();
@@ -19,13 +17,54 @@ export function PlanTrip() {
   const userId = user?.userId || localStorage.getItem('tripwise_userId');
 
   useEffect(() => {
-    if (!userId) {
-      navigate('/login');
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) return;
+
+    const recognition = new SpeechRecognition();
+    recognition.lang = user?.preferredLanguage || 'en-US';
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onresult = (event) => {
+      const transcript = Array.from(event.results)
+        .map((result) => result[0].transcript)
+        .join(' ')
+        .trim();
+      setUserInput((prev) => (prev ? `${prev} ${transcript}` : transcript));
+    };
+
+    recognition.onerror = (event) => {
+      console.error('Voice input error:', event.error);
+      setError('Voice input error. Please try again or type your request.');
+      setIsListening(false);
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+    };
+
+    recognitionRef.current = recognition;
+    setVoiceSupported(true);
+  }, [user?.preferredLanguage]);
+
+  const handleVoiceToggle = () => {
+    if (!voiceSupported || !recognitionRef.current) {
+      setError('Voice input is not supported in this browser.');
+      return;
     }
-  }, [userId, navigate]);
+
+    if (isListening) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    } else {
+      setError('');
+      setIsListening(true);
+      recognitionRef.current.start();
+    }
+  };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     if (!userInput.trim() || loading) return;
 
     setLoading(true);
@@ -33,173 +72,179 @@ export function PlanTrip() {
     setAiResponse(null);
 
     try {
-      const response = await axios.post(`${API_BASE_URL}/trip/ai-intent`, {
-        userId,
-        userInput: userInput.trim(),
-        language: user?.preferredLanguage || 'English'
-      });
-
-      setAiResponse(response.data);
+      const response = await tripAPI.getAIIntent(
+        userId || 'anonymous',
+        userInput.trim(),
+        user?.preferredLanguage || 'English'
+      );
+      setAiResponse(response);
     } catch (err) {
       console.error('AI intent processing failed:', err);
-      const message = err?.response?.data?.message || 'Failed to process your request. Please try again.';
-      setError(message);
+      setError('Failed to process your request. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   const examplePrompts = [
-    "I want to go to Jaipur this weekend",
-    "Plan a budget trip to Goa",
-    "Suggest a solo trip for 3 days",
-    "Family vacation in Kerala under ₹50,000"
+    { text: "Jaipur weekend trip", icon: <MapPin size={14} /> },
+    { text: "Budget Goa trip", icon: <Wallet size={14} /> },
+    { text: "3 days solo hike", icon: <Compass size={14} /> },
+    { text: "Family Kerala plan", icon: <Calendar size={14} /> }
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#FAF8F3] via-[#F9F6F1] to-[#F5F0E8] relative overflow-hidden pt-24 pb-12 px-4">
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_20%_30%,rgba(232,175,160,0.08),transparent_50%),radial-gradient(circle_at_80%_70%,rgba(184,201,180,0.06),transparent_50%)]" />
-      
-      <div className="relative max-w-4xl mx-auto">
+    <div className="relative min-h-screen pt-32 pb-20 overflow-hidden">
+      {/* Background Decor */}
+      <div className="absolute top-0 left-0 w-full h-full -z-10">
+        <div className="absolute top-[20%] right-[-5%] w-[40%] h-[40%] bg-primary/5 rounded-full blur-[100px]" />
+        <div className="absolute bottom-[10%] left-[-5%] w-[40%] h-[40%] bg-accent/5 rounded-full blur-[100px]" />
+      </div>
+
+      <div className="container mx-auto px-6 max-w-4xl">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
           className="text-center mb-12"
         >
-          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 border border-sand mb-6">
-            <Sparkles size={18} className="text-accent-coral" />
-            <span className="text-sm font-medium text-charcoal/70">AI-Powered Travel Planning</span>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-6 backdrop-blur-sm">
+            <Sparkles size={16} className="text-primary" />
+            <span className="text-xs font-bold text-primary tracking-widest uppercase">Intelligence Layer</span>
           </div>
-          
-          <h1 className="font-display text-4xl md:text-5xl font-semibold text-charcoal mb-4">
-            Where do you want to go?
-          </h1>
-          <p className="text-lg text-charcoal/60 max-w-2xl mx-auto">
-            Describe your travel plans in your own words and let TripWise create a personalized itinerary for you
+          <h1 className="text-4xl md:text-6xl font-display font-bold mb-4">Design Your <span className="text-gradient">Journey</span></h1>
+          <p className="text-gray-400 text-lg max-w-2xl mx-auto">
+            Tell us about your dream trip in plain language. Our AI will craft a personalized itinerary just for you.
           </p>
         </motion.div>
 
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6, delay: 0.2 }}
-          className="bg-white/95 backdrop-blur-sm rounded-3xl shadow-2xl border border-sand/30 overflow-hidden"
-        >
-          <div className="p-8">
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="relative">
+        <div className="grid gap-8">
+          {/* Input Section */}
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="glass-card p-1 pb-1 overflow-hidden"
+          >
+            <div className="p-8 pb-4">
+              <div className="relative group">
                 <textarea
                   value={userInput}
                   onChange={(e) => setUserInput(e.target.value)}
-                  placeholder="E.g., I want to visit Jaipur this weekend with my family. We love history and local food. Budget around ₹30,000."
-                  rows={4}
-                  disabled={loading}
-                  className="w-full px-5 py-4 rounded-2xl border-2 border-sand bg-white/80 text-charcoal placeholder-charcoal/40 focus:border-accent-coral focus:outline-none transition-all resize-none disabled:opacity-60"
+                  placeholder="Where would you like to go? (e.g., 'Plan a romantic 4-day trip to Paris with a focus on art and wine on a moderate budget')"
+                  className="w-full bg-white/5 border border-white/10 rounded-2xl p-6 pt-8 text-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-primary/50 transition-all min-h-[160px] resize-none"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSubmit();
+                    }
+                  }}
                 />
-              </div>
-
-              <button
-                type="submit"
-                disabled={loading || !userInput.trim()}
-                className="w-full bg-gradient-to-r from-accent-coral to-[#D4A89D] text-white py-4 rounded-2xl font-semibold text-base shadow-lg hover:shadow-xl transition-all disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 size={20} className="animate-spin" />
-                    Processing your request...
-                  </>
-                ) : (
-                  <>
-                    <Send size={20} />
-                    Plan My Trip
-                  </>
-                )}
-              </button>
-            </form>
-
-            {!aiResponse && !loading && (
-              <div className="mt-8">
-                <p className="text-xs font-semibold tracking-wider text-charcoal/50 mb-3">TRY THESE EXAMPLES</p>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {examplePrompts.map((prompt, idx) => (
-                    <button
-                      key={idx}
-                      onClick={() => setUserInput(prompt)}
-                      className="text-left px-4 py-3 rounded-xl bg-sand/30 border border-sand hover:border-accent-coral hover:bg-white/80 text-sm text-charcoal/70 transition-all"
-                    >
-                      "{prompt}"
-                    </button>
-                  ))}
+                <div className="absolute top-3 left-6 text-[10px] font-bold text-primary tracking-widest uppercase opacity-50">Describe your intent</div>
+                
+                <div className="absolute bottom-4 right-4 flex items-center gap-3">
+                  <button
+                    onClick={handleVoiceToggle}
+                    className={`p-3 rounded-xl transition-all ${isListening ? 'bg-primary text-white shadow-glow animate-pulse' : 'bg-white/5 text-gray-400 hover:text-white hover:bg-white/10'}`}
+                  >
+                    {isListening ? <MicOff size={20} /> : <Mic size={20} />}
+                  </button>
+                  <button
+                    onClick={handleSubmit}
+                    disabled={!userInput.trim() || loading}
+                    className="btn-primary p-4 rounded-xl disabled:opacity-50 disabled:scale-100"
+                  >
+                    {loading ? <Loader2 size={20} className="animate-spin" /> : <Send size={20} />}
+                  </button>
                 </div>
               </div>
-            )}
-          </div>
 
+              <div className="mt-6 flex flex-wrap gap-3">
+                {examplePrompts.map((example, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setUserInput(example.text)}
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 border border-white/5 text-xs text-gray-400 hover:text-white hover:bg-white/10 transition-all hover:border-white/20"
+                  >
+                    {example.icon}
+                    {example.text}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </motion.div>
+
+          {/* Results Section */}
           <AnimatePresence>
             {error && (
               <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="px-8 pb-8"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="p-4 rounded-xl bg-destructive/10 border border-destructive/20 text-destructive text-sm text-center"
               >
-                <div className="p-4 bg-red-50 border border-red-200 rounded-xl">
-                  <p className="text-sm text-red-700">{error}</p>
-                </div>
+                {error}
               </motion.div>
             )}
 
             {aiResponse && (
               <motion.div
-                initial={{ opacity: 0, height: 0 }}
-                animate={{ opacity: 1, height: 'auto' }}
-                exit={{ opacity: 0, height: 0 }}
-                className="border-t border-sand/50 bg-gradient-to-br from-white to-sand/10"
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="glass-card overflow-hidden"
               >
-                <div className="p-8 space-y-6">
-                  <div className="flex items-center gap-2 mb-4">
-                    <Sparkles size={20} className="text-accent-coral" />
-                    <h2 className="text-xl font-semibold text-charcoal">Your Personalized Trip Plan</h2>
-                  </div>
-
-                  <div className="prose prose-sm max-w-none">
-                    <div className="space-y-4 text-charcoal/80 leading-relaxed whitespace-pre-wrap">
-                      {aiResponse.suggestion}
+                <div className="bg-primary/10 p-6 border-b border-white/10 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-primary rounded-lg text-white">
+                      <Sparkles size={20} />
+                    </div>
+                    <div>
+                      <h2 className="font-bold text-white text-lg">AI Generated Itinerary</h2>
+                      <p className="text-xs text-gray-400">Personalized based on your unique profile</p>
                     </div>
                   </div>
+                  <div className="px-3 py-1 rounded-full bg-accent/20 text-accent text-[10px] font-bold uppercase tracking-wider">High Fidelity</div>
+                </div>
+                
+                <div className="p-8 space-y-8">
+                  {/* Overview Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <ResultSection title="Overview" content={aiResponse.tripOverview} />
+                    <ResultSection title="Duration & Budget" content={`${aiResponse.suggestedDuration} • ${aiResponse.budgetRange}`} />
+                  </div>
 
-                  <div className="pt-6 border-t border-sand/50 flex gap-3">
+                  <ResultSection title="The Plan" content={aiResponse.itineraryOutline} isFull />
+                  <ResultSection title="Local Recommendations" content={aiResponse.recommendations} isFull />
+
+                  <div className="pt-6 border-t border-white/10 flex flex-col sm:flex-row gap-4">
                     <button
-                      onClick={() => {
-                        setUserInput('');
-                        setAiResponse(null);
-                      }}
-                      className="px-6 py-3 rounded-xl border-2 border-sand text-charcoal/70 font-medium hover:border-accent-coral transition-all"
+                      onClick={() => {setAiResponse(null); setUserInput('');}}
+                      className="btn-secondary flex-1 py-4"
                     >
-                      Plan Another Trip
+                      Refine Plan
                     </button>
                     <button
                       onClick={() => navigate('/booking')}
-                      className="flex-1 bg-gradient-to-r from-accent-coral to-[#D4A89D] text-white py-3 rounded-xl font-semibold shadow-lg hover:shadow-xl transition-all"
+                      className="btn-primary flex-1 py-4 flex items-center justify-center gap-2"
                     >
-                      Continue to Booking
+                      Book this Journey <ArrowRight size={18} />
                     </button>
                   </div>
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
-        </motion.div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.6, delay: 0.4 }}
-          className="mt-8 text-center text-sm text-charcoal/50"
-        >
-          <p>Powered by AI • Personalized using your travel preferences</p>
-        </motion.div>
+function ResultSection({ title, content, isFull = false }) {
+  if (!content) return null;
+  return (
+    <div className={isFull ? "col-span-full" : ""}>
+      <h3 className="text-xs font-bold text-primary tracking-widest uppercase mb-3 opacity-80">{title}</h3>
+      <div className="bg-white/5 rounded-2xl p-6 border border-white/5 text-gray-300 leading-relaxed whitespace-pre-wrap">
+        {content}
       </div>
     </div>
   );

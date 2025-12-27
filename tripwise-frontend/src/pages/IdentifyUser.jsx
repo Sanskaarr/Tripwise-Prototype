@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { User, Mail, Phone, Sparkles } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { User, Mail, Phone, Sparkles, ArrowRight, ArrowLeft, Compass } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useUser } from '../contexts/UserContext';
 import { authAPI } from '../services/api';
@@ -10,7 +10,6 @@ export function IdentifyUser() {
   const [step, setStep] = useState(1);
   const [name, setName] = useState('');
   const [identifier, setIdentifier] = useState('');
-  const [isReturning, setIsReturning] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -18,219 +17,170 @@ export function IdentifyUser() {
   const { login } = useUser();
 
   const handleNameSubmit = (e) => {
-    e.preventDefault();
+    if (e) e.preventDefault();
     if (name.trim()) {
       setStep(2);
     }
   };
 
-    const handleContactSubmit = async (e) => {
-      e.preventDefault();
-      if (identifier.trim()) {
-        setLoading(true);
-        setError('');
+  const handleContactSubmit = async (e) => {
+    if (e) e.preventDefault();
+    if (identifier.trim()) {
+      setLoading(true);
+      setError('');
+      
+      try {
+        const response = await authAPI.loginWithPhone(identifier.trim());
+        const phoneFromResponse = response?.userDetails?.phoneNumber || identifier.trim();
+
+        login({
+          identifier: phoneFromResponse,
+          name,
+          userId: response?.userId,
+          phoneNumber: phoneFromResponse,
+        });
         
-        try {
-          const response = await authAPI.loginWithPhone(identifier.trim());
-          const phoneFromResponse = response?.userDetails?.phoneNumber || identifier.trim();
-
-          setIsReturning(response.isFirstTime === false);
-          login({
-            identifier: phoneFromResponse,
-            name,
-            userId: response?.userId,
-            phoneNumber: phoneFromResponse,
-          });
-          
-          setTimeout(() => {
-            if (response.isFirstTime) {
-              navigate('/onboarding');
-            } else {
-              navigate('/plan-trip');
-            }
-          }, 800);
-        } catch (err) {
-          console.log('User not found, treating as new user');
-          setIsReturning(false);
-          login({ identifier, name, phoneNumber: identifier });
-          
-          setTimeout(() => {
-            navigate('/onboarding');
-          }, 800);
-        } finally {
-          setLoading(false);
+        if (response.isFirstTime) {
+          navigate('/onboarding');
+        } else {
+          navigate('/plan-trip');
         }
+      } catch (err) {
+        console.log('User not found, treating as new user');
+        login({ identifier, name, phoneNumber: identifier });
+        navigate('/onboarding');
+      } finally {
+        setLoading(false);
       }
-    };
-
+    }
+  };
 
   return (
-    <div className="min-h-screen section-bg-cream flex items-center justify-center px-4 pt-24">
+    <div className="relative min-h-screen flex items-center justify-center px-6 overflow-hidden">
+      {/* Background Decor */}
+      <div className="absolute top-0 left-0 w-full h-full -z-10">
+        <div className="absolute top-[-20%] right-[-20%] w-[70%] h-[70%] bg-primary/10 rounded-full blur-[140px]" />
+        <div className="absolute bottom-[-20%] left-[-20%] w-[70%] h-[70%] bg-accent/5 rounded-full blur-[140px]" />
+      </div>
+
       <motion.div
-        initial={{ opacity: 0, y: 50 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.8, ease: [0.25, 0.46, 0.45, 0.94] }}
-        className="bg-white/60 backdrop-blur-xl p-10 rounded-3xl shadow-lg border border-charcoal/5 max-w-lg w-full"
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        className="max-w-xl w-full"
       >
-        <div className="text-center mb-10">
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ duration: 0.6, delay: 0.2, ease: [0.25, 0.46, 0.45, 0.94] }}
-            className="relative inline-flex mb-6"
-          >
-            <div className="bg-accent-coral/10 p-6 rounded-2xl">
-              <User size={56} className="text-accent-coral" />
+        <div className="text-center mb-12">
+          <Link to="/" className="inline-flex items-center gap-2 mb-8 group">
+            <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center border border-primary/20 shadow-glow">
+              <Compass size={28} className="text-primary" />
             </div>
-          </motion.div>
+            <span className="text-2xl font-bold tracking-tight">TripWise</span>
+          </Link>
           
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="mb-4 inline-flex items-center gap-2 px-5 py-2 rounded-full border border-charcoal/10"
-          >
-            <Sparkles size={16} className="text-accent-lavender" />
-            <span className="text-xs font-medium tracking-wider text-gray">{t('stepOf')} {step} {t('of')} 2</span>
-          </motion.div>
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 mb-6 backdrop-blur-sm">
+            <Sparkles size={16} className="text-primary" />
+            <span className="text-[10px] font-bold text-primary tracking-widest uppercase">Identity Verification</span>
+          </div>
           
-          <motion.h2
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.6 }}
-            className="text-4xl font-display font-bold text-charcoal mb-3"
-          >
-            {step === 1 ? (
-              <>{t('whatsYourName')} <span className="text-gradient-pastel">{t('name')}</span>?</>
-            ) : (
-              <>{t('howCanWeReachYou')} <span className="text-gradient-pastel">{t('reachYou')}</span>?</>
-            )}
-          </motion.h2>
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.6, delay: 0.8 }}
-            className="text-gray text-lg"
-          >
-            {step === 1 ? t('tellUsYourName') : t('enterPhoneOrEmail')}
-          </motion.p>
+          <h1 className="text-4xl md:text-5xl font-display font-bold mb-4">
+            {step === 1 ? "What's your " : "How can we "}
+            <span className="text-gradient">{step === 1 ? "name" : "reach you"}</span>?
+          </h1>
+          <p className="text-gray-400">
+            {step === 1 ? "Tell us who you are so we can personalize your experience." : "We'll use this to save your trips and sync your preferences."}
+          </p>
         </div>
 
-        {step === 1 ? (
-          <form onSubmit={handleNameSubmit} className="space-y-7">
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 1 }}
-            >
-              <label className="block text-sm font-semibold text-gray mb-3 tracking-wide">
-                {t('yourName')}
-              </label>
-              <div className="relative">
-                <User className="absolute left-4 top-1/2 -translate-y-1/2 text-accent-coral" size={22} />
-                <input
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder={t('enterFullName')}
-                  className="w-full pl-14 pr-5 py-5 bg-white/80 border border-charcoal/10 rounded-xl text-charcoal placeholder-gray/50 focus:border-accent-coral focus:outline-none transition-all duration-300 text-lg"
-                  required
-                  autoFocus
-                />
-              </div>
-            </motion.div>
-
-            <motion.button
-              type="submit"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6, delay: 1.2 }}
-              whileHover={{ scale: 1.02, y: -2 }}
-              whileTap={{ scale: 0.98 }}
-              className="w-full py-5 bg-charcoal text-cream text-lg font-display font-semibold rounded-xl hover:shadow-xl transition-all duration-300"
-            >
-              {t('continue')}
-            </motion.button>
-          </form>
-        ) : (
-          <form onSubmit={handleContactSubmit} className="space-y-7">
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-            >
-              <label className="block text-sm font-semibold text-gray mb-3 tracking-wide">
-                {t('phoneOrEmail')}
-              </label>
-              <div className="relative">
-                <div className="absolute left-4 top-1/2 -translate-y-1/2 text-accent-coral">
-                  {identifier.includes('@') ? <Mail size={22} /> : <Phone size={22} />}
+        <div className="glass-card p-10 relative overflow-hidden">
+          <AnimatePresence mode="wait">
+            {step === 1 ? (
+              <motion.form
+                key="step1"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                onSubmit={handleNameSubmit}
+                className="space-y-6"
+              >
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-primary tracking-widest uppercase ml-1 opacity-70">Full Name</label>
+                  <div className="relative group">
+                    <User className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition-colors" size={20} />
+                    <input
+                      type="text"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Enter your name"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all text-lg"
+                      required
+                      autoFocus
+                    />
+                  </div>
                 </div>
-                <input
-                  type="text"
-                  value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value)}
-                  placeholder={t('enterPhoneEmail')}
-                  className="w-full pl-14 pr-5 py-5 bg-white/80 border border-charcoal/10 rounded-xl text-charcoal placeholder-gray/50 focus:border-accent-coral focus:outline-none transition-all duration-300 text-lg"
-                  required
-                  autoFocus
-                />
-              </div>
-            </motion.div>
-
-            {isReturning && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.4 }}
-                className="border border-accent-sage/30 rounded-xl p-5 text-charcoal text-center bg-accent-sage/10"
+                <button
+                  type="submit"
+                  disabled={!name.trim()}
+                  className="btn-primary w-full py-4 flex items-center justify-center gap-2 disabled:opacity-50"
+                >
+                  Continue <ArrowRight size={20} />
+                </button>
+              </motion.form>
+            ) : (
+              <motion.form
+                key="step2"
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -20 }}
+                onSubmit={handleContactSubmit}
+                className="space-y-6"
               >
-                <span className="text-2xl mb-2 block">🎉</span>
-                <span className="font-semibold">{t('welcomeBack')}, {name}!</span>
-              </motion.div>
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-primary tracking-widest uppercase ml-1 opacity-70">Phone or Email</label>
+                  <div className="relative group">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 group-focus-within:text-primary transition-colors">
+                      {identifier.includes('@') ? <Mail size={20} /> : <Phone size={20} />}
+                    </div>
+                    <input
+                      type="text"
+                      value={identifier}
+                      onChange={(e) => setIdentifier(e.target.value)}
+                      placeholder="Enter phone or email"
+                      className="w-full bg-white/5 border border-white/10 rounded-xl py-4 pl-12 pr-4 text-white focus:outline-none focus:ring-2 focus:ring-primary/30 transition-all text-lg"
+                      required
+                      autoFocus
+                    />
+                  </div>
+                </div>
+                
+                {error && <p className="text-destructive text-xs text-center">{error}</p>}
+
+                <div className="flex gap-4">
+                  <button
+                    type="button"
+                    onClick={() => setStep(1)}
+                    className="btn-secondary px-6"
+                  >
+                    <ArrowLeft size={20} />
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={!identifier.trim() || loading}
+                    className="btn-primary flex-1 py-4 flex items-center justify-center gap-2 disabled:opacity-50"
+                  >
+                    {loading ? "Verifying..." : "Start Planning"}
+                    <Compass size={20} className={loading ? "animate-spin" : ""} />
+                  </button>
+                </div>
+              </motion.form>
             )}
-
-            {isReturning === false && identifier && (
-              <motion.div
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.4 }}
-                className="border border-accent-coral/30 rounded-xl p-5 text-charcoal text-center bg-accent-coral/10"
-              >
-                <span className="text-2xl mb-2 block">✈️</span>
-                <span className="font-semibold">{t('letsplanFirstAdventure')}, {name}!</span>
-              </motion.div>
-            )}
-
-            <div className="flex gap-3">
-              <motion.button
-                type="button"
-                onClick={() => setStep(1)}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.4 }}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                className="py-5 px-8 bg-white/80 text-charcoal text-lg font-display font-semibold rounded-xl hover:shadow-lg transition-all duration-300 border border-charcoal/10"
-              >
-                {t('back')}
-              </motion.button>
-              <motion.button
-                type="submit"
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.6 }}
-                whileHover={{ scale: loading ? 1 : 1.02, y: loading ? 0 : -2 }}
-                whileTap={{ scale: loading ? 1 : 0.98 }}
-                disabled={loading}
-                className="flex-1 py-5 bg-charcoal text-cream text-lg font-display font-semibold rounded-xl hover:shadow-xl transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {loading ? t('processing') || 'Processing...' : t('startPlanning')}
-              </motion.button>
-            </div>
-          </form>
-        )}
+          </AnimatePresence>
+        </div>
+        
+        <p className="text-center mt-8 text-xs text-gray-500">
+          By continuing, you agree to our Terms of Service and Privacy Policy.
+        </p>
       </motion.div>
     </div>
   );
 }
+
+import { Link } from 'react-router-dom';

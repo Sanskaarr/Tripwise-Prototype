@@ -84,6 +84,20 @@ export const tripAPI = {
       throw error;
     }
   },
+
+  getAIIntent: async (userId, userInput, language) => {
+    try {
+      const response = await apiClient.post('/trip/ai-intent', {
+        userId,
+        userInput,
+        language
+      });
+      return response.data;
+    } catch (error) {
+      console.error('AI Intent failed:', error);
+      throw error;
+    }
+  },
 };
 
 export const bookingAPI = {
