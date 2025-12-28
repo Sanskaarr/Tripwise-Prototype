@@ -1,23 +1,24 @@
-import { SiteHeader } from "@/components/layout/SiteHeader";
-import { HeroSection } from "@/components/sections/HeroSection";
-import { HighlightsSection } from "@/components/sections/HighlightsSection";
+import React, { useEffect } from 'react';
+import Header from '@/components/sections/header';
+import HeroSection from '@/components/sections/hero';
+import FeaturesSection from '@/components/sections/features';
+import Footer from '@/components/sections/footer';
+import FloatingActionButton from '@/components/sections/floating-action';
 
 const Index = () => {
-  return (
-    <div className="page-shell">
-      <SiteHeader />
-      <main className="pt-10">
-        <HeroSection />
-        <div className="border-t border-muted/70" />
-        <HighlightsSection />
-      </main>
+  useEffect(() => {
+    window.scrollTo(0, 0);
+  }, []);
 
-      <footer className="border-t border-border/40 pb-6 pt-6 text-[11px] uppercase tracking-[0.24em] text-muted-foreground">
-        <div className="site-container flex flex-col justify-between gap-4 md:flex-row md:items-center">
-          <span>TripWise · AI-powered travel companion</span>
-          <span>Begin your journey when you&apos;re ready.</span>
-        </div>
-      </footer>
+  return (
+    <div className="relative min-h-screen w-full overflow-x-hidden bg-background">
+      <Header />
+      <main>
+        <HeroSection />
+        <FeaturesSection />
+      </main>
+      <Footer />
+      <FloatingActionButton />
     </div>
   );
 };

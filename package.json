@@ -1,9 +1,0 @@
-{
-  "name": "tripwise-root",
-  "version": "1.0.0",
-  "scripts": {
-    "dev": "cd tripwise-frontend && npm run dev",
-    "frontend": "cd tripwise-frontend && npm run dev",
-    "install-frontend": "cd tripwise-frontend && npm install"
-  }
-}
