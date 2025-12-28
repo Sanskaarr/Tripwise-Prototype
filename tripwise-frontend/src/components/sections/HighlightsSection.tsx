@@ -24,52 +24,57 @@ export const HighlightsSection = () => {
 
   return (
     <section
-      id="journeys"
+      id="highlights"
       ref={ref as React.RefObject<HTMLElement>}
-      aria-labelledby="journeys-heading"
       className={cn(
-        "mb-20 md:mb-24 lg:mb-28 transition-all duration-700 motion-safe:translate-y-6 motion-safe:opacity-0",
+        "relative py-40 md:py-64 transition-all duration-1000 ease-out motion-safe:translate-y-12 motion-safe:opacity-0",
         visible && "motion-safe:translate-y-0 motion-safe:opacity-100"
       )}
     >
-      <div className="site-container space-y-8">
-        <div className="flex flex-col justify-between gap-6 md:flex-row md:items-end">
-          <div className="space-y-3">
-            <p className="section-label">TripWise · How it helps</p>
-            <h2
-              id="journeys-heading"
-              className="text-balance text-2xl font-semibold leading-snug md:text-3xl lg:text-[2.3rem]"
-            >
-              A calm companion
-              <br />
-              for every journey.
-            </h2>
-          </div>
-          <p className="max-w-sm text-sm leading-relaxed text-muted-foreground md:text-[15px]">
-            Less tab chaos, more presence. TripWise quietly keeps timing, tickets, and turns in sync while you enjoy
-            the view.
-          </p>
+      {/* Background Decorative Elements */}
+      <div className="absolute top-0 left-1/4 -z-10 h-[600px] w-[600px] rounded-full bg-primary/5 blur-[140px]" />
+      <div className="absolute bottom-0 right-1/4 -z-10 h-[500px] w-[500px] rounded-full bg-secondary/5 blur-[120px]" />
+
+      <div className="site-container">
+        <div className="mb-32 flex flex-col items-center text-center space-y-8">
+          <p className="font-handwriting text-3xl text-primary/40 italic">The Art of Exploration</p>
+          <h2 className="font-display text-5xl font-light tracking-tighter md:text-7xl lg:text-[6rem] leading-[0.9]">
+            A calm companion <br /> for every journey.
+          </h2>
+          <div className="h-[1px] w-32 bg-gradient-to-r from-transparent via-primary/20 to-transparent" />
         </div>
 
-        <div className="grid gap-4 md:grid-cols-3">
-          {items.map((item, index) => (
-            <article
-              key={item.title}
-              className={cn(
-                "glass-panel hover-lift flex flex-col justify-between p-5 text-sm md:p-6 transition-all duration-700 motion-safe:translate-y-6 motion-safe:opacity-0",
-                visible && `motion-safe:translate-y-0 motion-safe:opacity-100`,
-                visible && `motion-safe:[transition-delay:${index * 80}ms]`
-              )}
-            >
-              <div className="space-y-4">
-                <span className="text-[11px] uppercase tracking-[0.25em] text-muted-foreground">{item.eyebrow}</span>
-                <h3 className="text-base font-semibold md:text-lg">{item.title}</h3>
-                <p className="text-[13px] leading-relaxed text-muted-foreground">{item.body}</p>
+          <div className="grid gap-12 md:grid-cols-3">
+            {items.map((item, index) => (
+              <article
+                key={item.title}
+                className={cn(
+                  "glass-panel group relative flex flex-col p-10 space-y-10 transition-all duration-700",
+                  visible && `motion-safe:[transition-delay:${index * 200}ms]`
+                )}
+              >
+
+              <div className="space-y-8">
+                <div className="flex items-center gap-4">
+                  <span className="font-sans text-[10px] font-bold uppercase tracking-[0.5em] text-primary/60">
+                    {item.eyebrow}
+                  </span>
+                  <div className="h-[1px] w-8 bg-primary/10 transition-all group-hover:w-12 group-hover:bg-primary/30" />
+                </div>
+                
+                <h3 className="font-display text-3xl font-light leading-[1.1] tracking-tight md:text-4xl">
+                  {item.title}
+                </h3>
+                
+                <p className="font-sans text-[16px] font-light leading-relaxed text-muted-foreground/70 transition-colors group-hover:text-muted-foreground">
+                  {item.body}
+                </p>
               </div>
-              <div className="mt-6 flex items-center justify-between text-[11px] uppercase tracking-[0.22em] text-muted-foreground">
-                <span>Trip preview</span>
-                <span className="story-link text-[11px]">See a sample flow</span>
-              </div>
+
+              <button className="group/btn flex items-center gap-4 text-[10px] font-bold uppercase tracking-[0.4em] text-muted-foreground transition-all hover:gap-6 hover:text-primary">
+                Explore Method
+                <div className="h-[1px] w-8 bg-muted-foreground/30 transition-all group-hover/btn:w-12 group-hover/btn:bg-primary" />
+              </button>
             </article>
           ))}
         </div>

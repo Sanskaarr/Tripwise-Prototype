@@ -43,52 +43,51 @@ const BookingOptionsPage = () => {
     navigate("/payment", { state: { trip, chosen } });
   };
 
-  return (
-    <main className="mx-auto max-w-5xl px-4 py-14 md:py-16">
-      <div className="glass-card p-6 md:p-8">
-        <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-primary">Step 3</p>
-        <h1 className="mb-1 text-3xl font-bold tracking-tight text-white">Choose how you&apos;d like to travel</h1>
-        <p className="mb-8 text-sm text-gray-400">
+    return (
+      <main className="mx-auto max-w-5xl px-4 py-14 md:py-24">
+        <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.5em] text-primary/40">Step 3</p>
+        <h1 className="mb-1 text-4xl font-light tracking-tight">Choose how you&apos;d like to travel</h1>
+        <p className="mb-10 text-sm text-primary/60">
           {trip.from && trip.to
             ? `For this demo, here are some example options from ${trip.from} to ${trip.to}.`
             : "Here are some sample options TripWise might show you."}
         </p>
-
-        <section className="mb-10 grid gap-6 md:grid-cols-2">
+  
+        <section className="mb-12 grid gap-6 md:grid-cols-2">
           {mockOptions.map((opt) => (
             <div
               key={opt.id}
-              className={`cursor-pointer glassmorphism p-6 rounded-xl transition-all duration-300 hover:border-primary/60 ${
-                selectedId === opt.id ? "border-primary ring-1 ring-primary shadow-glow" : ""
+              className={`glass-panel cursor-pointer p-8 transition-all hover:scale-[1.02] ${
+                selectedId === opt.id ? "ring-2 ring-primary bg-white/10" : ""
               }`}
               onClick={() => setSelectedId(opt.id)}
             >
-              <h2 className="mb-1 text-base font-bold text-white">{opt.title}</h2>
-              <p className="text-sm text-gray-400">{opt.subtitle}</p>
-              <p className="mt-4 text-[10px] font-semibold uppercase tracking-[0.24em] text-gray-500">{opt.time}</p>
-              <p className="mt-2 text-lg font-bold text-primary">{opt.price}</p>
+              <h2 className="mb-1 text-xl font-medium">{opt.title}</h2>
+              <p className="text-xs text-primary/40">{opt.subtitle}</p>
+              <p className="mt-6 text-[10px] font-bold uppercase tracking-[0.2em] text-primary/60">{opt.time}</p>
+              <p className="mt-2 text-lg font-medium">{opt.price}</p>
             </div>
           ))}
         </section>
-
-        <section className="mb-10">
-          <h2 className="mb-4 text-[11px] font-semibold uppercase tracking-[0.24em] text-gray-400">Suggested stays</h2>
-          <div className="grid gap-4 md:grid-cols-2">
+  
+        <section className="mb-12">
+          <h2 className="mb-6 text-[10px] font-bold uppercase tracking-[0.4em] text-primary/40">Suggested stays</h2>
+          <div className="grid gap-6 md:grid-cols-2">
             {mockHotels.map((hotel) => (
-              <div key={hotel.id} className="glassmorphism p-4 rounded-xl">
-                <p className="font-bold text-white">{hotel.name}</p>
-                <p className="text-xs text-gray-400">{hotel.details}</p>
-                <p className="mt-3 text-[10px] font-semibold uppercase tracking-[0.24em] text-gray-500">{hotel.price}</p>
+              <div key={hotel.id} className="glass-panel p-8 text-sm">
+                <p className="text-xl font-medium">{hotel.name}</p>
+                <p className="text-xs text-primary/40">{hotel.details}</p>
+                <p className="mt-6 text-[10px] font-bold uppercase tracking-[0.2em] text-primary/60">{hotel.price}</p>
               </div>
             ))}
           </div>
         </section>
 
-        <div className="flex justify-end">
-          <Button onClick={handleContinue} className="btn-primary">
-            Continue to payment
-          </Button>
-        </div>
+
+      <div className="flex justify-end">
+        <Button onClick={handleContinue} className="text-xs uppercase tracking-[0.24em]">
+          Continue to payment
+        </Button>
       </div>
     </main>
   );

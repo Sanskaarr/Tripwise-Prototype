@@ -1,24 +1,42 @@
-import React, { useEffect } from 'react';
-import Header from '@/components/sections/header';
-import HeroSection from '@/components/sections/hero';
-import FeaturesSection from '@/components/sections/features';
-import Footer from '@/components/sections/footer';
-import FloatingActionButton from '@/components/sections/floating-action';
+import { SiteHeader } from "@/components/layout/SiteHeader";
+import { HeroSection } from "@/components/sections/HeroSection";
+import { HighlightsSection } from "@/components/sections/HighlightsSection";
 
 const Index = () => {
-  useEffect(() => {
-    window.scrollTo(0, 0);
-  }, []);
-
   return (
-    <div className="relative min-h-screen w-full overflow-x-hidden bg-background">
-      <Header />
+    <div className="page-shell">
+      <SiteHeader />
       <main>
         <HeroSection />
-        <FeaturesSection />
+        <HighlightsSection />
       </main>
-      <Footer />
-      <FloatingActionButton />
+
+        <footer className="liquid-glass relative border-t border-white/10 !bg-background/20 pb-12 pt-12">
+          <div className="site-container flex flex-col items-center justify-between gap-8 md:flex-row">
+
+          <div className="flex flex-col items-center gap-4 md:items-start">
+            <span className="font-display text-xl font-medium">TripWise</span>
+            <span className="text-[10px] font-bold uppercase tracking-[0.4em] text-muted-foreground">
+              AI-powered travel companion
+            </span>
+          </div>
+          
+          <div className="flex gap-8 text-[10px] font-bold uppercase tracking-[0.4em] text-muted-foreground">
+            <a href="#" className="hover:text-primary transition-colors">Instagram</a>
+            <a href="#" className="hover:text-primary transition-colors">Twitter</a>
+            <a href="#" className="hover:text-primary transition-colors">LinkedIn</a>
+          </div>
+
+          <div className="text-right">
+            <span className="font-handwriting text-lg italic text-muted-foreground">
+              Begin your journey when you're ready.
+            </span>
+          </div>
+        </div>
+        <div className="mt-12 text-center text-[9px] font-bold uppercase tracking-[0.5em] text-muted-foreground/40">
+          © 2024 TripWise AI · The Art of Exploration
+        </div>
+      </footer>
     </div>
   );
 };

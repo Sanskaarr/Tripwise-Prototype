@@ -10,12 +10,9 @@ export const HeroSection = () => {
   useEffect(() => {
     if (typeof window === "undefined") return;
 
-    const prefersReduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    if (prefersReduced) return;
-
     const handleScroll = () => {
       const y = window.scrollY;
-      setParallaxOffset(y * -0.06);
+      setParallaxOffset(y * -0.08);
     };
 
     handleScroll();
@@ -23,71 +20,65 @@ export const HeroSection = () => {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const clampedOffset = Math.max(-32, Math.min(32, parallaxOffset));
-
   return (
     <section
       id="home"
-      aria-labelledby="hero-heading"
-      className="relative flex min-h-screen items-center justify-center overflow-hidden pt-24 pb-16 md:pt-28"
+      className="relative flex min-h-screen items-center justify-center overflow-hidden"
     >
-      {/* Full-bleed hero image */}
-      <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden">
+      {/* Background Image with Parallax */}
+      <div className="absolute inset-0 z-0">
         <img
           src={heroImage}
-          alt="Airplane wing over sunset clouds, setting the scene for a cinematic TripWise journey"
-          loading="lazy"
-          style={{ transform: `translateY(${clampedOffset}px)` }}
-          className="h-full w-full object-cover align-middle"
+          alt="Sunset journey background"
+          className="h-full w-full object-cover transition-transform duration-700 ease-out will-change-transform"
+          style={{ transform: `scale(1.1) translateY(${parallaxOffset}px)` }}
         />
-        {/* Subtle top gradient to avoid any visible edge on light backgrounds */}
-        <div className="pointer-events-none absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/15 via-black/5 to-transparent" />
-        {/* Very light bottom gradient: keep ~80% of the image visible while ensuring text readability */}
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/20 via-black/10 to-transparent" />
-      </div>
+        {/* Aesthetic Overlays */}
+        <div className="absolute inset-0 bg-black/10" />
+        <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-transparent" />
+        
+          {/* SMOOTH MERGE: The crucial gradient to blend into the next section */}
+          <div className="absolute bottom-0 left-0 right-0 h-[50vh] bg-gradient-to-t from-transparent via-transparent to-transparent" />
+        </div>
 
-      <div className="site-container relative z-10 items-center pt-0">
-        <div className="mx-auto flex max-w-5xl flex-col gap-10 text-center md:items-center">
-          <div className="mx-auto max-w-3xl">
-            <p className="mb-4 text-[11px] font-medium uppercase tracking-[0.25em] text-muted-foreground">
-              Your journey awaits
+        <div className="site-container relative z-20 text-center">
+
+        <div className="mx-auto max-w-4xl space-y-12 animate-in fade-in slide-in-from-bottom-12 duration-1000 ease-out">
+          <div className="space-y-6">
+            <p className="text-[10px] font-bold uppercase tracking-[0.5em] text-white/60">
+              Personalized Discovery
             </p>
-            <h1
-              id="hero-heading"
-              className="text-balance font-display text-4xl font-semibold leading-tight text-foreground md:text-5xl md:leading-tight lg:text-6xl"
-            >
-              Discover the
-              <span className="block font-handwriting text-primary text-5xl md:text-6xl lg:text-7xl">world</span>
-              with TripWise
+            <h1 className="font-display text-6xl font-light tracking-tighter text-white md:text-8xl lg:text-[9rem] leading-[0.85]">
+              Discover the 
+              <span className="mt-6 block font-handwriting text-5xl italic text-white/90 lowercase md:mt-8 md:text-7xl lg:text-8xl">
+                world
+              </span>
+              <span className="mt-2 block">with TripWise</span>
             </h1>
-            <p className="mx-auto mt-5 max-w-xl text-sm leading-relaxed text-muted-foreground md:text-base">
-              A unified travel companion that transforms how you explore, plan, and experience every destination—powered
-              quietly by TripWise AI.
-            </p>
+          </div>
 
-            <div
-              id="start-trip"
-              className="mt-8 flex flex-col items-center justify-center gap-3 text-sm md:flex-row md:gap-4"
+          <p className="mx-auto max-w-xl font-sans text-sm font-light leading-relaxed text-white/70 md:text-base">
+            Your cinematic AI travel companion. Quietly crafting journeys 
+            that resonate with your soul, one destination at a time.
+          </p>
+
+          <div className="flex flex-col items-center justify-center gap-4 pt-4 sm:flex-row">
+            <Button
+              size="lg"
+              className="ios-glass h-14 min-w-[200px] border-white/20 bg-white/10 text-xs font-semibold uppercase tracking-[0.2em] text-white hover:bg-white/20"
+              onClick={() => navigate("/identify")}
             >
-              <Button
-                variant="hero"
-                size="lg"
-                className="text-xs uppercase tracking-[0.24em]"
-                onClick={() => navigate("/identify")}
-              >
-                Start your trip
-              </Button>
-              <button
-                type="button"
-                className="btn-glass text-xs uppercase tracking-[0.24em]"
-                onClick={() => {
-                  const el = document.getElementById("journeys");
-                  el?.scrollIntoView({ behavior: "smooth", block: "start" });
-                }}
-              >
-                Learn more
-              </button>
-            </div>
+              Start Journey
+            </Button>
+            <button
+              onClick={() => {
+                const el = document.getElementById("highlights");
+                el?.scrollIntoView({ behavior: "smooth" });
+              }}
+              className="h-14 min-w-[200px] rounded-full border border-white/10 bg-transparent text-xs font-semibold uppercase tracking-[0.2em] text-white/80 transition-all hover:bg-white/5 hover:text-white"
+            >
+              Explore Features
+            </button>
           </div>
         </div>
       </div>

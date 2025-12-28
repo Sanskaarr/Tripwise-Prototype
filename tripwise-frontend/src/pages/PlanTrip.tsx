@@ -74,33 +74,34 @@ const PlanTripPage = () => {
     }
   };
 
-  return (
-    <main className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4 py-16 md:py-20">
-      <div className="w-full max-w-2xl glass-card p-6 md:p-8">
-        <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.24em] text-primary">Step 2</p>
-        <h1 className="mb-6 text-3xl font-bold tracking-tight text-white">Tell TripWise about your trip</h1>
-        <form onSubmit={handleSubmit} className="grid gap-6 md:grid-cols-2">
-          <div className="md:col-span-1">
-            <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-              From
-            </label>
-            <Input value={from} onChange={(e) => setFrom(e.target.value)} placeholder="e.g., Mumbai" />
-          </div>
-          <div className="md:col-span-1">
-            <div className="mb-1 flex items-center justify-between">
-              <label className="block text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
-                Destination
+    return (
+      <main className="flex min-h-[100vh] items-center justify-center px-4 py-16 md:py-20">
+        <div className="glass-panel w-full max-w-3xl p-6 md:p-12">
+          <p className="mb-2 text-[11px] font-bold uppercase tracking-[0.5em] text-primary/40">Step 2</p>
+          <h1 className="mb-8 text-3xl font-light tracking-tight">Tell TripWise about your trip</h1>
+          <form onSubmit={handleSubmit} className="grid gap-8 md:grid-cols-2">
+            <div className="md:col-span-1">
+              <label className="mb-2 block text-[10px] font-bold uppercase tracking-[0.2em] text-primary/60">
+                From
               </label>
-              <button
-                type="button"
-                onClick={handleVoice}
-                className="text-[11px] font-medium uppercase tracking-[0.2em] text-primary"
-              >
-                {listening ? "Listening..." : "Use voice"}
-              </button>
+              <Input className="bg-white/5 border-white/10" value={from} onChange={(e) => setFrom(e.target.value)} placeholder="e.g., Mumbai" />
             </div>
-            <Input value={to} onChange={(e) => setTo(e.target.value)} placeholder="e.g., Goa" />
-          </div>
+            <div className="md:col-span-1">
+              <div className="mb-2 flex items-center justify-between">
+                <label className="block text-[10px] font-bold uppercase tracking-[0.2em] text-primary/60">
+                  Destination
+                </label>
+                <button
+                  type="button"
+                  onClick={handleVoice}
+                  className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary hover:text-primary/70 transition-colors"
+                >
+                  {listening ? "Listening..." : "Use voice"}
+                </button>
+              </div>
+              <Input className="bg-white/5 border-white/10" value={to} onChange={(e) => setTo(e.target.value)} placeholder="e.g., Goa" />
+            </div>
+
 
           <div>
             <label className="mb-1 block text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">
