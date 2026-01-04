@@ -37,5 +37,12 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# Env files
+.env
+.env.*
+
+# Logs
+*.log
+
 
 /dist/
