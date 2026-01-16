@@ -72,4 +72,30 @@ public class ProfileService {
     public boolean profileExists(String profileId) {
         return repository.existsByProfileId(profileId);
     }
+
+    /**
+     * Find profile by identifier (phone or email)
+     */
+    public TravelerProfile findByIdentifier(String identifier) {
+        log.info("Finding profile by identifier: {}", identifier);
+
+        // Try to find by whatsapp number first
+        Optional<TravelerProfile> profile = repository.findByBasicInfo_WhatsappNumber(identifier);
+
+        if (profile.isPresent()) {
+            log.info("Profile found by whatsapp number");
+            return profile.get();
+        }
+
+        // Try to find by email
+        profile = repository.findByBasicInfo_Email(identifier);
+
+        if (profile.isPresent()) {
+            log.info("Profile found by email");
+            return profile.get();
+        }
+
+        log.info("No profile found for identifier: {}", identifier);
+        return null;
+    }
 }

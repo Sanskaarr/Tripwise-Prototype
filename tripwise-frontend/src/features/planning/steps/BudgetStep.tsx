@@ -55,9 +55,9 @@ export default function BudgetStep() {
   }) => (
     <button
       onClick={onClick}
-      className={`group relative p-6 rounded-2xl border text-left transition-all duration-300 overflow-hidden ${selected
-          ? 'border-primary/50 bg-primary/20 shadow-[0_0_20px_rgba(59,130,246,0.3)]'
-          : 'border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20'
+      className={`group relative p-5 rounded-2xl border text-left transition-all duration-300 overflow-hidden ${selected
+        ? 'border-primary/50 bg-primary/20 shadow-[0_0_20px_rgba(59,130,246,0.3)]'
+        : 'border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20'
         } ${className}`}
     >
       <div className={`absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-0 transition-opacity duration-500 ${selected ? 'opacity-100' : 'group-hover:opacity-100'}`} />

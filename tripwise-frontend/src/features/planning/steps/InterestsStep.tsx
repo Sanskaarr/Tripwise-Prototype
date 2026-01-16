@@ -33,7 +33,7 @@ export default function InterestsStep() {
     navigate(`/plan/step/${currentStep - 1}`);
   };
 
-  const InterestCard = ({
+  const SelectionCard = ({
     active,
     onClick,
     label
@@ -44,9 +44,9 @@ export default function InterestsStep() {
   }) => (
     <button
       onClick={onClick}
-      className={`group relative p-4 rounded-xl border text-left transition-all duration-300 overflow-hidden ${active
-          ? 'border-primary/50 bg-primary/20 shadow-[0_0_15px_rgba(59,130,246,0.3)]'
-          : 'border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20'
+      className={`group relative p-5 rounded-xl border text-left transition-all duration-300 overflow-hidden ${active
+        ? 'border-primary/50 bg-primary/20 shadow-[0_0_15px_rgba(59,130,246,0.3)]'
+        : 'border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20'
         }`}
     >
       <div className={`flex items-center gap-3 relative z-10 transition-colors ${active ? 'text-white' : 'text-white/70 group-hover:text-white'}`}>
@@ -81,7 +81,7 @@ export default function InterestsStep() {
         </Label>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
           {Object.keys(interests).map((key) => (
-            <InterestCard
+            <SelectionCard
               key={key}
               active={interests[key as keyof typeof interests]}
               onClick={() => handleToggle(key as keyof typeof interests)}

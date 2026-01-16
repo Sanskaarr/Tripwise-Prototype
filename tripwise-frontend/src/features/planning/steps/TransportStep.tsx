@@ -63,9 +63,9 @@ export default function TransportStep() {
   }) => (
     <button
       onClick={onClick}
-      className={`group relative p-4 rounded-xl border text-center transition-all duration-300 overflow-hidden ${selected
-          ? 'border-primary/50 bg-primary/20 shadow-[0_0_15px_rgba(59,130,246,0.3)]'
-          : 'border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20'
+      className={`group relative p-5 rounded-xl border text-center transition-all duration-300 overflow-hidden ${selected
+        ? 'border-primary/50 bg-primary/20 shadow-[0_0_15px_rgba(59,130,246,0.3)]'
+        : 'border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20'
         } ${className}`}
     >
       <div className={`font-medium text-base ${selected ? 'text-white' : 'text-white/80 group-hover:text-white'}`}>
@@ -113,7 +113,7 @@ export default function TransportStep() {
             value={transport.timingPreference || ''}
             onChange={handleTimingChange}
             placeholder="e.g., morning, evening, night"
-            className="h-14 rounded-xl border-white/10 bg-white/5 text-lg text-white placeholder:text-white/20 focus:border-primary/50 focus:bg-white/10"
+            className="glass-input"
           />
         </div>
 

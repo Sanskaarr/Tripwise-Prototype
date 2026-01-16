@@ -11,7 +11,7 @@ import java.util.Map;
 
 @Slf4j
 @RestController
-@RequestMapping("/api/profile")
+@RequestMapping("/api/profiles")
 @CrossOrigin(origins = "*")
 public class ProfileController {
 
@@ -36,6 +36,34 @@ public class ProfileController {
         return ResponseEntity.ok(Map.of(
                 "profileId", profile.getProfileId(),
                 "createdAt", profile.getCreatedAt()));
+    }
+
+    /**
+     * Check if user exists by phone or email
+     */
+    @PostMapping("/check")
+    @CrossOrigin(origins = "*")
+    public ResponseEntity<?> checkUserExists(@RequestBody Map<String, String> request) {
+        String identifier = request.get("identifier");
+        log.info("Checking if user exists: {}", identifier);
+
+        if (identifier == null || identifier.trim().isEmpty()) {
+            return ResponseEntity.badRequest().body(Map.of(
+                    "success", false,
+                    "error", "Identifier is required"));
+        }
+
+        TravelerProfile profile = profileService.findByIdentifier(identifier.trim());
+
+        if (profile != null) {
+            // User exists - return profile
+            return ResponseEntity.ok(Map.of(
+                    "exists", true,
+                    "profile", profile));
+        } else {
+            // New user
+            return ResponseEntity.ok(Map.of("exists", false));
+        }
     }
 
     /**

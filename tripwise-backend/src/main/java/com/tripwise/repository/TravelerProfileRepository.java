@@ -13,5 +13,9 @@ public interface TravelerProfileRepository extends MongoRepository<TravelerProfi
 
     boolean existsByProfileId(String profileId);
 
+    Optional<TravelerProfile> findByBasicInfo_WhatsappNumber(String whatsappNumber);
+
+    Optional<TravelerProfile> findByBasicInfo_Email(String email);
+
     void deleteByProfileId(String profileId);
 }

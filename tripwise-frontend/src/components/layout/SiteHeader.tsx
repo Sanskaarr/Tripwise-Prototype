@@ -39,12 +39,12 @@ export const SiteHeader = () => {
             <div
                 className={cn(
                     "relative z-[110] flex w-full max-w-7xl items-center justify-between px-6 py-3 transition-all duration-500",
-                    scrolled ? "rounded-full shadow-lg" : "bg-transparent"
+                    scrolled ? "rounded-full" : "bg-transparent"
                 )}
             >
                 {/* Separate Glass Layer to prevent interference with content */}
                 {scrolled && (
-                    <div className="ios-glass absolute inset-0 -z-10 rounded-full" />
+                    <div className="ios-glass absolute inset-0 -z-10 rounded-full shadow-lg" />
                 )}
 
                 <button
@@ -52,8 +52,7 @@ export const SiteHeader = () => {
                     className="relative z-[120] flex items-center gap-3 transition-transform hover:scale-105 active:scale-95"
                 >
                     <span className={cn(
-                        "font-display text-xl font-medium tracking-tight transition-colors duration-500",
-                        scrolled ? 'text-foreground' : 'text-white'
+                        "font-display text-2xl font-medium tracking-tight transition-colors duration-500 text-white drop-shadow-md",
                     )}>
                         TripWise
                     </span>
@@ -62,10 +61,8 @@ export const SiteHeader = () => {
                 <button
                     onClick={() => setMenuOpen(true)}
                     className={cn(
-                        "relative z-[120] flex items-center gap-3 rounded-full border px-5 py-2 text-[10px] font-bold uppercase tracking-[0.3em] transition-all duration-500",
-                        scrolled
-                            ? "border-foreground/10 bg-foreground/5 text-foreground hover:bg-foreground/20"
-                            : "border-white/20 bg-white/10 text-white hover:bg-white/30"
+                        "relative z-[120] flex items-center gap-3 rounded-full px-5 py-2 text-[10px] font-bold uppercase tracking-[0.3em] transition-all duration-500 text-white hover:bg-white/10 active:scale-95",
+                        scrolled ? "bg-white/5" : "bg-white/10 border border-white/10"
                     )}
                 >
                     <span>Menu</span>

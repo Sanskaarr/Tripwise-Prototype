@@ -4,7 +4,7 @@ import { ArrowLeft, Save, AlertCircle } from 'lucide-react';
 import { useProfileStore } from '@/store/profileStore';
 import { useShallow } from 'zustand/react/shallow';
 import { getSyncStatus, SyncStatus, onSyncStatusChange, offSyncStatusChange } from '@/lib/api/syncManager';
-import ProgressIndicator from './ProgressIndicator';
+import { Stepper } from '@/components/ui/Stepper';
 
 interface StepLayoutProps {
   stepNumber: number;
@@ -163,7 +163,7 @@ export default function StepLayout({
       </div>
 
       {/* Main content */}
-      <div className="max-w-4xl mx-auto px-4 py-8">
+      <div className="max-w-2xl mx-auto px-4 py-8">
         {/* Progress indicator */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -171,20 +171,20 @@ export default function StepLayout({
           transition={{ duration: 0.5 }}
           className="mb-8"
         >
-          <ProgressIndicator currentStep={stepNumber} />
+          <Stepper currentStep={stepNumber} totalSteps={12} />
         </motion.div>
 
-        {/* Step header */}
+        {/* Step header - Updated Typography */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          className="text-center mb-8"
+          className="text-center mb-10"
         >
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-3">
+          <h1 className="text-3xl md:text-4xl font-display font-bold text-gray-900 mb-2">
             {title}
           </h1>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          <p className="text-base text-gray-500 max-w-md mx-auto">
             {subtitle}
           </p>
         </motion.div>
@@ -194,7 +194,7 @@ export default function StepLayout({
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          className="bg-white rounded-2xl shadow-xl p-6 sm:p-8"
+          className="relative"
         >
           {children}
         </motion.div>

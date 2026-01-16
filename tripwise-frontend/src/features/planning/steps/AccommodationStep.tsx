@@ -46,7 +46,7 @@ export default function AccommodationStep() {
     navigate(`/plan/step/${currentStep - 1}`);
   };
 
-  const GlassButton = ({
+  const SelectionCard = ({
     active,
     onClick,
     children,
@@ -59,9 +59,9 @@ export default function AccommodationStep() {
   }) => (
     <button
       onClick={onClick}
-      className={`relative px-4 py-3 rounded-xl border text-sm font-medium transition-all duration-300 capitalize overflow-hidden ${active
-          ? 'border-primary/50 bg-primary/20 text-white shadow-[0_0_15px_rgba(59,130,246,0.3)]'
-          : 'border-white/10 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white hover:border-white/20'
+      className={`relative px-5 py-4 rounded-xl border text-sm font-medium transition-all duration-300 capitalize overflow-hidden ${active
+        ? 'border-primary/50 bg-primary/20 text-white shadow-[0_0_15px_rgba(59,130,246,0.3)]'
+        : 'border-white/10 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white hover:border-white/20'
         } ${className}`}
     >
       {active && (
@@ -90,13 +90,13 @@ export default function AccommodationStep() {
           </Label>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {['budget', 'mid-range', 'luxury', 'resort', 'homestay'].map((cat) => (
-              <GlassButton
+              <SelectionCard
                 key={cat}
                 active={accommodation.category === cat}
                 onClick={() => handleCategoryChange(cat as any)}
               >
                 {cat.replace('-', ' ')}
-              </GlassButton>
+              </SelectionCard>
             ))}
           </div>
         </div>
@@ -108,13 +108,13 @@ export default function AccommodationStep() {
           </Label>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
             {['single', 'double', 'twin', 'family', 'dorm'].map((room) => (
-              <GlassButton
+              <SelectionCard
                 key={room}
                 active={accommodation.roomType === room}
                 onClick={() => handleRoomTypeChange(room as any)}
               >
                 {room}
-              </GlassButton>
+              </SelectionCard>
             ))}
           </div>
         </div>
@@ -130,7 +130,7 @@ export default function AccommodationStep() {
               const isSelected = accommodation.specialNeeds?.includes(needLower) || false;
 
               return (
-                <GlassButton
+                <SelectionCard
                   key={need}
                   active={isSelected}
                   onClick={() => {
@@ -145,7 +145,7 @@ export default function AccommodationStep() {
                   }}
                 >
                   {need}
-                </GlassButton>
+                </SelectionCard>
               );
             })}
           </div>

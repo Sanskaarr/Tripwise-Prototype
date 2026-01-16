@@ -59,12 +59,12 @@ export interface SubmitResponse {
 export class ProfileApi {
   // Create a new profile
   static async createProfile(): Promise<ApiResponse<CreateProfileResponse>> {
-    return apiCall(() => apiClient.post('/api/profile/create'));
+    return apiCall(() => apiClient.post('/api/profiles/create'));
   }
 
   // Get profile by ID
   static async getProfile(profileId: string): Promise<ApiResponse<ProfileDataResponse>> {
-    return apiCall(() => apiClient.get(`/api/profile/${profileId}`));
+    return apiCall(() => apiClient.get(`/api/profiles/${profileId}`));
   }
 
   // Update basic info
@@ -72,7 +72,7 @@ export class ProfileApi {
     profileId: string,
     data: TravelerInfo
   ): Promise<ApiResponse<UpdateResponse>> {
-    return apiCall(() => apiClient.post(`/api/profile/${profileId}/basicInfo`, data));
+    return apiCall(() => apiClient.post(`/api/profiles/${profileId}/basicInfo`, data));
   }
 
   // Update travel dates
@@ -80,7 +80,7 @@ export class ProfileApi {
     profileId: string,
     data: TravelDates
   ): Promise<ApiResponse<UpdateResponse>> {
-    return apiCall(() => apiClient.post(`/api/profile/${profileId}/dates`, data));
+    return apiCall(() => apiClient.post(`/api/profiles/${profileId}/dates`, data));
   }
 
   // Update destination preference
@@ -88,7 +88,7 @@ export class ProfileApi {
     profileId: string,
     data: DestinationPreference
   ): Promise<ApiResponse<UpdateResponse>> {
-    return apiCall(() => apiClient.post(`/api/profile/${profileId}/destination`, data));
+    return apiCall(() => apiClient.post(`/api/profiles/${profileId}/destination`, data));
   }
 
   // Update budget preference
@@ -96,7 +96,7 @@ export class ProfileApi {
     profileId: string,
     data: BudgetPreference
   ): Promise<ApiResponse<UpdateResponse>> {
-    return apiCall(() => apiClient.post(`/api/profile/${profileId}/budget`, data));
+    return apiCall(() => apiClient.post(`/api/profiles/${profileId}/budget`, data));
   }
 
   // Update accommodation preference
@@ -104,7 +104,7 @@ export class ProfileApi {
     profileId: string,
     data: AccommodationPreference
   ): Promise<ApiResponse<UpdateResponse>> {
-    return apiCall(() => apiClient.post(`/api/profile/${profileId}/accommodation`, data));
+    return apiCall(() => apiClient.post(`/api/profiles/${profileId}/accommodation`, data));
   }
 
   // Update transport preference
@@ -112,7 +112,7 @@ export class ProfileApi {
     profileId: string,
     data: TransportPreference
   ): Promise<ApiResponse<UpdateResponse>> {
-    return apiCall(() => apiClient.post(`/api/profile/${profileId}/transport`, data));
+    return apiCall(() => apiClient.post(`/api/profiles/${profileId}/transport`, data));
   }
 
   // Update travel purpose
@@ -120,7 +120,7 @@ export class ProfileApi {
     profileId: string,
     data: TravelPurpose
   ): Promise<ApiResponse<UpdateResponse>> {
-    return apiCall(() => apiClient.post(`/api/profile/${profileId}/purpose`, data));
+    return apiCall(() => apiClient.post(`/api/profiles/${profileId}/purpose`, data));
   }
 
   // Update interests/activities
@@ -128,7 +128,7 @@ export class ProfileApi {
     profileId: string,
     data: Activities
   ): Promise<ApiResponse<UpdateResponse>> {
-    return apiCall(() => apiClient.post(`/api/profile/${profileId}/interests`, data));
+    return apiCall(() => apiClient.post(`/api/profiles/${profileId}/interests`, data));
   }
 
   // Update food preference
@@ -136,7 +136,7 @@ export class ProfileApi {
     profileId: string,
     data: FoodPreference
   ): Promise<ApiResponse<UpdateResponse>> {
-    return apiCall(() => apiClient.post(`/api/profile/${profileId}/food`, data));
+    return apiCall(() => apiClient.post(`/api/profiles/${profileId}/food`, data));
   }
 
   // Update document status
@@ -144,7 +144,7 @@ export class ProfileApi {
     profileId: string,
     data: DocumentStatus
   ): Promise<ApiResponse<UpdateResponse>> {
-    return apiCall(() => apiClient.post(`/api/profile/${profileId}/documents`, data));
+    return apiCall(() => apiClient.post(`/api/profiles/${profileId}/documents`, data));
   }
 
   // Update travel experience
@@ -152,7 +152,7 @@ export class ProfileApi {
     profileId: string,
     data: TravelExperience
   ): Promise<ApiResponse<UpdateResponse>> {
-    return apiCall(() => apiClient.post(`/api/profile/${profileId}/experience`, data));
+    return apiCall(() => apiClient.post(`/api/profiles/${profileId}/experience`, data));
   }
 
   // Update communication preference
@@ -160,12 +160,12 @@ export class ProfileApi {
     profileId: string,
     data: CommunicationPreference
   ): Promise<ApiResponse<UpdateResponse>> {
-    return apiCall(() => apiClient.post(`/api/profile/${profileId}/communication`, data));
+    return apiCall(() => apiClient.post(`/api/profiles/${profileId}/communication`, data));
   }
 
   // Submit complete profile
   static async submitProfile(profileId: string, profileData: Partial<TravelerProfile>): Promise<ApiResponse<SubmitResponse>> {
-    return apiCall(() => apiClient.post(`/api/profile/${profileId}/submit`, profileData));
+    return apiCall(() => apiClient.post(`/api/profiles/${profileId}/submit`, profileData));
   }
 }
 

@@ -1,12 +1,10 @@
 import { SiteHeader } from '@/components/layout/SiteHeader';
 import { HeroSection } from '@/components/sections/HeroSection';
 import { HighlightsSection } from '@/components/sections/HighlightsSection';
-import { LiquidBackground } from '@/components/ui/LiquidBackground';
 
 const Landing = () => {
   return (
     <div className="page-shell">
-      <LiquidBackground />
       <SiteHeader />
       <main>
         <HeroSection />

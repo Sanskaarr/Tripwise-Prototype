@@ -47,7 +47,7 @@ export default function DatesStep() {
   };
 
   const InputGroup = ({ label, icon: Icon, children }: { label: string, icon: any, children: React.ReactNode }) => (
-    <div className="space-y-3">
+    <div className="space-y-2">
       <Label className="text-sm font-medium tracking-wide text-white/80 flex items-center gap-2">
         <Icon className="w-4 h-4 text-primary" />
         {label}
@@ -58,15 +58,6 @@ export default function DatesStep() {
 
   return (
     <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="space-y-2 text-center">
-        <h2 className="text-3xl md:text-4xl font-display font-medium text-white tracking-tight">
-          When are you planning to travel?
-        </h2>
-        <p className="text-white/60 text-lg font-light">
-          Select your preferred travel dates
-        </p>
-      </div>
-
       <div className="space-y-8">
         <div className="grid md:grid-cols-2 gap-6">
           <InputGroup label="Start Date" icon={Calendar}>
@@ -78,7 +69,7 @@ export default function DatesStep() {
                 updateTravelDates(newDates);
                 if (profileId) queueSync(profileId, 'dates', newDates);
               }}
-              className="h-14 rounded-xl border-white/10 bg-white/5 text-lg text-white placeholder:text-white/20 focus:border-primary/50 focus:bg-white/10 [color-scheme:dark]"
+              className="glass-input [color-scheme:light]"
             />
           </InputGroup>
 
@@ -91,7 +82,7 @@ export default function DatesStep() {
                 updateTravelDates(newDates);
                 if (profileId) queueSync(profileId, 'dates', newDates);
               }}
-              className="h-14 rounded-xl border-white/10 bg-white/5 text-lg text-white placeholder:text-white/20 focus:border-primary/50 focus:bg-white/10 [color-scheme:dark]"
+              className="glass-input [color-scheme:light]"
             />
           </InputGroup>
         </div>
@@ -101,7 +92,7 @@ export default function DatesStep() {
             <select
               value={dates.duration || 0}
               onChange={(e) => updateTravelDates({ duration: parseInt(e.target.value) })}
-              className="w-full h-14 px-4 rounded-xl border border-white/10 bg-white/5 text-lg text-white focus:outline-none focus:border-primary/50 focus:bg-white/10 appearance-none [&>option]:text-black"
+              className="glass-input appearance-none"
             >
               <option value={0}>Select duration</option>
               <option value={3}>Weekend (2-3 days)</option>
@@ -113,7 +104,7 @@ export default function DatesStep() {
           </InputGroup>
 
           <InputGroup label="Flexibility" icon={RefreshCcw}>
-            <div className="grid grid-cols-2 gap-3 h-14">
+            <div className="grid grid-cols-2 gap-3 h-12">
               {[
                 { value: false, label: 'Fixed' },
                 { value: true, label: 'Flexible' }
@@ -122,8 +113,8 @@ export default function DatesStep() {
                   key={option.value.toString()}
                   onClick={() => updateTravelDates({ isFlexible: option.value })}
                   className={`rounded-xl border transition-all duration-300 font-medium text-sm ${dates.isFlexible === option.value
-                      ? 'border-primary/50 bg-primary/20 text-white shadow-[0_0_15px_rgba(59,130,246,0.3)]'
-                      : 'border-white/10 bg-white/5 text-white/60 hover:bg-white/10 hover:text-white'
+                    ? 'border-primary bg-primary/10 text-primary shadow-sm'
+                    : 'border-black/5 bg-white/40 text-gray-500 hover:bg-white/60 hover:text-gray-900'
                     }`}
                 >
                   {option.label}
@@ -134,7 +125,7 @@ export default function DatesStep() {
         </div>
       </div>
 
-      <div className="flex gap-4 pt-4">
+      <div className="flex justify-center gap-4 pt-4">
         <Button
           onClick={handleBack}
           variant="outline"
