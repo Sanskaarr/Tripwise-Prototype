@@ -55,7 +55,7 @@ const AuthPage = () => {
                 } else {
                     // New user - go to onboarding
                     authenticateUser(identifier);
-                    navigate("/plan/step/1", { state: { isNew: true } });
+                    navigate("/plan", { state: { isNew: true } });
                 }
             } else {
                 setError(response.error || "Failed to check user status. Please try again.");

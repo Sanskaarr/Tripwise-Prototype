@@ -2,12 +2,11 @@
 
 import { useNavigate } from 'react-router-dom';
 import { useProfileStore } from '@/store/profileStore';
-import { Button } from '@/components/ui/button';
 import { queueSync } from '@/lib/api/syncManager';
 import { useShallow } from 'zustand/react/shallow';
 import { Label } from '@/components/ui/label';
 import { Calendar, Clock, RefreshCcw } from 'lucide-react';
-import { Input } from '@/components/ui/input';
+import { ConversationalLayout } from '@/components/layout/ConversationalLayout';
 
 export default function DatesStep() {
   const navigate = useNavigate();
@@ -15,6 +14,7 @@ export default function DatesStep() {
     dates,
     updateTravelDates,
     goToNextStep,
+    goToPrevStep,
     currentStep,
     profileId
   } = useProfileStore(useShallow(state => ({
@@ -29,14 +29,11 @@ export default function DatesStep() {
   const handleContinue = () => {
     // Validate required fields
     if (!dates.startDate || !dates.returnDate) {
-      alert('Please select travel dates');
+      // Could animate error state here
       return;
     }
 
-    // Update store to next step
     goToNextStep();
-
-    // Navigate to next URL
     const nextStep = currentStep + 1;
     navigate(`/plan/step/${nextStep}`);
   };
@@ -46,10 +43,12 @@ export default function DatesStep() {
     navigate(`/plan/step/${prevStep}`);
   };
 
-  const InputGroup = ({ label, icon: Icon, children }: { label: string, icon: any, children: React.ReactNode }) => (
-    <div className="space-y-2">
-      <Label className="text-sm font-medium tracking-wide text-white/80 flex items-center gap-2">
-        <Icon className="w-4 h-4 text-primary" />
+  const isFormValid = dates.startDate && dates.returnDate;
+
+  const GlassInputGroup = ({ label, icon: Icon, children }: { label: string, icon: any, children: React.ReactNode }) => (
+    <div className="space-y-4 group">
+      <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground/70 group-focus-within:text-primary transition-colors flex items-center gap-2">
+        <Icon className="w-3 h-3" />
         {label}
       </Label>
       {children}
@@ -57,11 +56,24 @@ export default function DatesStep() {
   );
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="space-y-8">
-        <div className="grid md:grid-cols-2 gap-6">
-          <InputGroup label="Start Date" icon={Calendar}>
-            <Input
+    <ConversationalLayout
+      title="When Are You Planning To Go?"
+      description="Select your travel dates or rough duration."
+      currentStep={2}
+      totalSteps={12}
+      onNext={handleContinue}
+      onBack={handleBack}
+      canNext={!!isFormValid}
+      nextLabel="Continue Step"
+    >
+      <div className="space-y-5">
+        {/* Date Selection - Side by Side */}
+        <div className="grid md:grid-cols-2 gap-4 md:gap-8">
+          <div className="space-y-2">
+            <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground/70 flex items-center gap-2 mb-2">
+              <Calendar className="w-3 h-3 text-primary" /> Start Date
+            </Label>
+            <input
               type="date"
               value={dates.startDate || ''}
               onChange={(e) => {
@@ -69,12 +81,15 @@ export default function DatesStep() {
                 updateTravelDates(newDates);
                 if (profileId) queueSync(profileId, 'dates', newDates);
               }}
-              className="glass-input [color-scheme:light]"
+              className="glass-input h-12 w-full text-lg font-medium [color-scheme:dark]" // Using dark color scheme for date picker contrast in glass
             />
-          </InputGroup>
+          </div>
 
-          <InputGroup label="Return Date" icon={Calendar}>
-            <Input
+          <div className="space-y-2">
+            <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground/70 flex items-center gap-2 mb-2">
+              <Calendar className="w-3 h-3 text-primary" /> Return Date
+            </Label>
+            <input
               type="date"
               value={dates.returnDate || ''}
               onChange={(e) => {
@@ -82,66 +97,58 @@ export default function DatesStep() {
                 updateTravelDates(newDates);
                 if (profileId) queueSync(profileId, 'dates', newDates);
               }}
-              className="glass-input [color-scheme:light]"
+              className="glass-input h-12 w-full text-lg font-medium [color-scheme:dark]"
             />
-          </InputGroup>
+          </div>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-6">
-          <InputGroup label="Duration" icon={Clock}>
-            <select
-              value={dates.duration || 0}
-              onChange={(e) => updateTravelDates({ duration: parseInt(e.target.value) })}
-              className="glass-input appearance-none"
-            >
-              <option value={0}>Select duration</option>
-              <option value={3}>Weekend (2-3 days)</option>
-              <option value={7}>One week</option>
-              <option value={14}>Two weeks</option>
-              <option value={30}>One month</option>
-              <option value={60}>Extended stay</option>
-            </select>
-          </InputGroup>
+        <div className="h-px bg-white/10 w-full" />
 
-          <InputGroup label="Flexibility" icon={RefreshCcw}>
-            <div className="grid grid-cols-2 gap-3 h-12">
+        {/* Secondary Options Grid */}
+        <div className="grid md:grid-cols-2 gap-8">
+          <GlassInputGroup label="Duration Estimate" icon={Clock}>
+            <div className="relative">
+              <select
+                value={dates.duration || 0}
+                onChange={(e) => updateTravelDates({ duration: parseInt(e.target.value) })}
+                className="glass-input h-12 w-full appearance-none pl-4 pr-10 cursor-pointer text-base hover:bg-white/10 transition-colors"
+              >
+                <option value={0} className="text-black">Select duration...</option>
+                <option value={3} className="text-black">Weekend (2-3 days)</option>
+                <option value={7} className="text-black">One week</option>
+                <option value={14} className="text-black">Two weeks</option>
+                <option value={30} className="text-black">One month</option>
+                <option value={60} className="text-black">Extended stay</option>
+              </select>
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none">
+                <svg width="10" height="6" viewBox="0 0 10 6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M1 1L5 5L9 1" />
+                </svg>
+              </div>
+            </div>
+          </GlassInputGroup>
+
+          <GlassInputGroup label="Are dates flexible?" icon={RefreshCcw}>
+            <div className="flex gap-2 bg-white/5 rounded-xl p-1 border border-white/10">
               {[
-                { value: false, label: 'Fixed' },
+                { value: false, label: 'Fixed Dates' },
                 { value: true, label: 'Flexible' }
               ].map((option) => (
                 <button
                   key={option.value.toString()}
                   onClick={() => updateTravelDates({ isFlexible: option.value })}
-                  className={`rounded-xl border transition-all duration-300 font-medium text-sm ${dates.isFlexible === option.value
-                    ? 'border-primary bg-primary/10 text-primary shadow-sm'
-                    : 'border-black/5 bg-white/40 text-gray-500 hover:bg-white/60 hover:text-gray-900'
+                  className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 ${dates.isFlexible === option.value
+                      ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                      : 'text-muted-foreground hover:text-white hover:bg-white/10'
                     }`}
                 >
                   {option.label}
                 </button>
               ))}
             </div>
-          </InputGroup>
+          </GlassInputGroup>
         </div>
       </div>
-
-      <div className="flex justify-center gap-4 pt-4">
-        <Button
-          onClick={handleBack}
-          variant="outline"
-          size="lg"
-          className="flex-1 h-14 rounded-2xl border-white/10 bg-white/5 text-white hover:bg-white/10 hover:text-white"
-        >
-          Back
-        </Button>
-        <Button
-          onClick={handleContinue}
-          size="lg"
-          className="flex-[2] h-14 rounded-2xl bg-gradient-to-r from-blue-600 to-purple-600 text-lg font-bold tracking-widest uppercase hover:shadow-lg hover:shadow-primary/25 hover:scale-[1.01] transition-all duration-300"
-        >
-          Continue Step
-        </Button>
-      </div>
-    </div>
+    </ConversationalLayout>
   );
 }

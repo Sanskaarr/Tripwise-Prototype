@@ -14,7 +14,7 @@ import { useShallow } from 'zustand/react/shallow';
 
 // Import page components
 import PlanWelcomePage from '@/app/plan/page';
-import StepPage from '@/app/plan/step/[stepNumber]/page';
+import StepPage from '@/app/plan/step/[stepId]/page';
 import ConfirmationPage from '@/app/plan/confirmation/page';
 import Landing from '@/pages/Landing';
 import AuthPage from '@/pages/auth/AuthPage';
@@ -55,7 +55,7 @@ export default function App() {
             <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<AuthPage />} />
             <Route path="/plan" element={<PlanWelcomePage />} />
-            <Route path="/plan/step/:stepNumber" element={<StepPage />} />
+            <Route path="/plan/step/:stepId" element={<StepPage />} />
             <Route path="/plan/confirmation" element={<ConfirmationPage />} />
             <Route path="/chat" element={<ChattingPage />} />
           </Routes>

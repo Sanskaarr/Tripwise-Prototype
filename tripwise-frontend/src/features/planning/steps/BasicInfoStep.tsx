@@ -11,6 +11,19 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { User, Smartphone, Mail, MapPin, Users } from 'lucide-react';
 
+import { ConversationalLayout } from '@/components/layout/ConversationalLayout';
+
+// Reusable input group for this step - defined outside to prevent re-renders
+const GlassInputGroup = ({ label, icon: Icon, children }: { label: string, icon: any, children: React.ReactNode }) => (
+  <div className="space-y-2 group">
+    <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground/70 group-focus-within:text-primary transition-colors flex items-center gap-2">
+      <Icon className="w-3 h-3" />
+      {label}
+    </Label>
+    {children}
+  </div>
+);
+
 export default function BasicInfoStep() {
   const navigate = useNavigate();
   const {
@@ -47,144 +60,134 @@ export default function BasicInfoStep() {
   }, [profileId, setProfileId]);
 
   const handleContinue = () => {
-    // Validate required fields
     if (!basicInfo.fullName || !basicInfo.email || !basicInfo.whatsappNumber) {
-      alert('Please fill all required fields');
+      // Shaking animation or toast could be added here
       return;
     }
 
-    // Update store to next step
     goToNextStep();
-
-    // Navigate to next URL
     const nextStep = currentStep + 1;
     navigate(`/plan/step/${nextStep}`);
   };
 
-  const InputGroup = ({ label, icon: Icon, children }: { label: string, icon: any, children: React.ReactNode }) => (
-    <div className="space-y-2">
-      <Label className="text-sm font-medium tracking-wide text-white/80 flex items-center gap-2">
-        <Icon className="w-4 h-4 text-primary" />
-        {label}
-      </Label>
-      {children}
-    </div>
-  );
+  const isFormValid = basicInfo.fullName && basicInfo.email && basicInfo.whatsappNumber;
+
+
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      {/* Form */}
-      <div className="grid gap-6 md:grid-cols-2">
-        <div className="md:col-span-2 space-y-6">
-          <InputGroup label="Full Name" icon={User}>
-            <Input
-              type="text"
-              value={basicInfo.fullName}
-              onChange={(e) => {
-                const newInfo = { ...basicInfo, fullName: e.target.value };
-                updateTravelerInfo(newInfo);
-                if (profileId) queueSync(profileId, 'basicInfo', newInfo);
-              }}
-              className="glass-input" // Simplified: consumes global style
-              placeholder="Enter your full name"
-            />
-          </InputGroup>
-
-          <div className="grid md:grid-cols-2 gap-6">
-            <InputGroup label="WhatsApp Number" icon={Smartphone}>
-              <Input
-                type="tel"
-                value={basicInfo.whatsappNumber}
+    <ConversationalLayout
+      title="Let's Start With The Basics"
+      description="We need a few details to personalize your journey."
+      currentStep={1}
+      totalSteps={12}
+      onNext={handleContinue}
+      canNext={!!isFormValid}
+      nextLabel="Continue Step"
+    >
+      <div className="space-y-5">
+        {/* Main Inputs Grid */}
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="md:col-span-2">
+            <GlassInputGroup label="Full Name" icon={User}>
+              <input
+                type="text"
+                value={basicInfo.fullName}
                 onChange={(e) => {
-                  const newInfo = { ...basicInfo, whatsappNumber: e.target.value };
+                  const newInfo = { ...basicInfo, fullName: e.target.value };
                   updateTravelerInfo(newInfo);
                   if (profileId) queueSync(profileId, 'basicInfo', newInfo);
                 }}
-                className="glass-input"
-                placeholder="+91 98765 43210"
+                className="glass-input h-12 text-lg" // Larger text for better readability
+                placeholder="Enter your full name"
+                autoFocus
               />
-            </InputGroup>
-
-            <InputGroup label="Email Address" icon={Mail}>
-              <Input
-                type="email"
-                value={basicInfo.email}
-                onChange={(e) => {
-                  const newInfo = { ...basicInfo, email: e.target.value };
-                  updateTravelerInfo(newInfo);
-                  if (profileId) queueSync(profileId, 'basicInfo', newInfo);
-                }}
-                className="glass-input"
-                placeholder="your@email.com"
-              />
-            </InputGroup>
+            </GlassInputGroup>
           </div>
 
-          <InputGroup label="City of Departure" icon={MapPin}>
-            <Input
-              type="text"
-              value={basicInfo.cityOfDeparture}
+          <GlassInputGroup label="WhatsApp Number" icon={Smartphone}>
+            <input
+              type="tel"
+              value={basicInfo.whatsappNumber}
               onChange={(e) => {
-                const newInfo = { ...basicInfo, cityOfDeparture: e.target.value };
+                const newInfo = { ...basicInfo, whatsappNumber: e.target.value };
                 updateTravelerInfo(newInfo);
                 if (profileId) queueSync(profileId, 'basicInfo', newInfo);
               }}
-              className="glass-input"
-              placeholder="e.g., Mumbai, Delhi"
+              className="glass-input h-12 text-lg"
+              placeholder="+91 98765 43210"
             />
-          </InputGroup>
+          </GlassInputGroup>
+
+          <GlassInputGroup label="Email Address" icon={Mail}>
+            <input
+              type="email"
+              value={basicInfo.email}
+              onChange={(e) => {
+                const newInfo = { ...basicInfo, email: e.target.value };
+                updateTravelerInfo(newInfo);
+                if (profileId) queueSync(profileId, 'basicInfo', newInfo);
+              }}
+              className="glass-input h-12 text-lg"
+              placeholder="your@email.com"
+            />
+          </GlassInputGroup>
+
+          <div className="md:col-span-2">
+            <GlassInputGroup label="City of Departure" icon={MapPin}>
+              <input
+                type="text"
+                value={basicInfo.cityOfDeparture}
+                onChange={(e) => {
+                  const newInfo = { ...basicInfo, cityOfDeparture: e.target.value };
+                  updateTravelerInfo(newInfo);
+                  if (profileId) queueSync(profileId, 'basicInfo', newInfo);
+                }}
+                className="glass-input h-12 text-lg"
+                placeholder="e.g., Mumbai, Delhi"
+              />
+            </GlassInputGroup>
+          </div>
         </div>
 
-        {/* Travelers Section */}
-        <div className="md:col-span-2 pt-4">
-          <Label className="text-sm font-medium tracking-wide text-white/80 flex items-center gap-2 mb-4">
-            <Users className="w-4 h-4 text-primary" />
+        {/* Travelers Counter Section - Compact Row */}
+        <div className="pt-4 border-t border-white/10">
+          <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground/70 mb-4 flex items-center gap-2">
+            <Users className="w-3 h-3" />
             Who is traveling?
           </Label>
 
-          <div className="grid gap-3 md:grid-cols-3">
+          <div className="grid grid-cols-3 gap-3">
             {[
-              { label: 'Adults', key: 'adults', min: 1, sub: '12+ years' },
-              { label: 'Children', key: 'children', min: 0, sub: '2-12 years' },
-              { label: 'Infants', key: 'infants', min: 0, sub: '< 2 years' }
+              { label: 'Adults', key: 'adults', min: 1, sub: '12+' },
+              { label: 'Children', key: 'children', min: 0, sub: '2-12' },
+              { label: 'Infants', key: 'infants', min: 0, sub: '< 2' }
             ].map((item) => (
-              <div key={item.key} className="bg-white/40 border border-black/5 rounded-xl p-3 flex flex-col items-center justify-center gap-2 hover:bg-white/60 transition-colors">
-                <span className="text-gray-900 font-medium">{item.label}</span>
-                <span className="text-[10px] text-gray-400 -mt-1">{item.sub}</span>
+              <div key={item.key} className="bg-white/5 border border-white/10 rounded-2xl p-3 flex flex-col items-center justify-center gap-2 hover:bg-white/10 transition-colors group">
+                <span className="text-sm font-medium text-foreground/80">{item.label}</span>
 
-                <div className="flex items-center gap-3">
+                <div className="flex items-center justify-between w-full px-1">
                   <button
                     onClick={() => updateTravelerInfo({ [item.key]: Math.max(item.min, (basicInfo as any)[item.key] - 1) })}
-                    className="glass-counter-btn"
+                    className="w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-foreground/60 hover:text-foreground transition-all active:scale-95"
                   >
                     -
                   </button>
-                  <span className="text-lg font-bold text-gray-900 tabular-nums w-4 text-center">
+                  <span className="text-lg font-bold text-foreground tabular-nums">
                     {(basicInfo as any)[item.key]}
                   </span>
                   <button
                     onClick={() => updateTravelerInfo({ [item.key]: (basicInfo as any)[item.key] + 1 })}
-                    className="glass-counter-btn"
+                    className="w-8 h-8 rounded-full bg-indigo-500/10 hover:bg-indigo-500/20 text-indigo-600 flex items-center justify-center transition-all active:scale-95 border border-indigo-500/20"
                   >
                     +
                   </button>
                 </div>
+                <span className="text-[10px] text-muted-foreground/50 font-bold tracking-wider">{item.sub}</span>
               </div>
             ))}
           </div>
         </div>
       </div>
-
-      {/* Action Buttons */}
-      <div className="pt-8 flex justify-center">
-        <Button
-          onClick={handleContinue}
-          size="lg"
-          className="min-w-[240px] h-14 rounded-2xl bg-gradient-to-r from-blue-600 to-purple-600 text-lg font-bold tracking-widest uppercase hover:shadow-lg hover:shadow-primary/25 hover:scale-[1.01] transition-all duration-300"
-        >
-          Continue Step
-        </Button>
-      </div>
-    </div>
+    </ConversationalLayout>
   );
 }

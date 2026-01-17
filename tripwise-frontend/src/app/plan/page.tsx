@@ -1,3 +1,6 @@
+import { GlassCard } from '@/components/ui/GlassCard';
+import { PremiumButton } from '@/components/ui/PremiumButton';
+import { PageTransition } from '@/components/layout/PageTransition';
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -81,22 +84,26 @@ export default function PlanWelcomePage() {
           }}
         />
 
-        <motion.div
-          className="w-full max-w-xl relative z-10"
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-        >
-          {/* Main Glass Card - Grounded Style */}
-          <div className="ios-glass relative overflow-hidden rounded-[2.5rem] p-8 md:p-12 shadow-2xl">
-            {/* Inner shimmer */}
-            <div className="absolute inset-0 rounded-[2.5rem] bg-gradient-to-r from-transparent via-white/10 to-transparent shimmer opacity-40" />
-
-            {/* Corner Glows */}
-            <div className="absolute -top-20 -right-20 h-40 w-40 rounded-full bg-gradient-to-br from-blue-400/30 to-purple-400/30 blur-3xl" />
-            <div className="absolute -bottom-20 -left-20 h-40 w-40 rounded-full bg-gradient-to-tr from-purple-400/20 to-pink-400/20 blur-3xl" />
-
+        <PageTransition className="w-full max-w-xl relative z-10">
+          <GlassCard glowColor="purple" className="p-8 md:p-12">
             <div className="relative space-y-8 text-center">
+              {/* Icon/Logo mark */}
+              <motion.div
+                className="mx-auto w-16 h-16 rounded-2xl bg-gradient-to-br from-primary/20 to-purple-500/20 flex items-center justify-center backdrop-blur-md border border-white/10 shadow-lg"
+                initial={{ scale: 0, rotate: -20 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: "spring", duration: 1, delay: 0.2 }}
+              >
+                <div className="relative">
+                  <Plane className="w-8 h-8 text-white/90" />
+                  <motion.div
+                    className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-purple-400 rounded-full blur-[2px]"
+                    animate={{ opacity: [0.5, 1, 0.5] }}
+                    transition={{ duration: 2, repeat: Infinity }}
+                  />
+                </div>
+              </motion.div>
+
               <div className="space-y-4">
                 <motion.div
                   initial={{ opacity: 0, y: 15 }}
@@ -149,57 +156,38 @@ export default function PlanWelcomePage() {
                     </div>
 
                     <div className="flex flex-col sm:flex-row gap-4 justify-center w-full">
-                      <Button
+                      <PremiumButton
                         onClick={handleResume}
-                        className="group relative h-14 min-w-[200px] overflow-hidden rounded-2xl bg-primary text-sm font-bold uppercase tracking-[0.1em] text-primary-foreground transition-all duration-300 hover:shadow-lg hover:scale-[1.02]"
+                        variant="primary"
+                        className="min-w-[200px]"
                       >
-                        <span className="relative z-10 flex items-center justify-center gap-2">
-                          Resume <ArrowRight className="w-3 h-3 group-hover:translate-x-1 transition-transform" />
-                        </span>
-                        <motion.div
-                          className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600"
-                          initial={{ x: "-100%" }}
-                          whileHover={{ x: 0 }}
-                          transition={{ duration: 0.5 }}
-                        />
-                      </Button>
+                        Resume <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      </PremiumButton>
 
-                      <Button
+                      <PremiumButton
                         onClick={handleStartPlanning}
                         variant="ghost"
-                        className="h-14 min-w-[140px] rounded-2xl text-muted-foreground font-medium hover:bg-black/5 hover:text-foreground transition-colors"
+                        className="min-w-[140px]"
                       >
                         Start Fresh
-                      </Button>
+                      </PremiumButton>
                     </div>
                   </div>
                 ) : (
-                  <Button
+                  <PremiumButton
                     onClick={handleStartPlanning}
-                    disabled={isCreating}
-                    size="lg"
-                    className="group relative h-16 w-full overflow-hidden rounded-2xl bg-primary text-sm font-bold uppercase tracking-[0.2em] text-primary-foreground transition-all duration-500 hover:shadow-[0_0_40px_rgba(59,130,246,0.4)] hover:scale-[1.02] disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:scale-100"
+                    isLoading={isCreating}
+                    variant="primary"
+                    fullWidth
+                    className="h-16 text-sm tracking-[0.2em] uppercase"
                   >
-                    {isCreating ? (
-                      <span className="relative z-10 flex items-center justify-center">
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        Starting...
-                      </span>
-                    ) : (
-                      <span className="relative z-10 flex items-center justify-center">
-                        Begin Planning
-                        <ArrowRight className="w-3 h-3 ml-2 group-hover:translate-x-1 transition-transform" />
-                      </span>
-                    )}
                     {!isCreating && (
-                      <motion.div
-                        className="absolute inset-0 bg-gradient-to-r from-blue-600 to-purple-600"
-                        initial={{ x: "-100%" }}
-                        whileHover={{ x: 0 }}
-                        transition={{ duration: 0.5 }}
-                      />
+                      <>
+                        Begin Planning
+                        <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      </>
                     )}
-                  </Button>
+                  </PremiumButton>
                 )}
 
                 <p className="text-[10px] text-muted-foreground/40 font-bold tracking-[0.2em] uppercase pt-2">
@@ -207,9 +195,9 @@ export default function PlanWelcomePage() {
                 </p>
               </motion.div>
             </div>
-          </div>
-        </motion.div >
-      </div >
+          </GlassCard>
+        </PageTransition>
+      </div>
     </>
   );
 }

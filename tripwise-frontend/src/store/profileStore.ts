@@ -108,7 +108,7 @@ export interface TravelerProfile {
 
 export interface ProfileState extends TravelerProfile {
   // Actions
-  initializeProfile: (profileId?: string) => void;
+  initializeProfile: (profileId?: string, data?: Partial<TravelerProfile>) => void;
   updateStepData: (stepId: string, data: Record<string, unknown>) => void;
   goToNextStep: () => void;
   goToPrevStep: () => void;
@@ -246,9 +246,18 @@ export const useProfileStore = create<ProfileState>()(
       ...initialDataState,
 
       // New actions
-      initializeProfile: (profileId?: string) => {
+      initializeProfile: (profileId?: string, data?: Partial<TravelerProfile>) => {
         const id = profileId || `profile_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        set({ profileId: id, isLoading: false, error: null });
+        if (data) {
+          set({
+            ...data,
+            profileId: id,
+            isLoading: false,
+            error: null
+          });
+        } else {
+          set({ profileId: id, isLoading: false, error: null });
+        }
       },
 
       updateStepData: (stepId: string, data: Record<string, unknown>) => {

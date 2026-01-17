@@ -2,11 +2,11 @@
 
 import { useNavigate } from 'react-router-dom';
 import { useProfileStore } from '@/store/profileStore';
-import { Button } from '@/components/ui/button';
 import { queueSync } from '@/lib/api/syncManager';
 import { useShallow } from 'zustand/react/shallow';
 import { Label } from '@/components/ui/label';
 import { Hotel, Bed, Accessibility } from 'lucide-react';
+import { ConversationalLayout } from '@/components/layout/ConversationalLayout';
 
 export default function AccommodationStep() {
   const navigate = useNavigate();
@@ -46,91 +46,89 @@ export default function AccommodationStep() {
     navigate(`/plan/step/${currentStep - 1}`);
   };
 
-  const SelectionCard = ({
+  const Pill = ({
     active,
     onClick,
     children,
-    className = ""
   }: {
     active: boolean;
     onClick: () => void;
     children: React.ReactNode;
-    className?: string;
   }) => (
     <button
       onClick={onClick}
-      className={`relative px-5 py-4 rounded-xl border text-sm font-medium transition-all duration-300 capitalize overflow-hidden ${active
-        ? 'border-primary/50 bg-primary/20 text-white shadow-[0_0_15px_rgba(59,130,246,0.3)]'
-        : 'border-white/10 bg-white/5 text-white/70 hover:bg-white/10 hover:text-white hover:border-white/20'
-        } ${className}`}
+      className={`px-4 py-2 rounded-full border text-xs font-bold uppercase tracking-wider transition-all duration-200 ${active
+          ? 'border-primary bg-primary/10 text-primary shadow-sm'
+          : 'border-white/10 bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-foreground'
+        }`}
     >
-      {active && (
-        <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
-      )}
-      <div className="relative z-10">{children}</div>
+      {children}
     </button>
   );
 
   return (
-    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-      <div className="space-y-2 text-center">
-        <h2 className="text-3xl md:text-4xl font-display font-medium text-white tracking-tight">
-          Where would you prefer to stay?
-        </h2>
-        <p className="text-white/60 text-lg font-light">
-          Your comfort matters to us
-        </p>
-      </div>
-
-      <div className="space-y-8">
-        <div className="space-y-4">
-          <Label className="text-sm font-medium tracking-wide text-white/80 flex items-center gap-2">
-            <Hotel className="w-4 h-4 text-primary" />
-            Hotel Category
+    <ConversationalLayout
+      title="Where Will You Stay?"
+      description="Choose your comfort level and preferences."
+      currentStep={5}
+      totalSteps={12}
+      onNext={handleContinue}
+      onBack={handleBack}
+      canNext={true} // Accommodation is often optional or loaded with defaults? Assuming true for now.
+      nextLabel="Continue Step"
+    >
+      <div className="space-y-5">
+        {/* Hotel Category */}
+        <div className="space-y-3">
+          <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground/70 flex items-center gap-2">
+            <Hotel className="w-3 h-3 text-primary" />
+            Category
           </Label>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <div className="flex flex-wrap gap-2">
             {['budget', 'mid-range', 'luxury', 'resort', 'homestay'].map((cat) => (
-              <SelectionCard
+              <Pill
                 key={cat}
                 active={accommodation.category === cat}
                 onClick={() => handleCategoryChange(cat as any)}
               >
                 {cat.replace('-', ' ')}
-              </SelectionCard>
+              </Pill>
             ))}
           </div>
         </div>
 
-        <div className="space-y-4">
-          <Label className="text-sm font-medium tracking-wide text-white/80 flex items-center gap-2">
-            <Bed className="w-4 h-4 text-primary" />
+        {/* Room Type */}
+        <div className="space-y-3">
+          <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground/70 flex items-center gap-2">
+            <Bed className="w-3 h-3 text-primary" />
             Room Type
           </Label>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <div className="flex flex-wrap gap-2">
             {['single', 'double', 'twin', 'family', 'dorm'].map((room) => (
-              <SelectionCard
+              <Pill
                 key={room}
                 active={accommodation.roomType === room}
                 onClick={() => handleRoomTypeChange(room as any)}
               >
                 {room}
-              </SelectionCard>
+              </Pill>
             ))}
           </div>
         </div>
 
-        <div className="space-y-4">
-          <Label className="text-sm font-medium tracking-wide text-white/80 flex items-center gap-2">
-            <Accessibility className="w-4 h-4 text-primary" />
-            Special Needs (Optional)
+        {/* Special Needs */}
+        <div className="space-y-3">
+          <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground/70 flex items-center gap-2">
+            <Accessibility className="w-3 h-3 text-primary" />
+            Amenities (Optional)
           </Label>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+          <div className="flex flex-wrap gap-2">
             {['WiFi', 'Breakfast', 'Parking', 'Pool', 'Gym', 'Spa'].map((need) => {
               const needLower = need.toLowerCase();
               const isSelected = accommodation.specialNeeds?.includes(needLower) || false;
 
               return (
-                <SelectionCard
+                <Pill
                   key={need}
                   active={isSelected}
                   onClick={() => {
@@ -145,30 +143,12 @@ export default function AccommodationStep() {
                   }}
                 >
                   {need}
-                </SelectionCard>
+                </Pill>
               );
             })}
           </div>
         </div>
       </div>
-
-      <div className="flex gap-4 pt-4">
-        <Button
-          onClick={handleBack}
-          variant="outline"
-          size="lg"
-          className="flex-1 h-14 rounded-2xl border-white/10 bg-white/5 text-white hover:bg-white/10 hover:text-white"
-        >
-          Back
-        </Button>
-        <Button
-          onClick={handleContinue}
-          size="lg"
-          className="flex-[2] h-14 rounded-2xl bg-gradient-to-r from-blue-600 to-purple-600 text-lg font-bold tracking-widest uppercase hover:shadow-lg hover:shadow-primary/25 hover:scale-[1.01] transition-all duration-300"
-        >
-          Continue Step
-        </Button>
-      </div>
-    </div>
+    </ConversationalLayout>
   );
 }

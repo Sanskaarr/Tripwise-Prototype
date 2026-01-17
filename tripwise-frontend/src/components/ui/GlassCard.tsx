@@ -2,50 +2,48 @@ import React from 'react';
 import { motion, HTMLMotionProps } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
-interface GlassCardProps extends Omit<HTMLMotionProps<'div'>, 'children'> {
+interface GlassCardProps extends HTMLMotionProps<"div"> {
   children: React.ReactNode;
-  variant?: 'default' | 'floating' | 'elevated' | 'subtle';
-  glow?: boolean;
-  hover?: boolean;
+  className?: string;
+  glowColor?: "blue" | "purple" | "pink" | "none";
 }
 
-export const GlassCard = React.forwardRef<HTMLDivElement, GlassCardProps>(
-  ({ children, className, variant = 'default', glow = false, hover = true, ...props }, ref) => {
-    const variants = {
-      default: 'glass-card-material',
-      floating: 'glass-card-material glass-floating',
-      elevated: 'glass-card-material glass-elevated',
-      subtle: 'glass-card-subtle',
-    };
+export const GlassCard = ({
+  children,
+  className,
+  glowColor = "none",
+  ...props
+}: GlassCardProps) => {
+  return (
+    <motion.div
+      className={cn(
+        "relative overflow-hidden rounded-[2.5rem] bg-white/40 backdrop-blur-xl border border-white/50 shadow-xl group",
+        className
+      )}
+      initial={{ y: 0 }}
+      whileHover={{ y: -8, transition: { duration: 0.5, ease: "easeOut" } }}
+      transition={{ duration: 0.5 }}
+      {...props}
+    >
+      {/* Inner subtle shimmer for depth */}
+      <div className="absolute inset-0 bg-gradient-to-br from-white/10 to-transparent pointer-events-none" />
 
-    return (
-      <motion.div
-        ref={ref}
-        className={cn(
-          variants[variant],
-          hover && 'glass-hover',
-          glow && 'glass-glow',
-          className
-        )}
-        whileHover={hover ? { scale: 1.01, y: -2 } : undefined}
-        transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-        {...props}
-      >
-        {/* Specular highlight overlay */}
-        <div className="glass-specular" />
-        
-        {/* Inner glow effect */}
-        <div className="glass-inner-glow" />
-        
-        {/* Content */}
-        <div className="relative z-10">
-          {children}
-        </div>
-      </motion.div>
-    );
-  }
-);
+      {/* Shine Effect Overlay */}
+      <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-700 pointer-events-none">
+        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000 ease-in-out" />
+      </div>
 
-GlassCard.displayName = 'GlassCard';
+      {/* Optional Corner Glows */}
+      {glowColor !== "none" && (
+        <>
+          <div className="absolute -top-20 -right-20 h-40 w-40 rounded-full bg-gradient-to-br from-blue-400/20 to-purple-400/20 blur-3xl opacity-60" />
+          <div className="absolute -bottom-20 -left-20 h-40 w-40 rounded-full bg-gradient-to-tr from-purple-400/20 to-pink-400/20 blur-3xl opacity-60" />
+        </>
+      )}
 
-export default GlassCard;
+      <div className="relative z-10">
+        {children}
+      </div>
+    </motion.div>
+  );
+};
