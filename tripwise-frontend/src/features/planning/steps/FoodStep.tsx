@@ -46,8 +46,8 @@ export default function FoodStep() {
     <button
       onClick={onClick}
       className={`flex-1 py-3 px-4 rounded-xl text-sm font-bold uppercase tracking-wide transition-all duration-300 ${active
-          ? 'bg-primary text-white shadow-lg shadow-primary/25 scale-[1.02]'
-          : 'bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-white'
+        ? 'bg-primary text-white shadow-lg shadow-primary/25 scale-[1.02]'
+        : 'bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-white'
         }`}
     >
       {label}

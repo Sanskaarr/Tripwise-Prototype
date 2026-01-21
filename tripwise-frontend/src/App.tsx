@@ -6,6 +6,7 @@ import ErrorBoundary from '@/components/ErrorBoundary';
 import NetworkStatusBanner from '@/components/NetworkStatusBanner';
 import ValidationErrors from '@/components/ValidationErrors';
 import SuccessToast from '@/components/SuccessToast';
+import WelcomeToast from '@/components/WelcomeToast';
 import { LiquidBackground } from '@/components/ui/LiquidBackground';
 import { useProfileStore } from '@/store/profileStore';
 import { useSessionRecovery } from '@/hooks/useSessionRecovery';
@@ -17,8 +18,10 @@ import PlanWelcomePage from '@/app/plan/page';
 import StepPage from '@/app/plan/step/[stepId]/page';
 import ConfirmationPage from '@/app/plan/confirmation/page';
 import Landing from '@/pages/Landing';
-import AuthPage from '@/pages/auth/AuthPage';
 import ChattingPage from '@/pages/ChattingPage';
+import DashboardPage from '@/pages/dashboard/DashboardPage';
+import AuthPage from '@/pages/auth/AuthPage';
+import WizardLayout from '@/features/wizard/WizardLayout';
 
 export default function App() {
   const { error, isLoading } = useProfileStore(useShallow(state => ({
@@ -54,12 +57,16 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<AuthPage />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/chat" element={<ChattingPage />} />
             <Route path="/plan" element={<PlanWelcomePage />} />
             <Route path="/plan/step/:stepId" element={<StepPage />} />
             <Route path="/plan/confirmation" element={<ConfirmationPage />} />
-            <Route path="/chat" element={<ChattingPage />} />
+            <Route path="/wizard" element={<WizardLayout />} />
           </Routes>
         </main>
+
+        <WelcomeToast />
 
         <SuccessToast
           show={isLoading}

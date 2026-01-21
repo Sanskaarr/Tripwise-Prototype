@@ -22,6 +22,7 @@ export default function ConfirmationPage() {
       const dataToSubmit = {
         basicInfo: profileData.basicInfo,
         dates: profileData.dates,
+        // ... (other fields remain same, relying on spread in original or explicit)
         destination: profileData.destination,
         budget: profileData.budget,
         accommodation: profileData.accommodation,
@@ -35,19 +36,37 @@ export default function ConfirmationPage() {
       };
 
       console.log('Submitting profile data:', dataToSubmit);
-      
-      // Submit the profile with all data
+
+      // 1. Submit Profile
       const response = await ProfileApi.submitProfile(profileId, dataToSubmit);
-      
+
       if (response.success) {
-        setIsSubmitted(true);
-        // Reset the store after successful submission
+        // Reset steps logic
         resetProfile();
-        
-        // Navigate to home page after a delay
-        setTimeout(() => {
+
+        // 2. Initialize Wizard Session (The "Magic" Handoff)
+        try {
+          const { InteractiveApi } = await import('@/lib/api/interactiveApi');
+          const { useWizardStore } = await import('@/store/wizardStore');
+
+          const sessionRes = await InteractiveApi.initSession(profileId);
+          if (sessionRes.success && sessionRes.data) {
+            // Initialize Store
+            useWizardStore.getState().setSessionId(sessionRes.data.id);
+            useWizardStore.getState().setOverviewData(sessionRes.data.destinationOverview);
+            useWizardStore.getState().setStep('OVERVIEW');
+
+            // Navigate to Dashboard
+            navigate('/dashboard');
+          } else {
+            console.error("Failed to init wizard session");
+            navigate('/'); // Fallback
+          }
+        } catch (e) {
+          console.error("Wizard init error", e);
           navigate('/');
-        }, 2000);
+        }
+
       } else {
         throw new Error(response.error || 'Failed to submit profile');
       }
@@ -70,25 +89,25 @@ export default function ConfirmationPage() {
         transition={{ duration: 0.6 }}
         className="max-w-2xl w-full"
       >
-        <div className="glass-card-material p-8 md:p-12">
+        <div className="glass-card-material p-5 sm:p-8 md:p-12">
           {/* Header */}
-          <div className="text-center mb-8">
+          <div className="text-center mb-6 sm:mb-8">
             <motion.div
               initial={{ scale: 0.8 }}
               animate={{ scale: 1 }}
               transition={{ duration: 0.4 }}
               className="inline-flex items-center justify-center mb-4"
             >
-              <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-blue-600 rounded-full flex items-center justify-center">
-                <CheckCircle className="w-8 h-8 text-white" />
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-green-500 to-blue-600 rounded-full flex items-center justify-center">
+                <CheckCircle className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
               </div>
             </motion.div>
-            
-            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-4">
+
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-foreground mb-3 sm:mb-4">
               Ready to Submit!
             </h1>
-            
-            <p className="text-lg text-muted-foreground max-w-md mx-auto">
+
+            <p className="text-sm sm:text-lg text-muted-foreground max-w-md mx-auto leading-relaxed">
               Review your travel preferences and submit your profile to receive personalized recommendations.
             </p>
           </div>
@@ -168,7 +187,7 @@ export default function ConfirmationPage() {
                 <p className="text-muted-foreground mb-4">
                   Your travel profile has been submitted successfully. We'll send you personalized recommendations soon.
                 </p>
-                
+
                 <div className="flex gap-4">
                   <button
                     onClick={handleReturnToPlanning}
@@ -177,7 +196,7 @@ export default function ConfirmationPage() {
                     <Home className="w-4 h-4" />
                     <span>Back to Planning</span>
                   </button>
-                  
+
                   <button
                     onClick={() => navigate('/')}
                     className="glass-button-primary flex items-center gap-2 px-4 py-2 rounded-lg text-foreground"

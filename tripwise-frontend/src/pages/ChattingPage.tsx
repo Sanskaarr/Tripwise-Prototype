@@ -1,148 +1,215 @@
-import { useEffect } from "react";
-import { useLocation } from "react-router-dom";
-import { motion } from "framer-motion";
-import { LiquidBackground } from "@/components/ui/LiquidBackground";
+import React, { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import { motion, AnimatePresence } from "framer-motion";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { useProfileStore } from "@/store/profileStore";
+import { useWizardStore } from "@/store/wizardStore";
+import { InteractiveApi } from "@/lib/api/interactiveApi";
 import { useShallow } from 'zustand/react/shallow';
+import { ArrowRight, Save, Play, Sparkles } from "lucide-react";
+
+// Typing Effect Component
+const TypewriterText = ({ text, onComplete }: { text: string; onComplete?: () => void }) => {
+    const [displayedText, setDisplayedText] = useState("");
+
+    useEffect(() => {
+        let i = 0;
+        const speed = 10;
+        const interval = setInterval(() => {
+            if (i < text.length) {
+                setDisplayedText((prev) => prev + text.charAt(i));
+                i++;
+            } else {
+                clearInterval(interval);
+                onComplete?.();
+            }
+        }, speed);
+
+        return () => clearInterval(interval);
+    }, [text, onComplete]);
+
+    return <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-line">{displayedText}</p>;
+};
 
 const ChattingPage = () => {
+    const navigate = useNavigate();
     const location = useLocation();
-    const { basicInfo, isNewUser } = useProfileStore(useShallow(state => ({
-        basicInfo: state.basicInfo,
-        isNewUser: state.isNewUser
-    })));
-    const isReturning = location.state?.isReturning || !isNewUser;
 
-    const userName = basicInfo.fullName || "Traveler";
-    const welcomeMessage = isReturning
-        ? `Welcome back, ${userName}!`
-        : `Welcome to TripWise, ${userName}!`;
+    // Store access
+    const { basicInfo } = useProfileStore(useShallow(state => ({ basicInfo: state.basicInfo })));
+    const { sessionId, overviewData, setHotelOptions, setStep, setLoading, isLoading: loading } = useWizardStore();
+
+    const [showActions, setShowActions] = useState(false);
+
+    // Initial parsing of overview data
+    const parsedOverview = React.useMemo(() => {
+        if (!overviewData) return null;
+        return typeof overviewData === 'string' ? JSON.parse(overviewData) : overviewData;
+    }, [overviewData]);
+
+    const handleContinuePlanning = async () => {
+        if (!sessionId) return;
+        setLoading(true);
+        try {
+            // Fetch next step (Hotels)
+            const response = await InteractiveApi.getHotelSuggestions(sessionId);
+
+            if (response.success) {
+                let options = response.data?.options;
+
+                // Fallback: If data is a string (backend sent raw JSON string not parsed by client)
+                if (!options && typeof response.data === 'string') {
+                    try {
+                        const parsed = JSON.parse(response.data as string);
+                        options = parsed.options;
+                    } catch (e) {
+                        console.error("Failed to parse hotel options JSON", e);
+                    }
+                }
+
+                if (options && options.length > 0) {
+                    setHotelOptions(options);
+                    setStep('HOTEL');
+                    navigate('/wizard');
+                } else {
+                    console.error("No hotel options received", response);
+                }
+            }
+        } catch (e) {
+            console.error("Failed to fetch hotels", e);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleSaveForLater = () => {
+        // Just navigate home for now or show a toast
+        navigate('/');
+    };
+
+    // If no session/overview, fallback to default view (or redirect)
+    // For now, let's assume if there's no data, we show the "Welcome" state
+    const hasActiveSession = !!parsedOverview;
+    const userName = basicInfo.fullName?.split(' ')[0] || "Traveler";
 
     return (
         <>
-            <LiquidBackground />
             <SiteHeader />
+            <main className="relative z-10 container mx-auto px-4 pt-24 pb-12 max-w-4xl min-h-screen flex flex-col">
 
-            <div className="relative min-h-screen px-4 py-20">
-                {/* Floating glass orbs */}
-                <motion.div
-                    className="absolute top-1/4 left-1/4 w-96 h-96 rounded-full liquid-glass opacity-10 blur-3xl"
-                    animate={{
-                        y: [-30, 30, -30],
-                        scale: [1, 1.15, 1],
-                    }}
-                    transition={{
-                        duration: 12,
-                        repeat: Infinity,
-                        ease: "easeInOut",
-                    }}
-                />
+                {/* Chat Interface */}
+                <div className="flex-1 flex flex-col gap-6 pb-24">
 
-                <div className="site-container relative z-10">
+                    {/* Bot Greeting */}
                     <motion.div
-                        className="mx-auto max-w-5xl"
-                        initial={{ opacity: 0, y: 40 }}
+                        initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.8 }}
+                        className="flex items-start gap-4"
                     >
-                        {/* Welcome Header */}
-                        <div className="ios-glass relative overflow-hidden rounded-[2rem] p-12 md:p-16 shadow-2xl mb-8">
-                            <div className="absolute inset-0 rounded-[2rem] bg-gradient-to-r from-transparent via-white/10 to-transparent shimmer opacity-40" />
-
-                            <div className="relative text-center space-y-6">
-                                <motion.h1
-                                    className="font-display text-4xl md:text-5xl lg:text-6xl font-light tracking-tighter leading-tight"
-                                    initial={{ opacity: 0, scale: 0.95 }}
-                                    animate={{ opacity: 1, scale: 1 }}
-                                    transition={{ delay: 0.2, duration: 0.8 }}
-                                >
-                                    {welcomeMessage}
-                                </motion.h1>
-
-                                <motion.p
-                                    className="mx-auto max-w-2xl text-lg text-muted-foreground/80 leading-relaxed font-light"
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    transition={{ delay: 0.4, duration: 0.6 }}
-                                >
-                                    {isReturning
-                                        ? "Continue crafting your perfect journey"
-                                        : "We're excited to help you plan your perfect trip"}
-                                </motion.p>
+                        <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-primary to-purple-500 flex items-center justify-center shrink-0 shadow-lg shadow-primary/20">
+                            <Sparkles className="w-5 h-5 text-white" />
+                        </div>
+                        <div className="flex flex-col gap-2 max-w-[85%]">
+                            <div className="glass-card-subtle px-6 py-4 rounded-2xl rounded-tl-none border-white/10 bg-black/20 backdrop-blur-md">
+                                <p className="text-sm font-semibold mb-1 text-primary">TripWise AI</p>
+                                <p className="text-foreground/90 leading-relaxed">
+                                    Welcome back, {userName}! I've analyzed your preferences for
+                                    <span className="font-bold text-primary mx-1">{parsedOverview?.destination || (basicInfo.fullName?.split(' ')[0]) || 'your trip'}</span>.
+                                </p>
                             </div>
                         </div>
+                    </motion.div>
 
-                        {/* Chatbot Placeholder */}
+                    {/* Overview Message (The "Typing" Part) */}
+                    {hasActiveSession && (
                         <motion.div
-                            className="ios-glass relative overflow-hidden rounded-[2rem] p-12 md:p-16 shadow-2xl"
-                            initial={{ opacity: 0, y: 20 }}
+                            initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.6, duration: 0.8 }}
+                            transition={{ delay: 1 }}
+                            className="flex items-start gap-4"
                         >
-                            <div className="relative text-center space-y-8">
-                                <div className="mx-auto w-24 h-24 rounded-full bg-gradient-to-br from-blue-400/20 to-purple-400/20 flex items-center justify-center">
-                                    <svg
-                                        className="w-12 h-12 text-primary"
-                                        fill="none"
-                                        viewBox="0 0 24 24"
-                                        stroke="currentColor"
-                                    >
-                                        <path
-                                            strokeLinecap="round"
-                                            strokeLinejoin="round"
-                                            strokeWidth={1.5}
-                                            d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z"
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-primary to-purple-500 flex items-center justify-center shrink-0 shadow-lg opacity-0">
+                                {/* Invisible placeholder for alignment */}
+                            </div>
+                            <div className="flex flex-col gap-2 max-w-[85%]">
+                                <div className="glass-card-subtle px-6 py-4 rounded-2xl rounded-tl-none border-white/10 bg-black/20 backdrop-blur-md">
+                                    <div className="mb-4">
+                                        <TypewriterText
+                                            text={parsedOverview.overview}
+                                            onComplete={() => setShowActions(true)}
                                         />
-                                    </svg>
-                                </div>
-
-                                <div className="space-y-4">
-                                    <h2 className="font-display text-2xl md:text-3xl font-light tracking-tight">
-                                        Your AI Travel Assistant
-                                    </h2>
-                                    <p className="text-muted-foreground/70 max-w-xl mx-auto leading-relaxed">
-                                        This is your central hub where you can chat with your AI travel assistant,
-                                        view your itinerary, manage bookings, and get personalized recommendations.
-                                    </p>
-                                    <p className="text-sm text-muted-foreground/50 italic">
-                                        Chatbot integration coming soon...
-                                    </p>
-                                </div>
-
-                                {/* Placeholder chat interface */}
-                                <div className="mt-8 space-y-4 max-w-2xl mx-auto">
-                                    <div className="flex items-start gap-3">
-                                        <div className="w-8 h-8 rounded-full bg-primary/20 flex-shrink-0" />
-                                        <div className="ios-glass px-4 py-3 rounded-2xl rounded-tl-sm">
-                                            <p className="text-sm text-muted-foreground/90">
-                                                Hi! I'm your AI travel assistant. How can I help you plan your trip today?
-                                            </p>
-                                        </div>
                                     </div>
 
-                                    <div className="ios-glass rounded-2xl p-4 flex items-center gap-3">
-                                        <input
-                                            type="text"
-                                            placeholder="Type your message..."
-                                            className="flex-1 bg-transparent border-none outline-none text-sm placeholder:text-muted-foreground/40"
-                                            disabled
-                                        />
-                                        <button
-                                            className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center opacity-50 cursor-not-allowed"
-                                            disabled
-                                        >
-                                            <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-                                                <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
-                                            </svg>
-                                        </button>
+                                    {/* Mini Stats Grid inside Chat */}
+                                    <div className="grid grid-cols-2 gap-3 mt-4 pt-4 border-t border-white/10">
+                                        <div>
+                                            <p className="text-xs text-muted-foreground uppercase tracking-wider">Weather</p>
+                                            <p className="text-sm font-medium">{parsedOverview.weatherForecast}</p>
+                                        </div>
+                                        <div>
+                                            <p className="text-xs text-muted-foreground uppercase tracking-wider">Est. Cost</p>
+                                            <p className="text-sm font-medium">{parsedOverview.estimatedCost}</p>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
                         </motion.div>
-                    </motion.div>
+                    )}
+
+                    {/* User Actions */}
+                    <AnimatePresence>
+                        {showActions && (
+                            <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="flex justify-end gap-3 mt-4"
+                            >
+                                <button
+                                    onClick={handleSaveForLater}
+                                    className="px-6 py-3 rounded-xl border border-white/10 hover:bg-white/5 transition-colors text-sm font-medium flex items-center gap-2 text-muted-foreground"
+                                >
+                                    <Save className="w-4 h-4" />
+                                    Save for Later
+                                </button>
+
+                                <button
+                                    onClick={handleContinuePlanning}
+                                    disabled={loading}
+                                    className="glass-button-primary px-6 py-3 rounded-xl flex items-center gap-2 text-sm font-medium hover:scale-105 transition-transform"
+                                >
+                                    {loading ? (
+                                        <>Finding Hotels...</>
+                                    ) : (
+                                        <>Continue Planning <ArrowRight className="w-4 h-4" /></>
+                                    )}
+                                </button>
+                            </motion.div>
+                        )}
+                    </AnimatePresence>
+
                 </div>
-            </div>
+
+                {/* Input Area (Visual Only) */}
+                <div className="fixed bottom-4 md:bottom-8 left-0 right-0 px-4">
+                    <div className="max-w-4xl mx-auto">
+                        <div className="glass-card px-4 py-3 rounded-full flex items-center gap-3 border border-white/10 bg-black/40 backdrop-blur-xl">
+                            <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-muted-foreground">
+                                <Sparkles className="w-4 h-4" />
+                            </div>
+                            <input
+                                type="text"
+                                placeholder="Reply to TripWise AI..."
+                                className="flex-1 bg-transparent border-none outline-none text-sm placeholder:text-muted-foreground/50"
+                                disabled
+                            />
+                            <button className="w-10 h-10 rounded-full bg-primary/20 text-primary flex items-center justify-center hover:bg-primary/30 transition-colors">
+                                <ArrowRight className="w-4 h-4" />
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </main>
         </>
     );
 };

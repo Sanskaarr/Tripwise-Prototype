@@ -58,8 +58,8 @@ export default function AccommodationStep() {
     <button
       onClick={onClick}
       className={`px-4 py-2 rounded-full border text-xs font-bold uppercase tracking-wider transition-all duration-200 ${active
-          ? 'border-primary bg-primary/10 text-primary shadow-sm'
-          : 'border-white/10 bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-foreground'
+        ? 'border-primary bg-primary/10 text-primary shadow-sm'
+        : 'border-white/10 bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-foreground'
         }`}
     >
       {children}

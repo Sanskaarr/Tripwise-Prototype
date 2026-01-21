@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
+import heroImageMobile from "@/assets/hero-plane-sunset-mobile.png";
 import heroImage from "@/assets/hero-plane-sunset.jpg";
 
 export const HeroSection = () => {
@@ -33,11 +34,19 @@ export const HeroSection = () => {
             className="relative flex min-h-screen items-center justify-center overflow-hidden"
         >
             {/* Background Image with Parallax */}
-            <div className="absolute inset-0 z-0">
+            <div className="absolute inset-0 z-0 w-full h-full">
+                {/* Mobile Image - Fixed, no parallax to prevent jitters, full cover */}
+                <img
+                    src={heroImageMobile}
+                    alt="Sunset journey background"
+                    className="block md:hidden absolute inset-0 w-full h-full object-cover"
+                />
+
+                {/* Desktop Image - With Parallax */}
                 <img
                     src={heroImage}
                     alt="Sunset journey background"
-                    className="h-full w-full object-cover transition-transform duration-700 ease-out will-change-transform"
+                    className="hidden md:block absolute inset-0 w-full h-full object-cover transition-transform duration-700 ease-out will-change-transform"
                     style={{ transform: `scale(1.1) translateY(${parallaxOffset}px)` }}
                 />
 
@@ -55,17 +64,17 @@ export const HeroSection = () => {
                         <div className="relative">
                             {/* Glowing text effect */}
                             <div className="absolute inset-0 blur-2xl opacity-40">
-                                <h1 className="font-display text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-white leading-[0.9]">
+                                <h1 className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-white leading-[0.9]">
                                     Discover the world
                                 </h1>
                             </div>
 
-                            <h1 className="relative font-display text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-white leading-[0.9]">
+                            <h1 className="relative font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold tracking-tight text-white leading-[0.9]">
                                 Discover the
-                                <span className="mt-6 block font-handwriting text-6xl md:text-7xl lg:text-8xl italic text-white/95 lowercase">
+                                <span className="mt-4 sm:mt-6 block font-handwriting text-5xl sm:text-6xl md:text-7xl lg:text-8xl italic text-white/95 lowercase">
                                     world
                                 </span>
-                                <span className="mt-4 block text-base md:text-xl font-light tracking-[0.2em] uppercase opacity-90">with TripWise</span>
+                                <span className="mt-4 block text-xs sm:text-base md:text-xl font-light tracking-[0.2em] uppercase opacity-90">with TripWise</span>
                             </h1>
                         </div>
                     </div>

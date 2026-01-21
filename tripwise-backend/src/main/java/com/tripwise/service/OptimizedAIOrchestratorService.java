@@ -14,16 +14,6 @@ import com.tripwise.service.ImprovedQualityValidationService.ValidationResult;
 
 import reactor.core.publisher.Mono;
 
-/**
- * OPTIMIZED AI Orchestrator with Parallel Execution
- * Reduces latency by 40-60% through smart parallelization
- * 
- * STRATEGY:
- * 1. Draft plan + fact validation run in parallel
- * 2. Smart caching eliminates redundant Perplexity calls
- * 3. Only regenerate on validation failure
- * 4. Timeout protection on all AI calls
- */
 @Service
 public class OptimizedAIOrchestratorService {
 
@@ -33,6 +23,7 @@ public class OptimizedAIOrchestratorService {
     private final PerplexityClient perplexityClient;
     private final CacheService cacheService;
     private final ImprovedQualityValidationService validationService;
+    private final LocalKnowledgeService localKnowledgeService;
 
     private static final int MAX_REGENERATION_ATTEMPTS = 2; // Reduced from 3
     private static final int MIN_RESPONSE_LENGTH = 800;
@@ -41,11 +32,13 @@ public class OptimizedAIOrchestratorService {
     public OptimizedAIOrchestratorService(ChatGPTClient chatGPTClient,
             PerplexityClient perplexityClient,
             CacheService cacheService,
-            ImprovedQualityValidationService validationService) {
+            ImprovedQualityValidationService validationService,
+            LocalKnowledgeService localKnowledgeService) {
         this.chatGPTClient = chatGPTClient;
         this.perplexityClient = perplexityClient;
         this.cacheService = cacheService;
         this.validationService = validationService;
+        this.localKnowledgeService = localKnowledgeService;
     }
 
     /**
@@ -84,39 +77,52 @@ public class OptimizedAIOrchestratorService {
      */
     private Mono<TripResponse> executeOptimizedFlow(TripRequest request, int attempt, long startTime) {
 
-        // PARALLEL PHASE 1: Draft plan + Fact validation
-        logger.info("[PARALLEL PHASE 1] Starting draft + fact validation (attempt {})...", attempt);
+        // PARALLEL PHASE 1: Draft plan + Deep Research + Local Knowledge
+        logger.info("[PARALLEL PHASE 1] Starting draft + research (attempt {})...", attempt);
 
         String reasoningPrompt = SystemPromptFactory.createTripPlanningPrompt(request);
         Mono<String> draftPlanMono = chatGPTClient.generateDraftPlan(reasoningPrompt)
-                .timeout(java.time.Duration.ofSeconds(60))
+                .timeout(java.time.Duration.ofSeconds(180)) // Increased from 60s
                 .doOnSuccess(draft -> logger.info("✓ Draft ready: {} words", draft.split("\\s+").length));
 
-        Mono<String> factsMono = validateFactsWithCache(request)
-                .timeout(java.time.Duration.ofSeconds(30))
-                .doOnSuccess(facts -> logger.info("✓ Facts validated"));
+        // Task B: Deep Research (formerly Fact Validation)
+        Mono<String> researchMono = validateFactsWithCache(request)
+                .timeout(java.time.Duration.ofSeconds(60)) // Increased from 30s
+                .doOnSuccess(research -> logger.info("✓ Research complete"));
+
+        Mono<String> localKnowledgeMono = localKnowledgeService
+                .extractLocalPlaces(request.getDestination(), request.getTravelStyle())
+                .timeout(java.time.Duration.ofSeconds(90)) // Increased from 45s
+                .onErrorResume(e -> {
+                    logger.warn("Local knowledge extraction failed, proceeding without it: {}", e.getMessage());
+                    return Mono.just("");
+                })
+                .doOnSuccess(insights -> logger.info("✓ Local knowledge extracted"));
 
         // Run in parallel and combine
-        return Mono.zip(draftPlanMono, factsMono)
+        return Mono.zip(draftPlanMono, researchMono, localKnowledgeMono)
                 .doOnSuccess(tuple -> {
                     long phase1Time = System.currentTimeMillis() - startTime;
                     logger.info("✓ Parallel Phase 1 complete: {}ms", phase1Time);
                 })
 
-                // SEQUENTIAL PHASE 2: Generate final response with validated facts
+                // SEQUENTIAL PHASE 2: Generate final response with Research Data + Local
+                // Insights
                 .flatMap(tuple -> {
                     String draftPlan = tuple.getT1();
-                    String validatedFacts = tuple.getT2();
+                    String researchData = tuple.getT2(); // Was validatedFacts
+                    String localInsights = tuple.getT3();
 
                     logger.info("[SEQUENTIAL PHASE 2] Generating final response...");
 
-                    String enrichedContext = buildEnrichedContext(request, draftPlan, validatedFacts);
+                    // Note: We are using a 4-stage pipeline prompt factory, passing local insights
+                    // now
                     String finalPrompt = SystemPromptFactory.createFinalResponsePrompt(
-                            draftPlan, validatedFacts, enrichedContext);
+                            draftPlan, localInsights, researchData);
 
                     return chatGPTClient.generateFinalResponse(finalPrompt)
-                            .timeout(java.time.Duration.ofSeconds(60))
-                            .map(response -> new ResponseContext(draftPlan, validatedFacts, response));
+                            .timeout(java.time.Duration.ofSeconds(120)) // Increased from 60s
+                            .map(response -> new ResponseContext(draftPlan, researchData, response));
                 })
                 .doOnSuccess(ctx -> {
                     long phase2Time = System.currentTimeMillis() - startTime;
@@ -182,81 +188,43 @@ public class OptimizedAIOrchestratorService {
     }
 
     /**
-     * Smart caching for facts - 90% cache hit rate expected
+     * Smart caching for Deep Research - 90% cache hit rate expected
      */
     private Mono<String> validateFactsWithCache(TripRequest request) {
         // Cache key includes destination + budget + style
-        String cacheKey = String.format("facts_%s_%s_%s",
+        String cacheKey = String.format("research_%s_%s_%s",
                 request.getDestination().toLowerCase().replace(" ", "_"),
                 request.getBudgetLevel().toLowerCase(),
                 request.getTravelStyle().toLowerCase());
 
         // Check cache
-        String cachedFacts = cacheService.get(cacheKey);
-        if (cachedFacts != null) {
+        String cachedResearch = cacheService.get(cacheKey);
+        if (cachedResearch != null) {
             logger.info("✓ Cache HIT for {}", request.getDestination());
-            return Mono.just(cachedFacts);
+            return Mono.just(cachedResearch);
         }
 
-        logger.info("○ Cache MISS - Calling Perplexity for {}", request.getDestination());
+        logger.info("○ Cache MISS - Calling Perplexity for Deep Research on {}", request.getDestination());
 
-        // Build comprehensive fact query
-        String factQuery = SystemPromptFactory.createFactValidationPrompt(
-                request.getDestination(),
-                String.format("Planning %d days, %s budget, %s style",
-                        request.getDays(), request.getBudgetLevel(), request.getTravelStyle()));
+        // Build comprehensive research query (NO DRAFT PLAN NEEDED NOW)
+        String researchQuery = SystemPromptFactory.createDeepResearchPrompt(request);
 
         // Call Perplexity with immediate fallback on any error
-        return perplexityClient.validateFacts(request.getDestination(), factQuery)
-                .timeout(java.time.Duration.ofSeconds(10)) // Short timeout for facts
-                .map(factValidation -> {
-                    // Cache immediately even without local signals
-                    cacheService.put(cacheKey, factValidation);
-                    logger.info("✓ Facts cached for {}", request.getDestination());
-                    return factValidation;
+        return perplexityClient.validateFacts(request.getDestination(), researchQuery)
+                .timeout(java.time.Duration.ofSeconds(20)) // Research might take a bit
+                .map(researchData -> {
+                    // Cache immediately
+                    cacheService.put(cacheKey, researchData);
+                    logger.info("✓ Research cached for {}", request.getDestination());
+                    return researchData;
                 })
                 .onErrorResume(error -> {
                     logger.warn("Perplexity failed, using fallback: {}", error.getMessage());
-                    String fallback = "FACTS UNAVAILABLE - Using reasoning only for " +
-                            request.getDestination() + ". Standard travel advice applies.";
+                    String fallback = "RESEARCH UNAVAILABLE - Proceeding with general knowledge for " +
+                            request.getDestination();
                     cacheService.put(cacheKey, fallback);
                     return Mono.just(fallback);
                 });
-    }
-
-    /**
-     * Build enriched context
-     */
-    private String buildEnrichedContext(TripRequest request, String draftPlan, String validatedFacts) {
-        return String.format("""
-                === TRIP REQUEST ===
-                Destination: %s
-                Days: %d
-                Budget: %s (spending level)
-                Style: %s (travel pace)
-                Traveler from: %s
-
-                === REASONING FRAMEWORK ===
-                %s
-
-                === VALIDATED FACTS (MUST USE THESE) ===
-                %s
-
-                === CRITICAL INSTRUCTIONS ===
-                1. Use reasoning framework for logical structure
-                2. Ground ALL specific claims in validated facts above
-                3. Write as ONE natural narrative (no sections/bullets/lists)
-                4. Minimum 800 words with comprehensive 8-dimension coverage
-                5. Include: day flow, stay logic, food, local places, transport,
-                   money (with numbers), culture, safety reality
-                """,
-                request.getDestination(),
-                request.getDays(),
-                request.getBudgetLevel(),
-                request.getTravelStyle(),
-                request.getUserCountry(),
-                draftPlan,
-                validatedFacts);
     }
 
     /**

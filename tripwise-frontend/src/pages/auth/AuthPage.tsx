@@ -51,7 +51,7 @@ const AuthPage = () => {
                 if (exists && profile) {
                     // Returning user - load profile and go to chat
                     authenticateUser(identifier, profile);
-                    navigate("/chat", { state: { isReturning: true } });
+                    navigate("/dashboard", { state: { isReturning: true } });
                 } else {
                     // New user - go to onboarding
                     authenticateUser(identifier);
@@ -109,7 +109,7 @@ const AuthPage = () => {
                     transition={{ duration: 0.8 }}
                 >
                     {/* Main glass panel */}
-                    <div className="ios-glass relative overflow-hidden rounded-[2.5rem] p-8 md:p-10 shadow-2xl">
+                    <div className="ios-glass relative overflow-hidden rounded-[2.5rem] p-6 sm:p-8 md:p-10 shadow-2xl">
                         {/* Shimmer effect */}
                         <div className="absolute inset-0 rounded-[2.5rem] bg-gradient-to-r from-transparent via-white/10 to-transparent shimmer opacity-40" />
 

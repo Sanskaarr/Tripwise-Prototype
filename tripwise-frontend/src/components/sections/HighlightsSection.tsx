@@ -56,7 +56,7 @@ export const HighlightsSection = () => {
             id="highlights"
             ref={ref}
             className={cn(
-                "relative py-44 md:py-72 transition-all duration-1000 ease-out motion-safe:translate-y-12 motion-safe:opacity-0",
+                "relative py-44 md:py-72 transition-all duration-1000 ease-out motion-safe:translate-y-12 motion-safe:opacity-0 overflow-hidden",
                 visible && "motion-safe:translate-y-0 motion-safe:opacity-100"
             )}
         >
@@ -95,7 +95,7 @@ export const HighlightsSection = () => {
                     transition={{ duration: 0.8 }}
                 >
                     <motion.p
-                        className="font-handwriting text-4xl text-primary/50 italic relative"
+                        className="font-handwriting text-2xl sm:text-4xl text-primary/50 italic relative"
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={visible ? { opacity: 1, scale: 1 } : {}}
                         transition={{ duration: 0.8, delay: 0.2 }}
@@ -110,7 +110,7 @@ export const HighlightsSection = () => {
                     </motion.p>
 
                     <motion.h2
-                        className="font-display text-5xl font-light tracking-tighter md:text-7xl lg:text-[6.5rem] leading-[0.9]"
+                        className="font-display text-4xl sm:text-5xl font-light tracking-tighter md:text-7xl lg:text-[6.5rem] leading-[0.9]"
                         initial={{ opacity: 0, y: 20 }}
                         animate={visible ? { opacity: 1, y: 0 } : {}}
                         transition={{ duration: 0.8, delay: 0.3 }}

@@ -250,7 +250,22 @@ export const useProfileStore = create<ProfileState>()(
         const id = profileId || `profile_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
         if (data) {
           set({
+            ...initialDataState, // Defaults first
             ...data,
+            // Ensure nested objects are safety merged
+            basicInfo: data.basicInfo || initialDataState.basicInfo,
+            dates: data.dates || initialDataState.dates,
+            destination: data.destination || initialDataState.destination,
+            budget: data.budget || initialDataState.budget,
+            accommodation: data.accommodation || initialDataState.accommodation,
+            transport: data.transport || initialDataState.transport,
+            purpose: data.purpose || initialDataState.purpose,
+            interests: data.interests || initialDataState.interests,
+            food: data.food || initialDataState.food,
+            documents: data.documents || initialDataState.documents,
+            experience: data.experience || initialDataState.experience,
+            communication: data.communication || initialDataState.communication,
+
             profileId: id,
             isLoading: false,
             error: null
@@ -318,20 +333,44 @@ export const useProfileStore = create<ProfileState>()(
       // Auth actions
       authenticateUser: (identifier: string, profile?: TravelerProfile) => {
         if (profile) {
-          // Returning user - load their profile
+          // Returning user - load their profile and merge with defaults to avoid nulls
           set({
-            ...profile,
+            ...initialDataState, // Defaults first
+            ...profile, // Overwrite with backend data
+            // Ensure nested objects are safety merged
+            basicInfo: profile.basicInfo || initialDataState.basicInfo,
+            dates: profile.dates || initialDataState.dates,
+            destination: profile.destination || initialDataState.destination,
+            budget: profile.budget || initialDataState.budget,
+            accommodation: profile.accommodation || initialDataState.accommodation,
+            transport: profile.transport || initialDataState.transport,
+            purpose: profile.purpose || initialDataState.purpose,
+            interests: profile.interests || initialDataState.interests,
+            food: profile.food || initialDataState.food,
+            documents: profile.documents || initialDataState.documents,
+            experience: profile.experience || initialDataState.experience,
+            communication: profile.communication || initialDataState.communication,
+
             isAuthenticated: true,
             isNewUser: false,
             userIdentifier: identifier,
           });
         } else {
-          // New user - just set identifier
-          set({
+          // New user - determine type and pre-fill basic info
+          const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(identifier);
+
+          set((state) => ({
             isAuthenticated: true,
             isNewUser: true,
             userIdentifier: identifier,
-          });
+            // Keep existing state or reset? Usually keep current progress if authenticating mid-flow
+            // But if it's a fresh auth... lets verify logic behavior.
+            basicInfo: {
+              ...state.basicInfo,
+              email: isEmail ? identifier : state.basicInfo.email,
+              whatsappNumber: !isEmail ? identifier : state.basicInfo.whatsappNumber,
+            }
+          }));
         }
       },
 

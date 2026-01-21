@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils";
 
 const NAV_ITEMS = [
     { id: "home", label: "Home", sub: "The starting point" },
-    { id: "plan", label: "Start Journey", sub: "Craft your itinerary" },
+    { id: "auth", label: "Start Journey", sub: "Craft your itinerary" },
 ];
 
 export const SiteHeader = () => {
@@ -34,11 +34,11 @@ export const SiteHeader = () => {
     };
 
     return (
-        <header className="fixed inset-x-0 top-0 z-[100] flex justify-center p-6 transition-all duration-500">
+        <header className="fixed inset-x-0 top-0 z-[100] flex justify-center p-3 sm:p-6 transition-all duration-500">
             {/* Floating Header Bar */}
             <div
                 className={cn(
-                    "relative z-[110] flex w-full max-w-7xl items-center justify-between px-6 py-3 transition-all duration-500",
+                    "relative z-[110] flex w-full max-w-7xl items-center justify-between px-4 sm:px-6 py-3 transition-all duration-500",
                     scrolled ? "rounded-full" : "bg-transparent"
                 )}
             >
@@ -62,7 +62,7 @@ export const SiteHeader = () => {
                     onClick={() => setMenuOpen(true)}
                     className={cn(
                         "relative z-[120] flex items-center gap-3 rounded-full px-5 py-2 text-[10px] font-bold uppercase tracking-[0.3em] transition-all duration-500 text-white hover:bg-white/10 active:scale-95",
-                        scrolled ? "bg-white/5" : "bg-white/10 border border-white/10"
+                        scrolled ? "bg-white/5" : "bg-white/10"
                     )}
                 >
                     <span>Menu</span>

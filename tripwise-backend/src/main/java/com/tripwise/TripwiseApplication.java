@@ -6,6 +6,8 @@ import org.springframework.context.annotation.ComponentScan;
 
 @SpringBootApplication
 @ComponentScan(basePackages = "com.tripwise")
+@org.springframework.data.mongodb.repository.config.EnableReactiveMongoRepositories(basePackages = "com.tripwise.session")
+@org.springframework.data.mongodb.repository.config.EnableMongoRepositories(basePackages = "com.tripwise.repository")
 public class TripwiseApplication {
 
     public static void main(String[] args) {

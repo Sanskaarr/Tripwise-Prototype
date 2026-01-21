@@ -124,6 +124,24 @@
     -moz-osx-font-smoothing: grayscale;
   }
 
+  /* Force square corners and full width on the viewport */
+  html,
+  body,
+  #root {
+    border-radius: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100%;
+    min-height: 100%;
+    overflow-x: hidden; /* Prevent horizontal scrolling globally */
+  }
+
+  /* Reset any potential transform/filter acting on the body */
+  body {
+    transform: none !important;
+    filter: none !important;
+  }
+
   h1,
   h2,
   h3,
@@ -314,10 +332,10 @@
      ============================================ */
   .liquid-background {
     position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+    top: -50px;
+    left: -50px;
+    width: calc(100% + 100px);
+    height: calc(100% + 100px);
     z-index: -1;
     overflow: hidden;
     background: radial-gradient(circle at 50% 50%, #cec5be, #b8aea5);
@@ -408,25 +426,10 @@
         rgba(255, 255, 255, 0.06) 100%);
     border: none;
     box-shadow:
-      0 8px 32px rgba(0, 0, 0, 0.15),
-      0 1px 2px rgba(255, 255, 255, 0.25) inset,
-      0 -1px 2px rgba(0, 0, 0, 0.1) inset;
+      0 8px 32px rgba(0, 0, 0, 0.15);
   }
 
-  /* Specular highlight for iOS 26 glass */
-  .ios-glass::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 50%;
-    background: linear-gradient(180deg,
-        rgba(255, 255, 255, 0.15) 0%,
-        transparent 100%);
-    border-radius: inherit;
-    pointer-events: none;
-  }
+
 
   /* Liquid Glass - Ultra premium with mesh gradient */
   .liquid-glass {

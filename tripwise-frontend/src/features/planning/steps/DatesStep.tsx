@@ -138,8 +138,8 @@ export default function DatesStep() {
                   key={option.value.toString()}
                   onClick={() => updateTravelDates({ isFlexible: option.value })}
                   className={`flex-1 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 ${dates.isFlexible === option.value
-                      ? 'bg-primary text-white shadow-lg shadow-primary/20'
-                      : 'text-muted-foreground hover:text-white hover:bg-white/10'
+                    ? 'bg-primary text-white shadow-lg shadow-primary/20'
+                    : 'text-muted-foreground hover:text-white hover:bg-white/10'
                     }`}
                 >
                   {option.label}

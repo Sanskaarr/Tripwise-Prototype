@@ -11,8 +11,8 @@ const Landing = () => {
         <HighlightsSection />
       </main>
 
-      <footer className="liquid-glass relative border-t border-white/10 !bg-background/20 pb-12 pt-12">
-        <div className="site-container flex flex-col items-center justify-between gap-8 md:flex-row">
+      <footer className="liquid-glass relative border-t border-white/10 !bg-background/20 pb-8 pt-8 md:pb-12 md:pt-12">
+        <div className="site-container flex flex-col items-center justify-between gap-6 md:gap-8 md:flex-row">
 
           <div className="flex flex-col items-center gap-4 md:items-start">
             <span className="font-display text-xl font-medium">TripWise</span>

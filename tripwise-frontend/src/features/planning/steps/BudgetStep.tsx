@@ -135,8 +135,8 @@ export default function BudgetStep() {
                 key={option.value}
                 onClick={() => updateBudgetPreference({ includesFlights: option.value as any })}
                 className={`flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-300 ${budget.includesFlights === option.value
-                    ? 'bg-foreground text-background shadow-md'
-                    : 'text-muted-foreground hover:text-foreground hover:bg-white/5'
+                  ? 'bg-foreground text-background shadow-md'
+                  : 'text-muted-foreground hover:text-foreground hover:bg-white/5'
                   }`}
               >
                 {option.label}

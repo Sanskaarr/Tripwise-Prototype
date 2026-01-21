@@ -14,24 +14,23 @@ import org.springframework.web.bind.annotation.RestController;
 import com.tripwise.dto.TripRequest;
 import com.tripwise.dto.TripResponse;
 import com.tripwise.service.FastTripPlanningService;
-import com.tripwise.service.TripPlanningService;
+import com.tripwise.service.OptimizedAIOrchestratorService;
 
 import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/tripwise")
-@CrossOrigin(origins = "*")
 public class TripPlanController {
 
     private static final Logger logger = LoggerFactory.getLogger(TripPlanController.class);
 
-    private final TripPlanningService tripPlanningService;
+    private final OptimizedAIOrchestratorService optimizedAIOrchestratorService;
     private final FastTripPlanningService fastTripPlanningService;
 
     @Autowired
-    public TripPlanController(TripPlanningService tripPlanningService,
+    public TripPlanController(OptimizedAIOrchestratorService optimizedAIOrchestratorService,
             FastTripPlanningService fastTripPlanningService) {
-        this.tripPlanningService = tripPlanningService;
+        this.optimizedAIOrchestratorService = optimizedAIOrchestratorService;
         this.fastTripPlanningService = fastTripPlanningService;
     }
 
@@ -69,7 +68,10 @@ public class TripPlanController {
                 tripRequest.getTravelStyle());
 
         try {
-            TripResponse response = tripPlanningService.planTrip(tripRequest);
+            // CALL DRIVER DIRECTLY (No more middleman)
+            TripResponse response = optimizedAIOrchestratorService.orchestrateTripPlanning(tripRequest)
+                    .timeout(java.time.Duration.ofSeconds(300)) // Overall timeout increased for complex orchestration
+                    .block(); // Block for now, could be async in production
 
             if (response.isValid()) {
                 logger.info("Successfully generated trip plan for destination: {}", tripRequest.getDestination());

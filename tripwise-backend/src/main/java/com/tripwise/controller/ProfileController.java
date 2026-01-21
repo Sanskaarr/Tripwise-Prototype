@@ -12,7 +12,6 @@ import java.util.Map;
 @Slf4j
 @RestController
 @RequestMapping("/api/profiles")
-@CrossOrigin(origins = "*")
 public class ProfileController {
 
     private final ProfileService profileService;
@@ -42,7 +41,6 @@ public class ProfileController {
      * Check if user exists by phone or email
      */
     @PostMapping("/check")
-    @CrossOrigin(origins = "*")
     public ResponseEntity<?> checkUserExists(@RequestBody Map<String, String> request) {
         String identifier = request.get("identifier");
         log.info("Checking if user exists: {}", identifier);
@@ -331,5 +329,23 @@ public class ProfileController {
                 "updatedAt", LocalDateTime.now(),
                 "status", "saved",
                 "message", "Profile completed! Ready to generate trip plan."));
+    }
+
+    @PostMapping("/{profileId}/submit")
+    public ResponseEntity<?> submitProfile(@PathVariable String profileId, @RequestBody Map<String, Object> data) {
+        log.info("Submitting profile: {}", profileId);
+        TravelerProfile profile = profileService.getProfile(profileId);
+        if (profile == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Profile not found"));
+        }
+
+        // Mark as submitted
+        profile.setStatus("SUBMITTED");
+        profileService.updateProfile(profile);
+
+        return ResponseEntity.ok(Map.of(
+                "message", "Profile submitted successfully",
+                "submittedAt", LocalDateTime.now(),
+                "referenceNumber", java.util.UUID.randomUUID().toString()));
     }
 }

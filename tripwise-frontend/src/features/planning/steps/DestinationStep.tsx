@@ -153,8 +153,8 @@ export default function DestinationStep() {
                 key={option.value}
                 onClick={() => updateDestinationPreference({ preferenceType: option.value as any })}
                 className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all duration-200 ${destination.preferenceType === option.value
-                    ? 'border-primary bg-primary/10 text-primary font-medium shadow-sm'
-                    : 'border-white/10 bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-foreground'
+                  ? 'border-primary bg-primary/10 text-primary font-medium shadow-sm'
+                  : 'border-white/10 bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-foreground'
                   }`}
               >
                 <span className="text-xs">{option.label}</span>
@@ -176,8 +176,8 @@ export default function DestinationStep() {
                   key={option.value.toString()}
                   onClick={() => updateDestinationPreference({ isFirstVisit: option.value })}
                   className={`px-4 py-1.5 rounded-md text-xs font-bold uppercase tracking-wider transition-all ${destination.isFirstVisit === option.value
-                      ? 'bg-foreground text-background shadow-md'
-                      : 'text-muted-foreground hover:text-foreground'
+                    ? 'bg-foreground text-background shadow-md'
+                    : 'text-muted-foreground hover:text-foreground'
                     }`}
                 >
                   {option.label}
