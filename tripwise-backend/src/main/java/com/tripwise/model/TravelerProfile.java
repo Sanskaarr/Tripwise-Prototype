@@ -189,6 +189,19 @@ public class TravelerProfile {
         private String badExperiences;
     }
 
+    @Field("coTravelers")
+    private List<CoTraveler> coTravelers;
+
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class CoTraveler {
+        private String id;
+        private String name;
+        private String relation;
+    }
+
     @Data
     @Builder
     @NoArgsConstructor

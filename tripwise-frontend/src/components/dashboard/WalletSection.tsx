@@ -2,7 +2,13 @@ import { motion } from "framer-motion";
 import { CreditCard, Wallet, History, Plus, ArrowUpRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export const WalletSection = () => {
+interface WalletSectionProps {
+    balance: number;
+    currency: string;
+    onAddMoney: () => void;
+}
+
+export const WalletSection = ({ balance, currency, onAddMoney }: WalletSectionProps) => {
     return (
         <div className="space-y-6">
             {/* Main Wallet Card */}
@@ -22,7 +28,8 @@ export const WalletSection = () => {
                                 TripWise Pay
                             </p>
                             <h2 className="mt-2 text-4xl font-light tracking-tight text-foreground md:text-5xl">
-                                $2,450<span className="text-2xl text-muted-foreground/40">.00</span>
+                                {currency === 'INR' ? '₹' : currency} {balance.toLocaleString('en-IN')}
+                                <span className="text-2xl text-muted-foreground/40">.00</span>
                             </h2>
                         </div>
                         <div className="rounded-full border border-white/10 bg-white/5 p-3 backdrop-blur-xl">
@@ -31,7 +38,10 @@ export const WalletSection = () => {
                     </div>
 
                     <div className="mt-8 flex gap-3">
-                        <Button className="h-12 flex-1 rounded-2xl bg-white text-black hover:bg-white/90">
+                        <Button
+                            onClick={onAddMoney}
+                            className="h-12 flex-1 rounded-2xl bg-white text-black hover:bg-white/90"
+                        >
                             <Plus className="mr-2 h-4 w-4" /> Add Money
                         </Button>
                         <Button variant="outline" className="h-12 w-12 rounded-2xl border-white/10 bg-white/5 hover:bg-white/10">

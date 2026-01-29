@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
-import { X, Menu } from "lucide-react";
+import { X, Menu, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { useProfileStore } from "@/store/profileStore";
 
 const NAV_ITEMS = [
     { id: "home", label: "Home", sub: "The starting point" },
@@ -12,6 +13,13 @@ export const SiteHeader = () => {
     const navigate = useNavigate();
     const [scrolled, setScrolled] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
+    const { isAuthenticated, authenticateUser, logout } = useProfileStore();
+
+    const handleLogout = () => {
+        logout(); // Use dedicated logout action
+        setMenuOpen(false);
+        navigate("/"); // Redirect to Home as requested
+    };
 
     useEffect(() => {
         const handler = () => setScrolled(window.scrollY > 20);
@@ -43,8 +51,9 @@ export const SiteHeader = () => {
                 )}
             >
                 {/* Separate Glass Layer to prevent interference with content */}
+                {/* Separate Glass Layer to prevent interference with content */}
                 {scrolled && (
-                    <div className="ios-glass absolute inset-0 -z-10 rounded-full shadow-lg" />
+                    <div className="absolute inset-0 -z-10 rounded-full shadow-lg bg-white/10 backdrop-blur-[12px] border border-white/10" />
                 )}
 
                 <button
@@ -72,11 +81,11 @@ export const SiteHeader = () => {
 
             {/* Full Screen Menu Overlay */}
             <div
-                className={`fixed inset-0 z-[150] flex flex-col transition-all duration-400 ease-out ${menuOpen ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0 pointer-events-none"
+                className={`fixed inset-0 z-[150] flex flex-col transition-all duration-400 ease-out will-change-transform ${menuOpen ? "translate-y-0 opacity-100" : "-translate-y-full opacity-0 pointer-events-none"
                     }`}
             >
-                {/* Liquid Glass Background */}
-                <div className="liquid-glass absolute inset-0 !bg-background/40 backdrop-blur-[60px]" />
+                {/* Liquid Glass Background - Optimized Blur */}
+                <div className="liquid-glass absolute inset-0 !bg-background/40 backdrop-blur-[20px]" />
 
                 <div className="relative flex h-full flex-col px-8 pb-12 pt-8 md:px-24">
 
@@ -94,13 +103,38 @@ export const SiteHeader = () => {
                     </div>
 
                     <nav className="flex flex-1 flex-col justify-center space-y-6 md:space-y-10">
+                        {/* Dashboard Link - Only if authenticated */}
+                        {isAuthenticated && (
+                            <button
+                                onClick={() => handleNav("dashboard")}
+                                className="group flex flex-col items-start text-left transition-all hover:translate-x-6"
+                                style={{
+                                    transitionDelay: `0ms`,
+                                    opacity: menuOpen ? 1 : 0,
+                                    transform: menuOpen ? 'translateX(0)' : 'translateX(-40px)'
+                                }}
+                            >
+                                <div className="flex items-baseline gap-4">
+                                    <span className="font-sans text-[10px] font-bold uppercase tracking-[0.4em] text-muted-foreground transition-colors group-hover:text-primary">
+                                        00
+                                    </span>
+                                    <span className="font-display text-5xl font-light tracking-tighter transition-all group-hover:tracking-normal md:text-8xl">
+                                        Dashboard
+                                    </span>
+                                </div>
+                                <span className="ml-14 font-handwriting text-lg italic text-muted-foreground transition-colors group-hover:text-primary md:text-2xl">
+                                    Your travel hub
+                                </span>
+                            </button>
+                        )}
+
                         {NAV_ITEMS.map((item, i) => (
                             <button
                                 key={item.id}
                                 onClick={() => handleNav(item.id)}
                                 className="group flex flex-col items-start text-left transition-all hover:translate-x-6"
                                 style={{
-                                    transitionDelay: `${i * 100}ms`,
+                                    transitionDelay: `${(i + 1) * 100}ms`,
                                     opacity: menuOpen ? 1 : 0,
                                     transform: menuOpen ? 'translateX(0)' : 'translateX(-40px)'
                                 }}
@@ -120,8 +154,25 @@ export const SiteHeader = () => {
                         ))}
                     </nav>
 
-                    <div className="flex flex-wrap items-center justify-between gap-6 border-t border-foreground/5 pt-8 text-[10px] font-bold uppercase tracking-[0.4em] text-muted-foreground">
-                        <span className="font-medium">© 2024 TripWise AI · The Art of Travel</span>
+                    <div className="flex flex-col space-y-8 border-t border-foreground/5 pt-8">
+                        {/* Logout Option - Only visible if authenticated */}
+                        {isAuthenticated && (
+                            <button
+                                onClick={handleLogout}
+                                className="group flex items-center gap-4 text-left transition-all hover:translate-x-2"
+                            >
+                                <div className="flex h-10 w-10 items-center justify-center rounded-full border border-red-500/20 bg-red-500/10 text-red-500 transition-colors group-hover:bg-red-500 group-hover:text-white">
+                                    <LogOut className="h-4 w-4" />
+                                </div>
+                                <span className="font-display text-lg font-medium tracking-tight text-muted-foreground transition-colors group-hover:text-red-500">
+                                    Sign Out
+                                </span>
+                            </button>
+                        )}
+
+                        <div className="flex flex-wrap items-center justify-between gap-6 text-[10px] font-bold uppercase tracking-[0.4em] text-muted-foreground">
+                            <span className="font-medium">© 2024 TripWise AI · The Art of Travel</span>
+                        </div>
                     </div>
                 </div>
             </div>

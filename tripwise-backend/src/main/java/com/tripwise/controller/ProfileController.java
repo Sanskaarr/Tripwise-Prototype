@@ -7,6 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -347,5 +348,29 @@ public class ProfileController {
                 "message", "Profile submitted successfully",
                 "submittedAt", LocalDateTime.now(),
                 "referenceNumber", java.util.UUID.randomUUID().toString()));
+    }
+
+    @PostMapping("/{profileId}/co-travelers")
+    public ResponseEntity<?> updateCoTravelers(@PathVariable String profileId,
+            @RequestBody List<TravelerProfile.CoTraveler> coTravelers) {
+        log.info("Updating co-travelers for: {}", profileId);
+        TravelerProfile profile = profileService.getProfile(profileId);
+        if (profile == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Profile not found"));
+        }
+
+        profile.setCoTravelers(coTravelers);
+        profileService.updateProfile(profile);
+        return ResponseEntity.ok(Map.of("profileId", profileId, "updatedAt", LocalDateTime.now(), "status", "saved"));
+    }
+
+    @GetMapping("/{profileId}/co-travelers")
+    public ResponseEntity<?> getCoTravelers(@PathVariable String profileId) {
+        TravelerProfile profile = profileService.getProfile(profileId);
+        if (profile == null) {
+            return ResponseEntity.badRequest().body(Map.of("error", "Profile not found"));
+        }
+        return ResponseEntity
+                .ok(profile.getCoTravelers() != null ? profile.getCoTravelers() : java.util.Collections.emptyList());
     }
 }

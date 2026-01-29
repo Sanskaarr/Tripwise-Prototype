@@ -133,7 +133,8 @@
     padding: 0 !important;
     width: 100%;
     min-height: 100%;
-    overflow-x: hidden; /* Prevent horizontal scrolling globally */
+    overflow-x: hidden;
+    /* Prevent horizontal scrolling globally */
   }
 
   /* Reset any potential transform/filter acting on the body */

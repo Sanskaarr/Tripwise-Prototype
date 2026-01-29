@@ -7,6 +7,7 @@ import NetworkStatusBanner from '@/components/NetworkStatusBanner';
 import ValidationErrors from '@/components/ValidationErrors';
 import SuccessToast from '@/components/SuccessToast';
 import WelcomeToast from '@/components/WelcomeToast';
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { LiquidBackground } from '@/components/ui/LiquidBackground';
 import { useProfileStore } from '@/store/profileStore';
 import { useSessionRecovery } from '@/hooks/useSessionRecovery';
@@ -57,12 +58,16 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<AuthPage />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/chat" element={<ChattingPage />} />
-            <Route path="/plan" element={<PlanWelcomePage />} />
-            <Route path="/plan/step/:stepId" element={<StepPage />} />
-            <Route path="/plan/confirmation" element={<ConfirmationPage />} />
-            <Route path="/wizard" element={<WizardLayout />} />
+
+            {/* Protected Routes */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/chat" element={<ChattingPage />} />
+              <Route path="/plan" element={<PlanWelcomePage />} />
+              <Route path="/plan/step/:stepId" element={<StepPage />} />
+              <Route path="/plan/confirmation" element={<ConfirmationPage />} />
+              <Route path="/wizard" element={<WizardLayout />} />
+            </Route>
           </Routes>
         </main>
 

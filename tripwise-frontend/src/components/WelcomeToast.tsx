@@ -9,6 +9,10 @@ import { useProfileStore } from '@/store/profileStore';
 export default function WelcomeToast() {
     const location = useLocation();
     const navigate = useNavigate();
+
+    // Don't show on chat page
+    // Moved check to before return to satisfy Rules of Hooks (must not return before hooks)
+
     const [isVisible, setIsVisible] = useState(false);
     const [message, setMessage] = useState('');
     const [icon, setIcon] = useState<React.ReactNode>(null);
@@ -52,6 +56,8 @@ export default function WelcomeToast() {
     const handleDismiss = () => {
         setIsVisible(false);
     };
+
+    if (location.pathname === '/chat') return null;
 
     return (
         <AnimatePresence>

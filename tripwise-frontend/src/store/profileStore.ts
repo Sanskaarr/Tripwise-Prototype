@@ -121,6 +121,7 @@ export interface ProfileState extends TravelerProfile {
 
   // Auth actions
   authenticateUser: (identifier: string, profile?: TravelerProfile) => void;
+  logout: () => void;
   setNewUser: (isNew: boolean) => void;
 
   // Legacy actions for compatibility
@@ -375,6 +376,18 @@ export const useProfileStore = create<ProfileState>()(
       },
 
       setNewUser: (isNew: boolean) => set({ isNewUser: isNew }),
+
+      logout: () => {
+        set({
+          isAuthenticated: false,
+          userIdentifier: null,
+          profileId: null,
+          currentStep: 1,
+          ...initialDataState
+        });
+        // Clear persistence
+        localStorage.removeItem('tripwise-profile');
+      },
 
       // Legacy actions for compatibility
       setProfileId: (id: string) => set({ profileId: id }),

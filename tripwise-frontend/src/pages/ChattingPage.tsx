@@ -11,22 +11,43 @@ import { ArrowRight, Save, Play, Sparkles } from "lucide-react";
 // Typing Effect Component
 const TypewriterText = ({ text, onComplete }: { text: string; onComplete?: () => void }) => {
     const [displayedText, setDisplayedText] = useState("");
+    const intervalRef = React.useRef<NodeJS.Timeout | null>(null);
+    const timeoutRef = React.useRef<NodeJS.Timeout | null>(null);
+
+    // Store latest callback in ref to avoid re-triggering effect on parent re-renders
+    const onCompleteRef = React.useRef(onComplete);
 
     useEffect(() => {
+        onCompleteRef.current = onComplete;
+    }, [onComplete]);
+
+    useEffect(() => {
+        // Cleaning up previous run immediately
+        if (intervalRef.current) clearInterval(intervalRef.current);
+        if (timeoutRef.current) clearTimeout(timeoutRef.current);
+
+        setDisplayedText("");
+
         let i = 0;
         const speed = 10;
-        const interval = setInterval(() => {
-            if (i < text.length) {
-                setDisplayedText((prev) => prev + text.charAt(i));
-                i++;
-            } else {
-                clearInterval(interval);
-                onComplete?.();
-            }
-        }, speed);
 
-        return () => clearInterval(interval);
-    }, [text, onComplete]);
+        timeoutRef.current = setTimeout(() => {
+            intervalRef.current = setInterval(() => {
+                if (i < text.length) {
+                    setDisplayedText((prev) => prev + text.charAt(i));
+                    i++;
+                } else {
+                    if (intervalRef.current) clearInterval(intervalRef.current);
+                    onCompleteRef.current?.();
+                }
+            }, speed);
+        }, 100);
+
+        return () => {
+            if (intervalRef.current) clearInterval(intervalRef.current);
+            if (timeoutRef.current) clearTimeout(timeoutRef.current);
+        };
+    }, [text]);
 
     return <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-line">{displayedText}</p>;
 };
@@ -114,7 +135,7 @@ const ChattingPage = () => {
                                 <p className="text-sm font-semibold mb-1 text-primary">TripWise AI</p>
                                 <p className="text-foreground/90 leading-relaxed">
                                     Welcome back, {userName}! I've analyzed your preferences for
-                                    <span className="font-bold text-primary mx-1">{parsedOverview?.destination || (basicInfo.fullName?.split(' ')[0]) || 'your trip'}</span>.
+                                    <span className="font-bold text-primary mx-1">{parsedOverview?.destination || 'your trip'}</span>.
                                 </p>
                             </div>
                         </div>
