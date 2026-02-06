@@ -14,9 +14,10 @@ import { AddMoneyModal } from "@/components/dashboard/AddMoneyModal";
 import { walletService, Transaction } from "@/services/walletService";
 import { CoTravelersModal } from "@/components/profile/CoTravelersModal";
 import { DocumentUploadModal } from "@/components/profile/DocumentUploadModal";
+import { SavedCardsModal } from "@/components/dashboard/SavedCardsModal";
+import { TransactionHistoryModal } from "@/components/dashboard/TransactionHistoryModal";
+import { TripDetailsModal } from "@/components/dashboard/TripDetailsModal";
 
-// Fallback Mock Data
-// No mock fallback anymore
 
 const DashboardPage = () => {
     const navigate = useNavigate();
@@ -28,11 +29,14 @@ const DashboardPage = () => {
     const [isLoadingTrips, setIsLoadingTrips] = useState(true);
 
     // Modal State
-    // Modal State
     const [showEditProfile, setShowEditProfile] = useState(false);
     const [showCoTravelers, setShowCoTravelers] = useState(false);
     const [showDocuments, setShowDocuments] = useState(false);
     const [showAddMoney, setShowAddMoney] = useState(false);
+    const [showSavedCards, setShowSavedCards] = useState(false);
+    const [showHistory, setShowHistory] = useState(false);
+    const [showTripDetails, setShowTripDetails] = useState(false);
+    const [selectedTrip, setSelectedTrip] = useState<Trip | null>(null);
 
     // Wallet State
     const [walletBalance, setWalletBalance] = useState(0);
@@ -110,12 +114,13 @@ const DashboardPage = () => {
     // Combine Mock Data with Actual Profile Data
     const filteredTrips = trips.filter(trip => trip.status === activeTab);
 
-    const handleAction = (action: string, tripId: string) => { // eslint-disable-line @typescript-eslint/no-unused-vars
+    const handleAction = (action: string, tripId: string) => {
         if (action === 'continue') {
             navigate('/chat', { state: { isReturning: true } });
         } else if (action === 'view_ticket' || action === 'view_details') {
-            console.log('View details for', tripId);
-            // TODO: Implement details modal
+            const trip = trips.find(t => t.id === tripId) || null;
+            setSelectedTrip(trip);
+            setShowTripDetails(true);
         }
     };
 
@@ -264,6 +269,8 @@ const DashboardPage = () => {
                                     balance={walletBalance}
                                     currency={walletCurrency}
                                     onAddMoney={() => setShowAddMoney(true)}
+                                    onHistory={() => setShowHistory(true)}
+                                    onSavedCards={() => setShowSavedCards(true)}
                                 />
                             </div>
 
@@ -275,7 +282,7 @@ const DashboardPage = () => {
                                         </div>
                                         Recent Activity
                                     </h3>
-                                    <Button variant="ghost" size="sm" className="text-xs font-bold uppercase tracking-wider text-muted-foreground hover:text-white hover:bg-white/5">View All</Button>
+                                    <Button variant="ghost" size="sm" onClick={() => setShowHistory(true)} className="text-xs font-bold uppercase tracking-wider text-muted-foreground hover:text-white hover:bg-white/5">View All</Button>
                                 </div>
 
                                 <div className="space-y-3">
@@ -285,21 +292,23 @@ const DashboardPage = () => {
                                         </div>
                                     ) : (
                                         transactions.slice(0, 5).map((tx) => (
-                                            <div key={tx.id} className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/10 transition-all cursor-pointer group">
+                                            <div key={tx.id} onClick={() => setShowHistory(true)} className="flex items-center justify-between p-4 rounded-2xl bg-white/5 border border-white/5 hover:bg-white/10 hover:border-white/10 transition-all cursor-pointer group">
                                                 <div className="flex items-center gap-4">
                                                     <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border border-white/5 ${tx.type === 'TOPUP' || tx.type === 'REFUND' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'}`}>
                                                         {tx.type === 'TOPUP' ? <Plus className="w-5 h-5" /> : <Sparkles className="w-5 h-5" />}
                                                     </div>
                                                     <div>
                                                         <p className="font-medium text-base sm:text-lg">{tx.description || tx.type}</p>
-                                                        <p className="text-xs text-muted-foreground">{new Date(tx.timestamp).toLocaleDateString()} • {tx.method}</p>
+                                                        <p className="text-xs text-muted-foreground">{new Date(tx.timestamp).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })} • {tx.method}</p>
                                                     </div>
                                                 </div>
                                                 <div className="text-right">
-                                                    <p className={`font-medium text-base sm:text-lg ${tx.type === 'TOPUP' || tx.type === 'REFUND' ? 'text-emerald-400' : 'text-red-400'}`}>
-                                                        {tx.type === 'TOPUP' ? '+' : '-'}₹{tx.amount.toLocaleString('en-IN')}
-                                                    </p>
-                                                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity translate-y-2 group-hover:translate-y-0">Details &rarr;</p>
+                                                    <div className="px-3 py-1 rounded-full bg-primary/10">
+                                                        <p className="font-bold text-base sm:text-lg text-primary">
+                                                            {tx.type === 'TOPUP' ? '+' : '-'}₹{tx.amount.toLocaleString('en-IN')}
+                                                        </p>
+                                                    </div>
+                                                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity translate-y-2 group-hover:translate-y-0 mt-1">Details &rarr;</p>
                                                 </div>
                                             </div>
                                         ))
@@ -393,6 +402,13 @@ const DashboardPage = () => {
                     isOpen={showAddMoney}
                     onClose={() => setShowAddMoney(false)}
                     onSuccess={fetchWalletData}
+                />
+                <SavedCardsModal isOpen={showSavedCards} onClose={() => setShowSavedCards(false)} />
+                <TransactionHistoryModal isOpen={showHistory} onClose={() => setShowHistory(false)} />
+                <TripDetailsModal
+                    isOpen={showTripDetails}
+                    onClose={() => setShowTripDetails(false)}
+                    trip={selectedTrip}
                 />
             </main>
         </div>

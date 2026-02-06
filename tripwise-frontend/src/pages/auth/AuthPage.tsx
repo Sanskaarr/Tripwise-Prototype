@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { LiquidBackground } from "@/components/ui/LiquidBackground";
 import { SiteHeader } from "@/components/layout/SiteHeader";
 import { useProfileStore } from "@/store/profileStore";
-import { checkUserExists } from "@/lib/api/authApi";
+import { login } from "@/lib/api/authApi";
 
 const AuthPage = () => {
     const navigate = useNavigate();
@@ -43,18 +43,22 @@ const AuthPage = () => {
         setError(null);
 
         try {
-            const response = await checkUserExists(identifier.trim());
+            const response = await login(identifier.trim());
 
             if (response.success && response.data) {
-                const { exists, profile } = response.data;
+                const { exists, profile, token } = response.data;
+
+                if (!token) {
+                    throw new Error("Authentication failed: No token received");
+                }
 
                 if (exists && profile) {
                     // Returning user - load profile and go to chat
-                    authenticateUser(identifier, profile);
+                    authenticateUser(identifier, token, profile);
                     navigate("/dashboard", { state: { isReturning: true } });
                 } else {
                     // New user - go to onboarding
-                    authenticateUser(identifier);
+                    authenticateUser(identifier, token);
                     navigate("/plan", { state: { isNew: true } });
                 }
             } else {

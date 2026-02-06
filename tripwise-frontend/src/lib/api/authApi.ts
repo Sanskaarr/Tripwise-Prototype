@@ -1,22 +1,28 @@
 import { apiClient, apiCall, ApiResponse } from './client';
 import { TravelerProfile } from '@/store/profileStore';
 
-// Check if user exists by phone or email
-export interface CheckUserRequest {
-    identifier: string; // phone or email
-}
-
-export interface CheckUserResponse {
-    exists: boolean;
+export interface AuthResponse {
+    success: boolean;
+    token?: string;
+    exists?: boolean;
+    isNewUser?: boolean;
+    identifier?: string;
     profile?: TravelerProfile;
 }
 
 export class AuthApi {
-    // Check if user exists in database
-    static async checkUserExists(identifier: string): Promise<ApiResponse<CheckUserResponse>> {
-        return apiCall(() => apiClient.post('/api/profiles/check', { identifier }));
+    // Login with identifier (phone/email)
+    static async login(identifier: string): Promise<ApiResponse<AuthResponse>> {
+        return apiCall(() => apiClient.post('/api/auth/login', { identifier }));
+    }
+
+    // Validate existing session token
+    static async validateSession(token: string): Promise<ApiResponse<AuthResponse>> {
+        return apiCall(() => apiClient.get('/api/auth/validate', {
+            headers: { Authorization: `Bearer ${token}` }
+        }));
     }
 }
 
 // Export individual functions for easier usage
-export const { checkUserExists } = AuthApi;
+export const { login, validateSession } = AuthApi;

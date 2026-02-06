@@ -6,9 +6,11 @@ interface WalletSectionProps {
     balance: number;
     currency: string;
     onAddMoney: () => void;
+    onHistory: () => void;
+    onSavedCards: () => void;
 }
 
-export const WalletSection = ({ balance, currency, onAddMoney }: WalletSectionProps) => {
+export const WalletSection = ({ balance, currency, onAddMoney, onHistory, onSavedCards }: WalletSectionProps) => {
     return (
         <div className="space-y-6">
             {/* Main Wallet Card */}
@@ -44,7 +46,11 @@ export const WalletSection = ({ balance, currency, onAddMoney }: WalletSectionPr
                         >
                             <Plus className="mr-2 h-4 w-4" /> Add Money
                         </Button>
-                        <Button variant="outline" className="h-12 w-12 rounded-2xl border-white/10 bg-white/5 hover:bg-white/10">
+                        <Button
+                            variant="outline"
+                            className="h-12 w-12 rounded-2xl border-white/10 bg-white/5 hover:bg-white/10"
+                            onClick={onHistory}
+                        >
                             <History className="h-5 w-5" />
                         </Button>
                     </div>
@@ -59,6 +65,7 @@ export const WalletSection = ({ balance, currency, onAddMoney }: WalletSectionPr
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.1 }}
                     className="group relative cursor-pointer overflow-hidden rounded-[2rem] border border-white/10 bg-white/5 p-6 backdrop-blur-md transition-all hover:bg-white/10"
+                    onClick={onSavedCards}
                 >
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
@@ -80,6 +87,7 @@ export const WalletSection = ({ balance, currency, onAddMoney }: WalletSectionPr
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.1 }}
                     className="group relative cursor-pointer overflow-hidden rounded-[2rem] border border-white/10 bg-white/5 p-6 backdrop-blur-md transition-all hover:bg-white/10"
+                    onClick={onHistory}
                 >
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">

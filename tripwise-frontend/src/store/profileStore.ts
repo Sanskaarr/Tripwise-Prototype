@@ -90,6 +90,7 @@ export interface TravelerProfile {
   isAuthenticated: boolean;
   isNewUser: boolean;
   userIdentifier: string | null; // phone or email
+  token: string | null;
 
   // Step Data (1-12)
   basicInfo: TravelerInfo;
@@ -120,9 +121,10 @@ export interface ProfileState extends TravelerProfile {
   resetProfile: () => void;
 
   // Auth actions
-  authenticateUser: (identifier: string, profile?: TravelerProfile) => void;
+  authenticateUser: (identifier: string, token: string, profile?: TravelerProfile) => void;
   logout: () => void;
   setNewUser: (isNew: boolean) => void;
+  validateSession: () => Promise<void>;
 
   // Legacy actions for compatibility
   setProfileId: (id: string) => void;
@@ -142,7 +144,7 @@ export interface ProfileState extends TravelerProfile {
   completeOnboarding: () => void;
 }
 
-const initialDataState: Omit<TravelerProfile, 'profileId' | 'currentStep' | 'isLoading' | 'isSyncing' | 'error' | 'lastSavedAt' | 'isAuthenticated' | 'isNewUser' | 'userIdentifier'> = {
+const initialDataState: Omit<TravelerProfile, 'profileId' | 'currentStep' | 'isLoading' | 'isSyncing' | 'error' | 'lastSavedAt' | 'isAuthenticated' | 'isNewUser' | 'userIdentifier' | 'token'> = {
   // Step 1: Basic Info
   basicInfo: {
     fullName: '',
@@ -244,6 +246,7 @@ export const useProfileStore = create<ProfileState>()(
       isAuthenticated: false,
       isNewUser: true,
       userIdentifier: null,
+      token: localStorage.getItem('auth_token'),
       ...initialDataState,
 
       // New actions
@@ -332,7 +335,13 @@ export const useProfileStore = create<ProfileState>()(
       resetProfile: () => set({ profileId: null, currentStep: 1, ...initialDataState }),
 
       // Auth actions
-      authenticateUser: (identifier: string, profile?: TravelerProfile) => {
+      // Auth actions
+      authenticateUser: (identifier: string, token: string, profile?: TravelerProfile) => {
+        // Save token securely (separate from store to survive purges)
+        if (token) {
+          localStorage.setItem('auth_token', token);
+        }
+
         if (profile) {
           // Returning user - load their profile and merge with defaults to avoid nulls
           set({
@@ -355,6 +364,7 @@ export const useProfileStore = create<ProfileState>()(
             isAuthenticated: true,
             isNewUser: false,
             userIdentifier: identifier,
+            token: token
           });
         } else {
           // New user - determine type and pre-fill basic info
@@ -364,6 +374,7 @@ export const useProfileStore = create<ProfileState>()(
             isAuthenticated: true,
             isNewUser: true,
             userIdentifier: identifier,
+            token: token,
             // Keep existing state or reset? Usually keep current progress if authenticating mid-flow
             // But if it's a fresh auth... lets verify logic behavior.
             basicInfo: {
@@ -372,6 +383,42 @@ export const useProfileStore = create<ProfileState>()(
               whatsappNumber: !isEmail ? identifier : state.basicInfo.whatsappNumber,
             }
           }));
+        }
+      },
+
+      validateSession: async () => {
+        const token = localStorage.getItem('auth_token');
+        if (!token) return;
+
+        try {
+          // Dynamic import to avoid circular dependency issues if any
+          const { validateSession } = await import('@/lib/api/authApi');
+
+          set({ isSyncing: true });
+          const response = await validateSession(token);
+
+          if (response.success && response.data) {
+            const { profile, isNewUser, identifier } = response.data;
+
+            if (profile) {
+              // Restore full profile
+              get().authenticateUser(identifier || profile.basicInfo.whatsappNumber || profile.basicInfo.email || "", token, profile);
+            } else if (isNewUser && identifier) {
+              // Valid session but new user (stay on step 1)
+              get().authenticateUser(identifier, token);
+            }
+          } else {
+            // Invalid token
+            localStorage.removeItem('auth_token');
+            set({ isAuthenticated: false, token: null });
+          }
+        } catch (error) {
+          console.error("Session validation failed:", error);
+          // Don't logout immediately on network error, but maybe on 401?
+          // AuthApi handles 401 by returning appropriate error message or status
+          // For now, let's just stop loading
+        } finally {
+          set({ isSyncing: false });
         }
       },
 
@@ -387,6 +434,7 @@ export const useProfileStore = create<ProfileState>()(
         });
         // Clear persistence
         localStorage.removeItem('tripwise-profile');
+        localStorage.removeItem('auth_token');
       },
 
       // Legacy actions for compatibility
