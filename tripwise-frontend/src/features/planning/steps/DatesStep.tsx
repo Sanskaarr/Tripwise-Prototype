@@ -43,6 +43,7 @@ export default function DatesStep() {
     navigate(`/plan/step/${prevStep}`);
   };
 
+  const today = new Date().toISOString().split('T')[0];
   const isFormValid = dates.startDate && dates.returnDate;
 
   const GlassInputGroup = ({ label, icon: Icon, children }: { label: string, icon: any, children: React.ReactNode }) => (
@@ -76,12 +77,16 @@ export default function DatesStep() {
             <input
               type="date"
               value={dates.startDate || ''}
+              min={today}
               onChange={(e) => {
-                const newDates = { ...dates, startDate: e.target.value };
+                const newStartDate = e.target.value;
+                // If return date is now before new start date, clear it
+                const newReturnDate = dates.returnDate && dates.returnDate < newStartDate ? '' : dates.returnDate;
+                const newDates = { ...dates, startDate: newStartDate, returnDate: newReturnDate };
                 updateTravelDates(newDates);
                 if (profileId) queueSync(profileId, 'dates', newDates);
               }}
-              className="glass-input h-12 w-full text-lg font-medium [color-scheme:dark]" // Using dark color scheme for date picker contrast in glass
+              className="glass-input h-12 w-full text-lg font-medium [color-scheme:dark]"
             />
           </div>
 
@@ -92,6 +97,7 @@ export default function DatesStep() {
             <input
               type="date"
               value={dates.returnDate || ''}
+              min={dates.startDate || today}
               onChange={(e) => {
                 const newDates = { ...dates, returnDate: e.target.value };
                 updateTravelDates(newDates);

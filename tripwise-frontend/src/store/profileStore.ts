@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import localforage from 'localforage';
+import { isTokenExpired } from '@/lib/utils/tokenUtils';
 
 export interface TravelerInfo {
   fullName: string;
@@ -23,6 +24,7 @@ export interface DestinationPreference {
   destination: string;
   travelType: 'domestic' | 'international' | null;
   preferenceType: 'mountains' | 'beach' | 'city' | 'spiritual' | 'adventure' | null;
+  travelStyle: 'balanced' | 'adventure' | 'relaxed' | 'cultural' | null;
   isFirstVisit: boolean | null;
 }
 
@@ -142,6 +144,9 @@ export interface ProfileState extends TravelerProfile {
   updateTravelExperience: (exp: Partial<TravelExperience>) => void;
   updateCommunicationPreference: (pref: Partial<CommunicationPreference>) => void;
   completeOnboarding: () => void;
+
+  // Hydration
+  _hasHydrated: boolean;
 }
 
 const initialDataState: Omit<TravelerProfile, 'profileId' | 'currentStep' | 'isLoading' | 'isSyncing' | 'error' | 'lastSavedAt' | 'isAuthenticated' | 'isNewUser' | 'userIdentifier' | 'token'> = {
@@ -169,6 +174,7 @@ const initialDataState: Omit<TravelerProfile, 'profileId' | 'currentStep' | 'isL
     destination: '',
     travelType: null,
     preferenceType: null,
+    travelStyle: null,
     isFirstVisit: null,
   },
 
@@ -247,6 +253,7 @@ export const useProfileStore = create<ProfileState>()(
       isNewUser: true,
       userIdentifier: null,
       token: localStorage.getItem('auth_token'),
+      _hasHydrated: false,
       ...initialDataState,
 
       // New actions
@@ -430,6 +437,7 @@ export const useProfileStore = create<ProfileState>()(
           userIdentifier: null,
           profileId: null,
           currentStep: 1,
+          token: null,
           ...initialDataState
         });
         // Clear persistence
@@ -506,6 +514,18 @@ export const useProfileStore = create<ProfileState>()(
     {
       name: 'tripwise-profile',
       storage: createJSONStorage(() => localforage),
+      onRehydrateStorage: () => (state) => {
+        if (state) {
+          state._hasHydrated = true;
+          // Auto-clean expired tokens on hydration
+          const token = localStorage.getItem('auth_token');
+          if (token && isTokenExpired(token)) {
+            localStorage.removeItem('auth_token');
+            state.isAuthenticated = false;
+            state.token = null;
+          }
+        }
+      },
     }
   )
 );

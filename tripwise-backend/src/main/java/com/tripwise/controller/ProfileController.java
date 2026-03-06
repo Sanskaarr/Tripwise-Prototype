@@ -152,6 +152,7 @@ public class ProfileController {
                 .destination((String) data.get("destination"))
                 .travelType((String) data.get("travelType"))
                 .preferenceType((String) data.get("preferenceType"))
+                .travelStyle((String) data.get("travelStyle"))
                 .isFirstVisit((Boolean) data.get("isFirstVisit"))
                 .build();
 

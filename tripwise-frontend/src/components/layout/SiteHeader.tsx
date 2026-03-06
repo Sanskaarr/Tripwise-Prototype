@@ -3,6 +3,7 @@ import { X, Menu, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useProfileStore } from "@/store/profileStore";
+import { isTokenValid } from "@/lib/utils/tokenUtils";
 
 const NAV_ITEMS = [
     { id: "home", label: "Home", sub: "The starting point" },
@@ -13,7 +14,7 @@ export const SiteHeader = () => {
     const navigate = useNavigate();
     const [scrolled, setScrolled] = useState(false);
     const [menuOpen, setMenuOpen] = useState(false);
-    const { isAuthenticated, authenticateUser, logout } = useProfileStore();
+    const { isAuthenticated, token, logout } = useProfileStore();
 
     const handleLogout = () => {
         logout(); // Use dedicated logout action
@@ -36,6 +37,12 @@ export const SiteHeader = () => {
         if (id === "home") {
             navigate("/");
             window.scrollTo({ top: 0, behavior: "smooth" });
+        } else if (id === "auth") {
+            if (isAuthenticated || isTokenValid(token)) {
+                navigate('/dashboard');
+            } else {
+                navigate('/auth');
+            }
         } else {
             navigate(`/${id}`);
         }

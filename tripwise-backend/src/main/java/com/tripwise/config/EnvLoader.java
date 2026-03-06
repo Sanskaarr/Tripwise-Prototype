@@ -1,9 +1,11 @@
 package com.tripwise.config;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.env.EnvironmentPostProcessor;
 import org.springframework.core.env.ConfigurableEnvironment;
-import org.springframework.core.env.PropertySource;
+import org.springframework.core.env.MapPropertySource;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.util.StreamUtils;
@@ -14,6 +16,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class EnvLoader implements EnvironmentPostProcessor {
+
+    private static final Logger logger = LoggerFactory.getLogger(EnvLoader.class);
 
     @Override
     public void postProcessEnvironment(ConfigurableEnvironment environment, SpringApplication application) {
@@ -54,22 +58,17 @@ public class EnvLoader implements EnvironmentPostProcessor {
                     }
                 }
 
-                PropertySource<?> propertySource = new PropertySource<Map<String, Object>>("env", envMap) {
-                    @Override
-                    public Object getProperty(String name) {
-                        return envMap.get(name);
-                    }
-                };
+                // Create a property source from the map
+                MapPropertySource propertySource = new MapPropertySource("env", envMap);
 
                 environment.getPropertySources().addFirst(propertySource);
-                System.out.println(
-                        "✅ Loaded " + envMap.size() + " environment variables from " + resource.getDescription());
+                logger.info("✅ Loaded {} environment variables from {}", envMap.size(), resource.getDescription());
 
             } catch (IOException e) {
-                System.err.println("❌ Failed to load .env file: " + e.getMessage());
+                logger.error("❌ Failed to load .env file: {}", e.getMessage());
             }
         } else {
-            System.out.println(
+            logger.warn(
                     "⚠️  .env file not found in current directory or tripwise-backend/ subdirectory. Using system environment variables.");
         }
     }

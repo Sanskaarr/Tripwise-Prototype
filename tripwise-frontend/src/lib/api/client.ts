@@ -13,14 +13,14 @@ export const apiClient: AxiosInstance = axios.create({
 // Request interceptor
 apiClient.interceptors.request.use(
   (config) => {
-    console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`, {
-      data: config.data,
-      params: config.params,
-    });
+    // console.log(`🚀 API Request: ${config.method?.toUpperCase()} ${config.url}`, {
+    //   params: config.params,
+    //   data: config.data,
+    // });
     return config;
   },
   (error) => {
-    console.error('❌ Request Error:', error);
+    console.error('❌ API Request Error:', error);
     return Promise.reject(error);
   }
 );
@@ -28,15 +28,15 @@ apiClient.interceptors.request.use(
 // Response interceptor
 apiClient.interceptors.response.use(
   (response: AxiosResponse) => {
-    console.log(`✅ API Response: ${response.config.method?.toUpperCase()} ${response.config.url}`, {
-      status: response.status,
-      data: response.data,
-    });
+    // console.log(`✅ API Response: ${response.config.method?.toUpperCase()} ${response.config.url}`, {
+    //   status: response.status,
+    //   data: response.data,
+    // });
     return response;
   },
   (error: AxiosError) => {
     const { response, request, message } = error;
-    
+
     if (response) {
       // Server responded with error status
       console.error(`❌ API Error: ${response.config?.method?.toUpperCase()} ${response.config?.url}`, {
@@ -44,7 +44,7 @@ apiClient.interceptors.response.use(
         data: response.data,
         message: response.statusText,
       });
-      
+
       // Handle specific error codes
       switch (response.status) {
         case 401:
@@ -52,17 +52,17 @@ apiClient.interceptors.response.use(
           console.warn('🔒 Unauthorized - Session expired');
           // Let the component handle profile reset
           break;
-          
+
         case 404:
           // Not found - Profile not found
           console.warn('🔍 Resource not found');
           break;
-          
+
         case 500:
           // Server error - Allow retry
           console.error('🔥 Server error - Retry allowed');
           break;
-          
+
         default:
           console.error(`❌ Unhandled error status: ${response.status}`);
       }
@@ -77,7 +77,7 @@ apiClient.interceptors.response.use(
       // Something else happened
       console.error('❌ Request setup error:', message);
     }
-    
+
     return Promise.reject(error);
   }
 );
@@ -86,7 +86,7 @@ apiClient.interceptors.response.use(
 export const getErrorMessage = (error: unknown): string => {
   if (axios.isAxiosError(error)) {
     const { response, request, message } = error;
-    
+
     if (response) {
       // Server responded with error
       switch (response.status) {
@@ -108,7 +108,7 @@ export const getErrorMessage = (error: unknown): string => {
       }
     }
   }
-  
+
   return error instanceof Error ? error.message : 'An unexpected error occurred';
 };
 

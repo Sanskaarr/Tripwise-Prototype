@@ -3,10 +3,13 @@ import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import heroImageMobile from "@/assets/hero-plane-sunset-mobile.png";
 import heroImage from "@/assets/hero-plane-sunset.jpg";
+import { useProfileStore } from "@/store/profileStore";
+import { isTokenValid } from "@/lib/utils/tokenUtils";
 
 export const HeroSection = () => {
     const [parallaxOffset, setParallaxOffset] = useState(0);
     const navigate = useNavigate();
+    const { isAuthenticated, token } = useProfileStore();
 
     useEffect(() => {
         if (typeof window === "undefined") return;
@@ -25,7 +28,11 @@ export const HeroSection = () => {
     }, []);
 
     const handleStartPlanning = () => {
-        navigate('/auth');
+        if (isAuthenticated || isTokenValid(token)) {
+            navigate('/dashboard');
+        } else {
+            navigate('/auth');
+        }
     };
 
     return (

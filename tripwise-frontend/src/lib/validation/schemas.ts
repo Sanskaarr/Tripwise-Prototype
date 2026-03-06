@@ -77,6 +77,9 @@ export const destinationSchema = z.object({
   preferenceType: z
     .enum(['mountains', 'beach', 'city', 'spiritual', 'adventure'])
     .optional(),
+  travelStyle: z
+    .enum(['balanced', 'adventure', 'relaxed', 'cultural'])
+    .optional(),
   isFirstVisit: z
     .boolean()
     .nullable()
@@ -242,7 +245,7 @@ export type ExperienceFormData = z.infer<typeof experienceSchema>;
 export type CommunicationFormData = z.infer<typeof communicationSchema>;
 
 // Union type for all step data
-export type StepFormData = 
+export type StepFormData =
   | BasicInfoFormData
   | DatesFormData
   | DestinationFormData

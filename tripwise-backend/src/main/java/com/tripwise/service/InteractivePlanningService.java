@@ -1,6 +1,7 @@
 package com.tripwise.service;
 
 import com.tripwise.ai.ChatGPTClient;
+import com.tripwise.ai.PerplexityClient;
 import com.tripwise.dto.TripRequest;
 import com.tripwise.model.TravelerProfile;
 import com.tripwise.model.TripPlanSession;
@@ -23,6 +24,7 @@ public class InteractivePlanningService {
     private final TripPlanSessionRepository sessionRepository;
     private final TravelerProfileRepository profileRepository;
     private final ChatGPTClient chatGPTClient;
+    private final PerplexityClient perplexityClient;
 
     // STEP 1: INIT SESSION & OVERVIEW
     public Mono<TripPlanSession> initSession(String profileId) {
@@ -51,7 +53,7 @@ public class InteractivePlanningService {
                         .orElse(Mono.error(new RuntimeException("Profile not found"))));
     }
 
-    // STEP 2A: GENERATE HOTELS
+    // STEP 2A: GENERATE HOTELS (uses Perplexity for live web-searched prices)
     public Mono<String> generateHotelOptions(String sessionId) {
         return sessionRepository.findById(sessionId)
                 .flatMap(session -> Mono.fromCallable(() -> profileRepository.findByProfileId(session.getProfileId()))
@@ -59,18 +61,30 @@ public class InteractivePlanningService {
                         .flatMap(optionalProfile -> optionalProfile
                                 .map(profile -> {
                                     TripRequest request = mapProfileToRequest(profile);
-                                    String prompt = SystemPromptFactory.createHotelOptionsPrompt(request);
 
-                                    return chatGPTClient.generateDraftPlan(prompt)
-                                            .flatMap(rawResponse -> {
-                                                String jsonResponse = cleanJson(rawResponse);
-                                                session.setSuggestedHotelsJson(jsonResponse);
-                                                session.setCurrentStep(TripPlanSession.PlanningStep.HOTEL_SELECTION);
-                                                session.setUpdatedAt(LocalDateTime.now());
-                                                return sessionRepository.save(session).map(s -> jsonResponse);
+                                    // Use Perplexity (live web search) for real hotel prices
+                                    // Fall back to ChatGPT if Perplexity fails
+                                    Mono<String> hotelSearch = perplexityClient
+                                            .searchHotelOptions(
+                                                    request.getDestination(),
+                                                    request.getBudgetLevel(),
+                                                    request.getTravelStyle())
+                                            .onErrorResume(ex -> {
+                                                log.warn("Perplexity hotel search failed, falling back to ChatGPT: {}",
+                                                        ex.getMessage());
+                                                return chatGPTClient.generateDraftPlan(
+                                                        SystemPromptFactory.createHotelOptionsPrompt(request));
                                             });
+
+                                    return hotelSearch.flatMap(rawResponse -> {
+                                        String jsonResponse = cleanJson(rawResponse);
+                                        session.setSuggestedHotelsJson(jsonResponse);
+                                        session.setCurrentStep(TripPlanSession.PlanningStep.HOTEL_SELECTION);
+                                        session.setUpdatedAt(LocalDateTime.now());
+                                        return sessionRepository.save(session).<String>map(s -> jsonResponse);
+                                    });
                                 })
-                                .orElse(Mono.error(new RuntimeException("Profile not found")))));
+                                .orElse(Mono.<String>error(new RuntimeException("Profile not found")))));
     }
 
     // STEP 2B: SELECT HOTEL
@@ -159,7 +173,9 @@ public class InteractivePlanningService {
         if (profile.getBudget() != null)
             request.setBudgetLevel(profile.getBudget().getLevel());
         if (profile.getDestination() != null)
-            request.setTravelStyle(profile.getDestination().getPreferenceType());
+            request.setTravelStyle(profile.getDestination().getTravelStyle() != null
+                    ? profile.getDestination().getTravelStyle()
+                    : "balanced");
         if (profile.getDates() != null)
             request.setDays(profile.getDates().getDuration());
         request.setUserCountry("India"); // Default or fetch from profile if available

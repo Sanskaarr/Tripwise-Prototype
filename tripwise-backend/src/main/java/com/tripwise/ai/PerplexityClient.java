@@ -83,6 +83,48 @@ public class PerplexityClient {
                                 .map(this::extractContentFromResponse);
         }
 
+        public Mono<String> searchHotelOptions(String destination, String budgetLevel, String travelStyle) {
+                logger.debug("Searching real-time hotel prices for: {} ({} budget, {} style)", destination, budgetLevel,
+                                travelStyle);
+
+                String prompt = String.format(
+                                "Search the web RIGHT NOW for current hotel prices in %s for a %s budget traveler (%s style). "
+                                                +
+                                                "Find 3 distinct real hotels with VERIFIED current nightly prices from booking sites. "
+                                                +
+                                                "CRITICAL: Use live web search. Do NOT guess — only use prices you can find online today. "
+                                                +
+                                                "Return ONLY this raw JSON (no markdown, no code blocks): " +
+                                                "{\"options\":[" +
+                                                "{\"name\":\"Hotel Name\",\"address\":\"Full address\",\"costPerNight\":\"₹X,XXX\",\"reason\":\"Why this hotel fits\"},"
+                                                +
+                                                "{\"name\":\"Hotel Name\",\"address\":\"Full address\",\"costPerNight\":\"₹X,XXX\",\"reason\":\"Why this hotel fits\"},"
+                                                +
+                                                "{\"name\":\"Hotel Name\",\"address\":\"Full address\",\"costPerNight\":\"₹X,XXX\",\"reason\":\"Why this hotel fits\"}"
+                                                +
+                                                "]}",
+                                destination, budgetLevel, travelStyle);
+
+                Map<String, Object> requestBody = Map.of(
+                                "model", MODEL,
+                                "messages", new Object[] {
+                                                Map.of("role", "system", "content",
+                                                                "You are a hotel research assistant. Use live web search to find real, current hotel prices. Never fabricate prices. Return only raw JSON."),
+                                                Map.of("role", "user", "content", prompt)
+                                },
+                                "max_tokens", 1000,
+                                "temperature", 0.1);
+
+                return webClient.post()
+                                .bodyValue(requestBody)
+                                .retrieve()
+                                .bodyToMono(String.class)
+                                .timeout(Duration.ofSeconds(30))
+                                .doOnError(error -> logger.error("Error searching hotel options from Perplexity",
+                                                error))
+                                .map(this::extractContentFromResponse);
+        }
+
         private String extractContentFromResponse(String jsonResponse) {
                 try {
                         JsonNode root = objectMapper.readTree(jsonResponse);

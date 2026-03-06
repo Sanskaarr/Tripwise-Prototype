@@ -107,6 +107,7 @@ public class TravelerProfile {
         private String destination;
         private String travelType;
         private String preferenceType;
+        private String travelStyle; // balanced, adventure, relaxed, cultural
         private Boolean isFirstVisit;
     }
 

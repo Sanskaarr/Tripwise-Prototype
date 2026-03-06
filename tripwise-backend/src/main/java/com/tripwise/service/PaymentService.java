@@ -36,6 +36,10 @@ public class PaymentService {
         return razorpayClient.orders.create(orderRequest);
     }
 
+    public Order getOrder(String orderId) throws RazorpayException {
+        return razorpayClient.orders.fetch(orderId);
+    }
+
     public boolean verifySignature(String orderId, String paymentId, String signature) {
         try {
             JSONObject options = new JSONObject();

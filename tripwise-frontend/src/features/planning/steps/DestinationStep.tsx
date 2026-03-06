@@ -5,7 +5,7 @@ import { useProfileStore } from '@/store/profileStore';
 import { queueSync } from '@/lib/api/syncManager';
 import { useShallow } from 'zustand/react/shallow';
 import { Label } from '@/components/ui/label';
-import { Map, Plane, Compass, CheckCircle } from 'lucide-react';
+import { Map, Plane, Compass, CheckCircle, Waypoints } from 'lucide-react';
 import { ConversationalLayout } from '@/components/layout/ConversationalLayout';
 
 export default function DestinationStep() {
@@ -159,6 +159,30 @@ export default function DestinationStep() {
               >
                 <span className="text-xs">{option.label}</span>
               </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Travel Style */}
+        <div className="space-y-3">
+          <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground/70 flex items-center gap-2">
+            <Waypoints className="w-3 h-3 text-primary" />
+            Travel Style
+          </Label>
+          <div className="grid grid-cols-2 gap-3">
+            {[
+              { value: 'balanced', label: 'Balanced', desc: 'Mix of everything' },
+              { value: 'adventure', label: 'Adventure', desc: 'Thrill & exploration' },
+              { value: 'relaxed', label: 'Relaxed', desc: 'Slow-paced & chill' },
+              { value: 'cultural', label: 'Cultural', desc: 'Heritage & history' }
+            ].map((option) => (
+              <SelectionCard
+                key={option.value}
+                selected={destination.travelStyle === option.value}
+                onClick={() => updateDestinationPreference({ travelStyle: option.value as any })}
+                label={option.label}
+                desc={option.desc}
+              />
             ))}
           </div>
         </div>

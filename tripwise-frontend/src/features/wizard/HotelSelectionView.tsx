@@ -4,6 +4,20 @@ import { InteractiveApi, HotelOption } from '@/lib/api/interactiveApi';
 import { motion } from 'framer-motion';
 import { Building, Star, Check, ArrowRight } from 'lucide-react';
 
+// Normalize price values from AI into a consistent ₹X,XXX format
+const normalizePrice = (raw: string | number | undefined): string => {
+    if (!raw) return 'N/A';
+    const str = String(raw).replace(/\/night/i, '').trim();
+    // Extract numeric value (strip ₹, commas, spaces)
+    const numericStr = str.replace(/[₹,\s]/g, '');
+    const num = parseFloat(numericStr);
+    if (!isNaN(num)) {
+        return `₹${num.toLocaleString('en-IN')}/night`;
+    }
+    // Fallback: return as-is but append /night if missing
+    return str.includes('/') ? str : `${str}/night`;
+};
+
 export default function HotelSelectionView() {
     const { sessionId, hotelOptions, selectedHotel, selectHotel, setTransportOptions, setStep, setLoading } = useWizardStore();
 
@@ -73,7 +87,9 @@ export default function HotelSelectionView() {
                                 <div className="pt-4 border-t border-white/5 flex flex-col gap-2">
                                     <div className="flex justify-between items-center">
                                         <span className="text-[10px] text-muted-foreground uppercase tracking-[0.2em] font-bold">Per Night</span>
-                                        <span className={`font-display text-xl ${isSelected ? 'text-primary' : 'text-foreground'}`}>{hotel?.costPerNight || 'N/A'}</span>
+                                        <span className={`font-display text-xl ${isSelected ? 'text-primary' : 'text-foreground'}`}>
+                                            {normalizePrice(hotel?.costPerNight)}
+                                        </span>
                                     </div>
                                     <div className="mt-2 text-right">
                                         <p className="text-xs text-foreground/90 font-medium leading-relaxed bg-black/5 p-3 rounded-lg border border-black/5 block shadow-sm">

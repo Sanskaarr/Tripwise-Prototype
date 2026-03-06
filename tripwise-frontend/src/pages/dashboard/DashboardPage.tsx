@@ -84,9 +84,8 @@ const DashboardPage = () => {
             }
 
             try {
-                // TODO: Uncomment when backend ready
-                // const userTrips = await tripService.getUserTrips(profileId);
-                // setTrips(userTrips);
+                const userTrips = await tripService.getUserTrips(profileId);
+                setTrips(userTrips);
 
                 // For now, if we have a draft in state, show it
                 const currentTrip: Trip | null = (destination?.destination && dates) ? {
@@ -238,13 +237,9 @@ const DashboardPage = () => {
                                     <h3 className="text-xl font-medium mb-2">No {activeTab} trips</h3>
                                     <p className="text-muted-foreground mb-6">Time to start planning your next adventure?</p>
                                     {activeTab === 'upcoming' && (
-                                        <Button
-                                            onClick={handleNewTrip}
-                                            variant="outline"
-                                            className="border-white/10 hover:bg-white/10"
-                                        >
-                                            Start Planning
-                                        </Button>
+                                        <p className="text-sm text-muted-foreground/50 font-medium">
+                                            Use <span className="text-white/60">"Plan New Trip"</span> above to get started
+                                        </p>
                                     )}
                                 </motion.div>
                             )}

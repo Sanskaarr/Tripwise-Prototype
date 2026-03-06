@@ -9,7 +9,7 @@ import { CheckCircle, Send, ArrowRight, Home, Download } from 'lucide-react';
 
 export default function ConfirmationPage() {
   const navigate = useNavigate();
-  const { profileId, isLoading, error, resetProfile, ...profileData } = useProfileStore();
+  const { profileId, isLoading, error, resetProfile, validateSession, ...profileData } = useProfileStore();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
 
@@ -41,10 +41,14 @@ export default function ConfirmationPage() {
       const response = await ProfileApi.submitProfile(profileId, dataToSubmit);
 
       if (response.success) {
-        // Reset steps logic
+        // Step 1: Reset the wizard step state (clears profileId, currentStep, etc.)
         resetProfile();
 
-        // 2. Initialize Wizard Session (The "Magic" Handoff)
+        // Step 2: Re-fetch the full profile from backend so basicInfo.fullName is
+        // restored before the dashboard loads — this fixes the 'Hello, Traveler' bug
+        await validateSession();
+
+        // Step 3: Initialize the Wizard Session (The "Magic" Handoff)
         try {
           const { InteractiveApi } = await import('@/lib/api/interactiveApi');
           const { useWizardStore } = await import('@/store/wizardStore');
