@@ -3,7 +3,6 @@ import { TravelerProfile } from '@/store/profileStore';
 
 export interface AuthResponse {
     success: boolean;
-    token?: string;
     exists?: boolean;
     isNewUser?: boolean;
     identifier?: string;
@@ -11,18 +10,22 @@ export interface AuthResponse {
 }
 
 export class AuthApi {
-    // Login with identifier (phone/email)
     static async login(identifier: string): Promise<ApiResponse<AuthResponse>> {
         return apiCall(() => apiClient.post('/api/auth/login', { identifier }));
     }
 
-    // Validate existing session token
-    static async validateSession(token: string): Promise<ApiResponse<AuthResponse>> {
-        return apiCall(() => apiClient.get('/api/auth/validate', {
-            headers: { Authorization: `Bearer ${token}` }
-        }));
+    // No token parameter — the httpOnly cookie is sent automatically by the browser.
+    static async validateSession(): Promise<ApiResponse<AuthResponse>> {
+        return apiCall(() => apiClient.get('/api/auth/validate'));
+    }
+
+    static async logout(): Promise<void> {
+        try {
+            await apiClient.post('/api/auth/logout');
+        } catch {
+            // Ignore errors — the cookie will expire naturally
+        }
     }
 }
 
-// Export individual functions for easier usage
-export const { login, validateSession } = AuthApi;
+export const { login, validateSession, logout } = AuthApi;

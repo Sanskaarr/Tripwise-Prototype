@@ -1,7 +1,10 @@
 .vscode
 .DS_Store
 target/
-.vscode/
+node_modules/
+dist/
+.next/
+*.log
 
 # Env Files
 .env

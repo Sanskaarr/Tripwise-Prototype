@@ -19,23 +19,23 @@ public class WebClientConfig {
                 .build();
     }
     
-    @Bean("openaiWebClient")
-    public WebClient openaiWebClient() {
-        return WebClient.builder()
-                .baseUrl("https://api.openai.com/v1/chat/completions")
-                .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + apiConfig.getOpenaiApiKey())
-                .defaultHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .codecs(configurer -> configurer.defaultCodecs())
-                .build();
-    }
+    // @Bean("openaiWebClient")
+    // public WebClient openaiWebClient() {
+    //     return WebClient.builder()
+    //             .baseUrl("https://api.openai.com/v1/chat/completions")
+    //             .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + apiConfig.getOpenaiApiKey())
+    //             .defaultHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+    //             .codecs(configurer -> configurer.defaultCodecs())
+    //             .build();
+    // }
     
-    @Bean("perplexityWebClient")
-    public WebClient perplexityWebClient() {
-        return WebClient.builder()
-                .baseUrl("https://api.perplexity.ai/chat/completions")
-                .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + apiConfig.getPerplexityApiKey())
-                .defaultHeader(HttpHeaders.CONTENT_TYPE, "application/json")
-                .codecs(configurer -> configurer.defaultCodecs())
-                .build();
-    }
+    // @Bean("perplexityWebClient")
+    // public WebClient perplexityWebClient() {
+    //     return WebClient.builder()
+    //             .baseUrl("https://api.perplexity.ai/chat/completions")
+    //             .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + apiConfig.getPerplexityApiKey())
+    //             .defaultHeader(HttpHeaders.CONTENT_TYPE, "application/json")
+    //             .codecs(configurer -> configurer.defaultCodecs())
+    //             .build();
+    // }
 }

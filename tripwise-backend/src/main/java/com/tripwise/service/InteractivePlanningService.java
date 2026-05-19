@@ -1,15 +1,15 @@
 package com.tripwise.service;
 
-import com.tripwise.ai.ChatGPTClient;
-import com.tripwise.ai.PerplexityClient;
+import com.tripwise.ai.GeminiClient;
+import com.tripwise.config.AIPrompts;
 import com.tripwise.dto.TripRequest;
 import com.tripwise.model.TravelerProfile;
 import com.tripwise.model.TripPlanSession;
-import com.tripwise.prompt.SystemPromptFactory;
 import com.tripwise.repository.TravelerProfileRepository;
 import com.tripwise.session.TripPlanSessionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -23,8 +23,22 @@ public class InteractivePlanningService {
 
     private final TripPlanSessionRepository sessionRepository;
     private final TravelerProfileRepository profileRepository;
-    private final ChatGPTClient chatGPTClient;
-    private final PerplexityClient perplexityClient;
+    private final GeminiClient geminiClient;
+
+    @Value("${app.default.user.country:India}")
+    private String defaultUserCountry;
+
+    // STEP 0a: GET SESSION BY ID
+    public Mono<TripPlanSession> getSessionById(String sessionId) {
+        return sessionRepository.findById(sessionId);
+    }
+
+    // STEP 0: GET EXISTING SESSION (latest for profile)
+    public Mono<TripPlanSession> getLatestSession(String profileId) {
+        return sessionRepository.findByProfileId(profileId)
+                .sort((s1, s2) -> s2.getUpdatedAt().compareTo(s1.getUpdatedAt()))
+                .next();
+    }
 
     // STEP 1: INIT SESSION & OVERVIEW
     public Mono<TripPlanSession> initSession(String profileId) {
@@ -32,28 +46,30 @@ public class InteractivePlanningService {
                 .subscribeOn(Schedulers.boundedElastic())
                 .flatMap(optionalProfile -> optionalProfile
                         .map(profile -> {
-                            // Create minimal request object for prompt factory
                             TripRequest request = mapProfileToRequest(profile);
+                            String systemPrompt = "You are a professional travel planner. Provide a brief, inspiring overview of the destination "
+                                    + request.getDestination() + " for a " + request.getDays()
+                                    + " day trip. Return the response as a JSON object with fields: destination, overview, weatherForecast, estimatedCost, highlights (array).";
+                            String userPrompt = "Create a trip overview for " + request.getDestination();
 
-                            String prompt = SystemPromptFactory.createOverviewPrompt(request);
-
-                            return chatGPTClient.generateDraftPlan(prompt) // Reusing generateDraftPlan for generic AI
-                                                                           // call
+                            return geminiClient.generateResponse(systemPrompt, userPrompt)
                                     .flatMap(aiResponse -> {
                                         TripPlanSession session = TripPlanSession.builder()
                                                 .profileId(profileId)
+                                                .destination(request.getDestination())
                                                 .createdAt(LocalDateTime.now())
                                                 .updatedAt(LocalDateTime.now())
                                                 .currentStep(TripPlanSession.PlanningStep.INIT)
-                                                .destinationOverview(aiResponse) // Storing the AI's "Overview JSON"
+                                                .destinationOverview(cleanJson(aiResponse))
                                                 .build();
                                         return sessionRepository.save(session);
-                                    });
+                                    })
+                                    .switchIfEmpty(Mono.error(new RuntimeException("Failed to generate trip overview")));
                         })
                         .orElse(Mono.error(new RuntimeException("Profile not found"))));
     }
 
-    // STEP 2A: GENERATE HOTELS (uses Perplexity for live web-searched prices)
+    // STEP 2A: GENERATE HOTELS
     public Mono<String> generateHotelOptions(String sessionId) {
         return sessionRepository.findById(sessionId)
                 .flatMap(session -> Mono.fromCallable(() -> profileRepository.findByProfileId(session.getProfileId()))
@@ -61,28 +77,20 @@ public class InteractivePlanningService {
                         .flatMap(optionalProfile -> optionalProfile
                                 .map(profile -> {
                                     TripRequest request = mapProfileToRequest(profile);
+                                    String systemPrompt = "Find 3 best hotel options for " + request.getDestination()
+                                            + " with budget " + request.getBudgetLevel()
+                                            + ". Return a JSON object with an 'options' array. Each option should have: name, address, costPerNight, reason.";
+                                    String userPrompt = "Find hotels in " + request.getDestination();
 
-                                    // Use Perplexity (live web search) for real hotel prices
-                                    // Fall back to ChatGPT if Perplexity fails
-                                    Mono<String> hotelSearch = perplexityClient
-                                            .searchHotelOptions(
-                                                    request.getDestination(),
-                                                    request.getBudgetLevel(),
-                                                    request.getTravelStyle())
-                                            .onErrorResume(ex -> {
-                                                log.warn("Perplexity hotel search failed, falling back to ChatGPT: {}",
-                                                        ex.getMessage());
-                                                return chatGPTClient.generateDraftPlan(
-                                                        SystemPromptFactory.createHotelOptionsPrompt(request));
-                                            });
-
-                                    return hotelSearch.flatMap(rawResponse -> {
-                                        String jsonResponse = cleanJson(rawResponse);
-                                        session.setSuggestedHotelsJson(jsonResponse);
-                                        session.setCurrentStep(TripPlanSession.PlanningStep.HOTEL_SELECTION);
-                                        session.setUpdatedAt(LocalDateTime.now());
-                                        return sessionRepository.save(session).<String>map(s -> jsonResponse);
-                                    });
+                                    return geminiClient.generateResponse(systemPrompt, userPrompt)
+                                            .flatMap(rawResponse -> {
+                                                String jsonResponse = cleanJson(rawResponse);
+                                                session.setSuggestedHotelsJson(jsonResponse);
+                                                session.setCurrentStep(TripPlanSession.PlanningStep.HOTEL_SELECTION);
+                                                session.setUpdatedAt(LocalDateTime.now());
+                                                return sessionRepository.save(session).<String>map(s -> jsonResponse);
+                                            })
+                                            .switchIfEmpty(Mono.error(new RuntimeException("Failed to generate hotel options")));
                                 })
                                 .orElse(Mono.<String>error(new RuntimeException("Profile not found")))));
     }
@@ -105,27 +113,20 @@ public class InteractivePlanningService {
                         .flatMap(optionalProfile -> optionalProfile
                                 .map(profile -> {
                                     TripRequest request = mapProfileToRequest(profile);
+                                    String systemPrompt = "Suggest 3 transport options in " + request.getDestination()
+                                            + " starting from " + session.getSelectedHotel().getAddress()
+                                            + ". Return a JSON object with an 'options' array. Each option: mode, cost, duration, details.";
+                                    String userPrompt = "Find transport for my trip in " + request.getDestination();
 
-                                    // Get Arrival Mode from Profile (default to Flight if missing)
-                                    String arrivalMode = (profile.getTransport() != null
-                                            && profile.getTransport().getMode() != null)
-                                                    ? profile.getTransport().getMode()
-                                                    : "Flight";
-
-                                    String prompt = SystemPromptFactory.createTransportPrompt(
-                                            request,
-                                            session.getSelectedHotel().getName(),
-                                            session.getSelectedHotel().getAddress(),
-                                            arrivalMode);
-
-                                    return chatGPTClient.generateDraftPlan(prompt)
+                                    return geminiClient.generateResponse(systemPrompt, userPrompt)
                                             .flatMap(jsonResponse -> {
-                                                session.setSuggestedTransportJson(jsonResponse);
-                                                session.setCurrentStep(
-                                                        TripPlanSession.PlanningStep.TRANSPORT_SELECTION);
+                                                String cleaned = cleanJson(jsonResponse);
+                                                session.setSuggestedTransportJson(cleaned);
+                                                session.setCurrentStep(TripPlanSession.PlanningStep.TRANSPORT_SELECTION);
                                                 session.setUpdatedAt(LocalDateTime.now());
-                                                return sessionRepository.save(session).map(s -> jsonResponse);
-                                            });
+                                                return sessionRepository.save(session).map(s -> cleaned);
+                                            })
+                                            .switchIfEmpty(Mono.error(new RuntimeException("Failed to generate transport options")));
                                 })
                                 .orElse(Mono.error(new RuntimeException("Profile not found")))));
     }
@@ -148,24 +149,27 @@ public class InteractivePlanningService {
                         .flatMap(optionalProfile -> optionalProfile
                                 .map(profile -> {
                                     TripRequest request = mapProfileToRequest(profile);
+                                    String destination = session.getDestination() != null
+                                            ? session.getDestination() : request.getDestination();
+                                    String systemPrompt = AIPrompts.getMasterPlanJsonPrompt(destination);
+                                    String userPrompt = "Create a detailed day-by-day itinerary for " + destination
+                                            + ". Duration: " + request.getDays() + " days. Budget level: " + request.getBudgetLevel()
+                                            + ". I am staying at '" + session.getSelectedHotel().getName()
+                                            + "' (" + session.getSelectedHotel().getAddress() + ")"
+                                            + " and using '" + session.getFinalizedTransportChoice().getMode() + "' as my primary local transport.";
 
-                                    String prompt = SystemPromptFactory.createMasterPlanPrompt(
-                                            request,
-                                            session.getSelectedHotel().getName(),
-                                            session.getFinalizedTransportChoice().getMode(),
-                                            "Research already integrated in logic");
-
-                                    return chatGPTClient.generateFinalResponse(prompt)
+                                    return geminiClient.generateJsonResponse(systemPrompt, userPrompt)
                                             .flatMap(finalPlan -> {
                                                 session.setCurrentStep(TripPlanSession.PlanningStep.FINALIZED);
+                                                session.setMasterPlan(finalPlan);
                                                 session.setUpdatedAt(LocalDateTime.now());
                                                 return sessionRepository.save(session).map(s -> finalPlan);
-                                            });
+                                            })
+                                            .switchIfEmpty(Mono.error(new RuntimeException("Failed to generate master plan")));
                                 })
                                 .orElse(Mono.error(new RuntimeException("Profile not found")))));
     }
 
-    // Helper to map DB Profile -> Prompt Request
     private TripRequest mapProfileToRequest(TravelerProfile profile) {
         TripRequest request = new TripRequest();
         if (profile.getDestination() != null)
@@ -174,26 +178,19 @@ public class InteractivePlanningService {
             request.setBudgetLevel(profile.getBudget().getLevel());
         if (profile.getDestination() != null)
             request.setTravelStyle(profile.getDestination().getTravelStyle() != null
-                    ? profile.getDestination().getTravelStyle()
-                    : "balanced");
+                    ? profile.getDestination().getTravelStyle() : "balanced");
         if (profile.getDates() != null)
             request.setDays(profile.getDates().getDuration());
-        request.setUserCountry("India"); // Default or fetch from profile if available
+        request.setUserCountry(defaultUserCountry);
         return request;
     }
 
     private String cleanJson(String response) {
-        if (response == null)
-            return "{}";
+        if (response == null) return "{}";
         String cleaned = response.trim();
-        if (cleaned.startsWith("```json")) {
-            cleaned = cleaned.substring(7);
-        } else if (cleaned.startsWith("```")) {
-            cleaned = cleaned.substring(3);
-        }
-        if (cleaned.endsWith("```")) {
-            cleaned = cleaned.substring(0, cleaned.length() - 3);
-        }
+        if (cleaned.startsWith("```json")) cleaned = cleaned.substring(7);
+        else if (cleaned.startsWith("```")) cleaned = cleaned.substring(3);
+        if (cleaned.endsWith("```")) cleaned = cleaned.substring(0, cleaned.length() - 3);
         return cleaned.trim();
     }
 }

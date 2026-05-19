@@ -1,65 +1,46 @@
 package com.tripwise.controller;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
-
+import com.tripwise.ai.GeminiClient;
+import com.tripwise.config.AIPrompts;
 import com.tripwise.dto.TripRequest;
 import com.tripwise.dto.TripResponse;
-
-import com.tripwise.service.OptimizedAIOrchestratorService;
-
 import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/tripwise")
+@RequiredArgsConstructor
 public class TripPlanController {
 
-    private static final Logger logger = LoggerFactory.getLogger(TripPlanController.class);
-
-    private final OptimizedAIOrchestratorService optimizedAIOrchestratorService;
-
-    @Autowired
-    public TripPlanController(OptimizedAIOrchestratorService optimizedAIOrchestratorService) {
-        this.optimizedAIOrchestratorService = optimizedAIOrchestratorService;
-    }
-
-    // Test endpoint removed as requested to rely on real AI services
+    private final GeminiClient geminiClient;
 
     @PostMapping("/plan")
     public ResponseEntity<TripResponse> planTrip(@Valid @RequestBody TripRequest tripRequest) {
-        logger.info("Received trip planning request for destination: {}, days: {}, budget: {}, style: {}",
-                tripRequest.getDestination(),
-                tripRequest.getDays(),
-                tripRequest.getBudgetLevel(),
-                tripRequest.getTravelStyle());
-
+        log.info("Trip plan request: destination={}, days={}, budget={}, style={}",
+                tripRequest.getDestination(), tripRequest.getDays(),
+                tripRequest.getBudgetLevel(), tripRequest.getTravelStyle());
         try {
-            // CALL DRIVER DIRECTLY (No more middleman)
-            TripResponse response = optimizedAIOrchestratorService.orchestrateTripPlanning(tripRequest)
-                    .timeout(java.time.Duration.ofSeconds(300)) // Overall timeout increased for complex orchestration
-                    .block(); // Block for now, could be async in production
+            String userPrompt = String.format(
+                    "Plan a trip to %s for %d days with a %s budget. My travel style is %s.",
+                    tripRequest.getDestination(), tripRequest.getDays(),
+                    tripRequest.getBudgetLevel(), tripRequest.getTravelStyle());
 
-            if (response.isValid()) {
-                logger.info("Successfully generated trip plan for destination: {}", tripRequest.getDestination());
-                return ResponseEntity.ok(response);
-            } else {
-                logger.warn("Generated trip plan failed validation for destination: {}. Reason: {}",
-                        tripRequest.getDestination(), response.getValidationMessage());
-                return ResponseEntity.badRequest().body(response);
+            String aiResponse = geminiClient.generateResponse(AIPrompts.LOCAL_GUIDE_SYSTEM_PROMPT, userPrompt)
+                    .timeout(java.time.Duration.ofSeconds(60))
+                    .block();
+
+            if (aiResponse != null && !aiResponse.isEmpty()) {
+                return ResponseEntity.ok(new TripResponse(aiResponse));
             }
-
+            return ResponseEntity.badRequest().body(new TripResponse(null, false, "AI returned an empty response"));
         } catch (Exception e) {
-            logger.error("Error processing trip planning request for destination: {}",
-                    tripRequest.getDestination(), e);
+            log.error("Trip planning failed for destination: {}", tripRequest.getDestination(), e);
             return ResponseEntity.internalServerError()
-                    .body(new TripResponse(null, false, "Internal server error: " + e.getMessage()));
+                    .body(new TripResponse(null, false, "Trip planning failed. Please try again."));
         }
     }
 

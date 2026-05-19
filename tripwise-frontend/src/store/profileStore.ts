@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import localforage from 'localforage';
-import { isTokenExpired } from '@/lib/utils/tokenUtils';
 
 export interface TravelerInfo {
   fullName: string;
@@ -123,7 +122,7 @@ export interface ProfileState extends TravelerProfile {
   resetProfile: () => void;
 
   // Auth actions
-  authenticateUser: (identifier: string, token: string, profile?: TravelerProfile) => void;
+  authenticateUser: (identifier: string, token?: string, profile?: TravelerProfile) => void;
   logout: () => void;
   setNewUser: (isNew: boolean) => void;
   validateSession: () => Promise<void>;
@@ -252,7 +251,7 @@ export const useProfileStore = create<ProfileState>()(
       isAuthenticated: false,
       isNewUser: true,
       userIdentifier: null,
-      token: localStorage.getItem('auth_token'),
+      token: null,
       _hasHydrated: false,
       ...initialDataState,
 
@@ -343,12 +342,8 @@ export const useProfileStore = create<ProfileState>()(
 
       // Auth actions
       // Auth actions
-      authenticateUser: (identifier: string, token: string, profile?: TravelerProfile) => {
-        // Save token securely (separate from store to survive purges)
-        if (token) {
-          localStorage.setItem('auth_token', token);
-        }
-
+      authenticateUser: (identifier: string, token: string = '', profile?: TravelerProfile) => {
+        // Token is now stored as an httpOnly cookie by the server — not in localStorage.
         if (profile) {
           // Returning user - load their profile and merge with defaults to avoid nulls
           set({
@@ -394,36 +389,29 @@ export const useProfileStore = create<ProfileState>()(
       },
 
       validateSession: async () => {
-        const token = localStorage.getItem('auth_token');
-        if (!token) return;
-
+        // The auth_token cookie is sent automatically — no localStorage read needed.
         try {
-          // Dynamic import to avoid circular dependency issues if any
           const { validateSession } = await import('@/lib/api/authApi');
-
           set({ isSyncing: true });
-          const response = await validateSession(token);
+          const response = await validateSession();
 
           if (response.success && response.data) {
             const { profile, isNewUser, identifier } = response.data;
-
             if (profile) {
-              // Restore full profile
-              get().authenticateUser(identifier || profile.basicInfo.whatsappNumber || profile.basicInfo.email || "", token, profile);
+              get().authenticateUser(
+                identifier || profile.basicInfo?.whatsappNumber || profile.basicInfo?.email || '',
+                '', // token managed by cookie, not by store
+                profile
+              );
             } else if (isNewUser && identifier) {
-              // Valid session but new user (stay on step 1)
-              get().authenticateUser(identifier, token);
+              get().authenticateUser(identifier, '');
             }
           } else {
-            // Invalid token
-            localStorage.removeItem('auth_token');
             set({ isAuthenticated: false, token: null });
           }
         } catch (error) {
-          console.error("Session validation failed:", error);
-          // Don't logout immediately on network error, but maybe on 401?
-          // AuthApi handles 401 by returning appropriate error message or status
-          // For now, let's just stop loading
+          // 401 from the server means no valid session — treat as logged out
+          set({ isAuthenticated: false, token: null });
         } finally {
           set({ isSyncing: false });
         }
@@ -432,6 +420,9 @@ export const useProfileStore = create<ProfileState>()(
       setNewUser: (isNew: boolean) => set({ isNewUser: isNew }),
 
       logout: () => {
+        // Tell the server to clear the httpOnly cookie
+        import('@/lib/api/authApi').then(({ logout }) => logout()).catch(() => {});
+
         set({
           isAuthenticated: false,
           userIdentifier: null,
@@ -440,9 +431,7 @@ export const useProfileStore = create<ProfileState>()(
           token: null,
           ...initialDataState
         });
-        // Clear persistence
         localStorage.removeItem('tripwise-profile');
-        localStorage.removeItem('auth_token');
       },
 
       // Legacy actions for compatibility
@@ -517,13 +506,9 @@ export const useProfileStore = create<ProfileState>()(
       onRehydrateStorage: () => (state) => {
         if (state) {
           state._hasHydrated = true;
-          // Auto-clean expired tokens on hydration
-          const token = localStorage.getItem('auth_token');
-          if (token && isTokenExpired(token)) {
-            localStorage.removeItem('auth_token');
-            state.isAuthenticated = false;
-            state.token = null;
-          }
+          // Session validity is checked via validateSession() which uses the httpOnly cookie.
+          // isAuthenticated from the persisted store is treated as optimistic — the next
+          // validateSession call will correct it if the cookie has expired.
         }
       },
     }

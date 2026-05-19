@@ -3,10 +3,16 @@ package com.tripwise.controller;
 import com.tripwise.model.TravelerProfile;
 import com.tripwise.security.JwtUtil;
 import com.tripwise.service.ProfileService;
+import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Duration;
 import java.util.Map;
 
 @Slf4j
@@ -17,95 +23,74 @@ public class AuthController {
     private final ProfileService profileService;
     private final JwtUtil jwtUtil;
 
+    @Value("${server.cookie.secure:false}")
+    private boolean secureCookie;
+
     public AuthController(ProfileService profileService, JwtUtil jwtUtil) {
         this.profileService = profileService;
         this.jwtUtil = jwtUtil;
     }
 
-    /**
-     * Login with phone/email.
-     * Generates a JWT token for the session.
-     */
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> request) {
+    public ResponseEntity<?> login(@RequestBody Map<String, String> request,
+                                   HttpServletResponse response) {
         String identifier = request.get("identifier");
-
         if (identifier == null || identifier.trim().isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of(
-                    "success", false,
-                    "error", "Identifier is required"));
+            return ResponseEntity.badRequest().body(Map.of("success", false, "error", "Identifier is required"));
         }
-
         identifier = identifier.trim();
         log.info("Login attempt for: {}", identifier);
 
-        // Generate token for this user (whether new or existing)
-        // We use the identifier as the subject
         String token = jwtUtil.generateToken(identifier);
+        setAuthCookie(response, token);
 
-        // Check if profile exists
         TravelerProfile profile = profileService.findByIdentifier(identifier);
-
         if (profile != null) {
-            // Existing user
             return ResponseEntity.ok(Map.of(
                     "success", true,
-                    "token", token,
                     "exists", true,
                     "profile", profile));
-        } else {
-            // New user - they have a valid session token but no profile yet
-            return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "token", token,
-                    "exists", false,
-                    "isNewUser", true));
         }
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "exists", false,
+                "isNewUser", true));
     }
 
-    /**
-     * Validate session token and return fresh profile data.
-     */
+    @PostMapping("/logout")
+    public ResponseEntity<?> logout(HttpServletResponse response) {
+        ResponseCookie clearCookie = ResponseCookie.from("auth_token", "")
+                .httpOnly(true)
+                .path("/")
+                .maxAge(0)
+                .sameSite("Lax")
+                .secure(secureCookie)
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, clearCookie.toString());
+        return ResponseEntity.ok(Map.of("message", "Logged out"));
+    }
+
     @GetMapping("/validate")
-    public ResponseEntity<?> validateSession(
-            @RequestHeader(value = "Authorization", required = false) String authHeader) {
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return ResponseEntity.status(401).body(Map.of("error", "Missing or invalid token"));
+    public ResponseEntity<?> validateSession(@AuthenticationPrincipal String identifier) {
+        if (identifier == null) {
+            return ResponseEntity.status(401).body(Map.of("error", "No valid session"));
         }
-
-        String token = authHeader.substring(7); // Remove "Bearer "
-
-        try {
-            // Validate token structure and expiration
-            if (!jwtUtil.validateToken(token)) {
-                return ResponseEntity.status(401).body(Map.of("error", "Invalid or expired token"));
-            }
-
-            // Extract user ID (phone/email) from token
-            String identifier = jwtUtil.extractUserId(token);
-
-            log.info("Validating session for: {}", identifier);
-
-            // Fetch latest profile
-            TravelerProfile profile = profileService.findByIdentifier(identifier);
-
-            if (profile != null) {
-                return ResponseEntity.ok(Map.of(
-                        "success", true,
-                        "isValid", true,
-                        "profile", profile));
-            } else {
-                // Valid token but no profile (user hasn't saved step 1 yet)
-                return ResponseEntity.ok(Map.of(
-                        "success", true,
-                        "isValid", true,
-                        "isNewUser", true,
-                        "identifier", identifier));
-            }
-
-        } catch (Exception e) {
-            log.error("Token validation error", e);
-            return ResponseEntity.status(401).body(Map.of("error", "Session validation failed"));
+        log.info("Validating session for: {}", identifier);
+        TravelerProfile profile = profileService.findByIdentifier(identifier);
+        if (profile != null) {
+            return ResponseEntity.ok(Map.of("success", true, "isValid", true, "profile", profile));
         }
+        return ResponseEntity.ok(Map.of("success", true, "isValid", true, "isNewUser", true, "identifier", identifier));
+    }
+
+    private void setAuthCookie(HttpServletResponse response, String token) {
+        ResponseCookie cookie = ResponseCookie.from("auth_token", token)
+                .httpOnly(true)
+                .path("/")
+                .maxAge(Duration.ofDays(7))
+                .sameSite("Lax")
+                .secure(secureCookie)
+                .build();
+        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString());
     }
 }

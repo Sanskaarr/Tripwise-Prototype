@@ -46,19 +46,13 @@ const AuthPage = () => {
             const response = await login(identifier.trim());
 
             if (response.success && response.data) {
-                const { exists, profile, token } = response.data;
-
-                if (!token) {
-                    throw new Error("Authentication failed: No token received");
-                }
+                const { exists, profile } = response.data;
 
                 if (exists && profile) {
-                    // Returning user - load profile and go to chat
-                    authenticateUser(identifier, token, profile);
+                    authenticateUser(identifier, '', profile);
                     navigate("/dashboard", { state: { isReturning: true } });
                 } else {
-                    // New user - go to onboarding
-                    authenticateUser(identifier, token);
+                    authenticateUser(identifier, '');
                     navigate("/plan", { state: { isNew: true } });
                 }
             } else {

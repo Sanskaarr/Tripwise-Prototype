@@ -4,6 +4,8 @@ import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.security.Keys;
+import jakarta.annotation.PostConstruct;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 
 import java.security.Key;
@@ -15,14 +17,17 @@ import java.util.function.Function;
 @Component
 public class JwtUtil {
 
-    // For development, we'll use a hardcoded key. In production, this should be in
-    // environment variables.
-    // Must be at least 256 bits (32 bytes) for HS256
-    private static final String SECRET = "YOUR_SUPER_SECRET_KEY_MUST_BE_VERY_LONG_AND_SECURE_FOR_HS256_ALGORITHM";
-    private static final Key KEY = Keys.hmacShaKeyFor(SECRET.getBytes());
+    @Value("${jwt.secret}")
+    private String secret;
 
-    // Token validity: 30 days (long session)
-    private static final long EXPIRATION_TIME = 1000L * 60 * 60 * 24 * 30;
+    private Key key;
+
+    @PostConstruct
+    private void init() {
+        this.key = Keys.hmacShaKeyFor(secret.getBytes());
+    }
+
+    private static final long EXPIRATION_TIME = 1000L * 60 * 60 * 24 * 7; // 7 days
 
     public String generateToken(String userId) {
         Map<String, Object> claims = new HashMap<>();
@@ -35,7 +40,7 @@ public class JwtUtil {
                 .setSubject(subject)
                 .setIssuedAt(new Date(System.currentTimeMillis()))
                 .setExpiration(new Date(System.currentTimeMillis() + EXPIRATION_TIME))
-                .signWith(KEY, SignatureAlgorithm.HS256)
+                .signWith(key, SignatureAlgorithm.HS256)
                 .compact();
     }
 
@@ -44,8 +49,6 @@ public class JwtUtil {
         return (extractedUserId.equals(userId) && !isTokenExpired(token));
     }
 
-    // Overload for just checking validity without matching a specific user ID yet
-    // (for initial session check)
     public Boolean validateToken(String token) {
         try {
             return !isTokenExpired(token);
@@ -69,7 +72,7 @@ public class JwtUtil {
 
     private Claims extractAllClaims(String token) {
         return Jwts.parserBuilder()
-                .setSigningKey(KEY)
+                .setSigningKey(key)
                 .build()
                 .parseClaimsJws(token)
                 .getBody();

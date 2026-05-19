@@ -1,6 +1,6 @@
-import axios from 'axios';
+import { apiClient } from '@/lib/api/client';
 
-const API_URL = 'http://localhost:8080/api/wallet';
+const API_URL = '/api/wallet';
 
 export interface Wallet {
     id: string;
@@ -28,17 +28,17 @@ export interface AddFundsRequest {
 
 export const walletService = {
     getBalance: async (profileId: string) => {
-        const response = await axios.get(`${API_URL}/balance/${profileId}`);
+        const response = await apiClient.get(`${API_URL}/balance/${profileId}`);
         return response.data;
     },
 
     addFunds: async (data: AddFundsRequest) => {
-        const response = await axios.post(`${API_URL}/add-funds`, data);
+        const response = await apiClient.post(`${API_URL}/add-funds`, data);
         return response.data;
     },
 
     getHistory: async (profileId: string) => {
-        const response = await axios.get(`${API_URL}/history/${profileId}`);
+        const response = await apiClient.get(`${API_URL}/history/${profileId}`);
         return response.data;
     }
 };

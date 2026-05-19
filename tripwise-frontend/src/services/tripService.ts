@@ -1,11 +1,11 @@
-import axios from 'axios';
+import { apiClient } from '@/lib/api/client';
 
-const API_URL = 'http://localhost:8080/api/trips';
+const API_URL = '/api/trips';
 
 export const tripService = {
     getUserTrips: async (userId: string) => {
         try {
-            const response = await axios.get(`${API_URL}/user/${userId}`);
+            const response = await apiClient.get(`${API_URL}/user/${userId}`);
             return response.data;
         } catch (error) {
             console.error('Error fetching user trips:', error);
@@ -15,7 +15,7 @@ export const tripService = {
 
     getTripDetails: async (tripId: string) => {
         try {
-            const response = await axios.get(`${API_URL}/${tripId}`);
+            const response = await apiClient.get(`${API_URL}/${tripId}`);
             return response.data;
         } catch (error) {
             console.error('Error fetching trip details:', error);
@@ -25,7 +25,7 @@ export const tripService = {
 
     createTrip: async (tripData: any) => {
         try {
-            const response = await axios.post(`${API_URL}/create`, tripData);
+            const response = await apiClient.post(`${API_URL}/create`, tripData);
             return response.data;
         } catch (error) {
             console.error('Error creating trip:', error);
