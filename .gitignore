@@ -5,6 +5,8 @@ node_modules/
 dist/
 .next/
 *.log
+.claude/
+
 
 # Env Files
 .env
