@@ -19,10 +19,10 @@ import PlanWelcomePage from '@/app/plan/page';
 import StepPage from '@/app/plan/step/[stepId]/page';
 import ConfirmationPage from '@/app/plan/confirmation/page';
 import Landing from '@/pages/Landing';
-import ChattingPage from '@/pages/ChattingPage';
+import ConversationalWizard from '@/pages/ConversationalWizard';
 import DashboardPage from '@/pages/dashboard/DashboardPage';
 import AuthPage from '@/pages/auth/AuthPage';
-import WizardLayout from '@/features/wizard/WizardLayout';
+import QuickTripPage from '@/pages/plan/QuickTripPage';
 
 export default function App() {
   const { error, isLoading } = useProfileStore(useShallow(state => ({
@@ -62,11 +62,11 @@ export default function App() {
             {/* Protected Routes */}
             <Route element={<ProtectedRoute />}>
               <Route path="/dashboard" element={<DashboardPage />} />
-              <Route path="/chat" element={<ChattingPage />} />
+              <Route path="/chat" element={<ConversationalWizard />} />
               <Route path="/plan" element={<PlanWelcomePage />} />
               <Route path="/plan/step/:stepId" element={<StepPage />} />
               <Route path="/plan/confirmation" element={<ConfirmationPage />} />
-              <Route path="/wizard" element={<WizardLayout />} />
+              <Route path="/plan/quick" element={<QuickTripPage />} />
             </Route>
           </Routes>
         </main>

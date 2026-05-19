@@ -4,10 +4,10 @@ import com.tripwise.model.Transaction;
 import com.tripwise.model.Wallet;
 import com.tripwise.service.WalletService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 import java.math.BigDecimal;
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/wallet")
@@ -18,20 +18,23 @@ public class WalletController {
 
         // Get Balance (Create Wallet if it doesn't exist)
         @GetMapping("/balance/{profileId}")
-        public Mono<Wallet> getBalance(@PathVariable String profileId) {
-                return walletService.getBalance(profileId);
+        public ResponseEntity<Wallet> getBalance(@PathVariable String profileId) {
+                Wallet wallet = walletService.getBalance(profileId).block();
+                return ResponseEntity.ok(wallet);
         }
 
         // Add Funds
         @PostMapping("/add-funds")
-        public Mono<Wallet> addFunds(@RequestBody AddFundsRequest request) {
-                return walletService.addFunds(request.profileId(), request.amount(), request.method());
+        public ResponseEntity<Wallet> addFunds(@RequestBody AddFundsRequest request) {
+                Wallet wallet = walletService.addFunds(request.profileId(), request.amount(), request.method()).block();
+                return ResponseEntity.ok(wallet);
         }
 
         // Get Transaction History
         @GetMapping("/history/{profileId}")
-        public Flux<Transaction> getHistory(@PathVariable String profileId) {
-                return walletService.getHistory(profileId);
+        public ResponseEntity<List<Transaction>> getHistory(@PathVariable String profileId) {
+                List<Transaction> transactions = walletService.getHistory(profileId).collectList().block();
+                return ResponseEntity.ok(transactions != null ? transactions : List.of());
         }
 
         // DTOs

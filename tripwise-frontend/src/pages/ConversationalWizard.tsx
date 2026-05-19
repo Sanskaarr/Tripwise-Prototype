@@ -645,6 +645,7 @@ const ConversationalWizard: React.FC = () => {
                             onHotelSelect={handleHotelSelect}
                             onTransportSelect={handleTransportSelect}
                             onRetry={handleRetry}
+                            onPlanAnother={handlePlanAnother}
                             selectedHotelName={selectedHotel?.name}
                             selectedTransportMode={selectedTransport?.mode}
                             hotelSelectionLocked={hotelSelectionLocked}

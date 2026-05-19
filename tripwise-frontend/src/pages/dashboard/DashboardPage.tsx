@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Plus, Settings, User as UserIcon, Receipt, Sparkles, Map, Wallet, Calendar, LogOut } from "lucide-react";
@@ -21,7 +21,7 @@ import { TripDetailsModal } from "@/components/dashboard/TripDetailsModal";
 
 const DashboardPage = () => {
     const navigate = useNavigate();
-    const { basicInfo, destination, dates, profileId, logout } = useProfileStore();
+    const { basicInfo, destination, dates, profileId, isNewUser, logout } = useProfileStore();
     const [activeTab, setActiveTab] = useState<'upcoming' | 'completed' | 'cancelled'>('upcoming');
 
     // Data State
@@ -43,27 +43,29 @@ const DashboardPage = () => {
     const [walletCurrency, setWalletCurrency] = useState('INR');
     const [transactions, setTransactions] = useState<Transaction[]>([]);
 
-    const fetchWalletData = async () => {
+    const fetchWalletData = useCallback(async () => {
         if (!profileId) return;
         try {
-            // Parallel fetch
             const [wallet, history] = await Promise.all([
                 walletService.getBalance(profileId),
                 walletService.getHistory(profileId)
             ]);
             setWalletBalance(wallet.balance);
             setWalletCurrency(wallet.currency);
-            setTransactions(history.reverse()); // Show newest first
+            setTransactions(history.reverse());
         } catch (error) {
             console.error("Failed to fetch wallet data", error);
         }
-    };
+    }, [profileId]);
+
+    // Wallet fetch — only reruns when profileId changes, not on every destination/dates update.
+    useEffect(() => {
+        fetchWalletData();
+    }, [fetchWalletData]);
 
     // Fetch Data
     useEffect(() => {
         const fetchTrips = async () => {
-            fetchWalletData();
-
             if (!profileId) {
                 // If local user with no backend ID, check store for draft
                 setTimeout(() => {
@@ -124,7 +126,12 @@ const DashboardPage = () => {
     };
 
     const handleNewTrip = () => {
-        navigate('/plan');
+        // Returning users (completed onboarding) skip the 12-step flow
+        if (!isNewUser && basicInfo?.fullName) {
+            navigate('/plan/quick');
+        } else {
+            navigate('/plan');
+        }
     };
 
     const handleLogout = () => {

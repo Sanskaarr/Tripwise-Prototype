@@ -51,6 +51,7 @@ interface ChatMessageProps {
     onTransportSelect?: (transport: any) => void;
     onRetry?: () => void;
     onAction?: (action: string) => void;
+    onPlanAnother?: () => void;
     selectedHotelName?: string | null;
     selectedTransportMode?: string | null;
     hotelSelectionLocked?: boolean;
@@ -88,6 +89,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
     onTransportSelect,
     onRetry,
     onAction,
+    onPlanAnother,
     selectedHotelName,
     selectedTransportMode,
     hotelSelectionLocked,
@@ -223,7 +225,7 @@ const ChatMessage: React.FC<ChatMessageProps> = ({
                     <BotAvatar />
                     <div className="flex flex-col gap-2 min-w-0 flex-1">
                         <span className="text-[10px] font-bold uppercase tracking-widest text-primary/70 ml-1">TripWise AI</span>
-                        <MasterPlanCard plan={message.content as string} />
+                        <MasterPlanCard plan={message.content as string} onPlanAnother={onPlanAnother} />
                     </div>
                 </div>
             )}

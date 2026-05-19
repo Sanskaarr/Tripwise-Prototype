@@ -1,23 +1,29 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import localforage from 'localforage';
-import { TripPlanSession, HotelOption, TransportOption } from '@/lib/api/interactiveApi';
+import { HotelOption, TransportOption } from '@/lib/api/interactiveApi';
+import { ChatMessageData } from '@/components/chat/ChatMessage';
 
 interface WizardState {
+    _hasHydrated: boolean;
     sessionId: string | null;
     currentStep: 'OVERVIEW' | 'HOTEL' | 'TRANSPORT' | 'PLAN';
     isLoading: boolean;
     error: string | null;
 
+    // Chat messages
+    messages: ChatMessageData[];
+
     // Data
-    overviewData: any | null; // Parsed JSON
+    overviewData: any | null;
     hotelOptions: HotelOption[];
     selectedHotel: HotelOption | null;
     transportOptions: TransportOption[];
     selectedTransport: TransportOption | null;
-    masterPlan: string | null; // Markdown
+    masterPlan: string | null;
 
     // Actions
+    setHasHydrated: (hydrated: boolean) => void;
     setSessionId: (id: string) => void;
     setLoading: (loading: boolean) => void;
     setError: (error: string | null) => void;
@@ -30,17 +36,24 @@ interface WizardState {
     selectTransport: (transport: TransportOption) => void;
     setMasterPlan: (plan: string) => void;
 
+    addMessage: (msg: ChatMessageData) => void;
+    removeLastMessage: () => void;
+    updateLastMessage: (content: string) => void;
+    clearMessages: () => void;
+
     resetWizard: () => void;
 }
 
 export const useWizardStore = create<WizardState>()(
     persist(
         (set) => ({
+            _hasHydrated: false,
             sessionId: null,
             currentStep: 'OVERVIEW',
             isLoading: false,
             error: null,
 
+            messages: [],
             overviewData: null,
             hotelOptions: [],
             selectedHotel: null,
@@ -48,6 +61,7 @@ export const useWizardStore = create<WizardState>()(
             selectedTransport: null,
             masterPlan: null,
 
+            setHasHydrated: (hydrated) => set({ _hasHydrated: hydrated }),
             setSessionId: (id) => set({ sessionId: id }),
             setLoading: (loading) => set({ isLoading: loading }),
             setError: (error) => set({ error }),
@@ -60,22 +74,37 @@ export const useWizardStore = create<WizardState>()(
             selectTransport: (transport) => set({ selectedTransport: transport }),
             setMasterPlan: (plan) => set({ masterPlan: plan }),
 
+            addMessage: (msg) => set((state) => ({ messages: [...state.messages, msg] })),
+            removeLastMessage: () => set((state) => ({ messages: state.messages.slice(0, -1) })),
+            updateLastMessage: (content) =>
+                set((state) => {
+                    if (state.messages.length === 0) return state;
+                    const updated = [...state.messages];
+                    updated[updated.length - 1] = { ...updated[updated.length - 1], content };
+                    return { messages: updated };
+                }),
+            clearMessages: () => set({ messages: [] }),
+
             resetWizard: () => set({
                 sessionId: null,
                 currentStep: 'OVERVIEW',
                 isLoading: false,
                 error: null,
+                messages: [],
                 overviewData: null,
                 hotelOptions: [],
                 selectedHotel: null,
                 transportOptions: [],
                 selectedTransport: null,
-                masterPlan: null
+                masterPlan: null,
             }),
         }),
         {
             name: 'tripwise-wizard',
             storage: createJSONStorage(() => localforage),
+            onRehydrateStorage: () => (state) => {
+                state?.setHasHydrated(true);
+            },
         }
     )
 );

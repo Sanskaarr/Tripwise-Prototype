@@ -1,34 +1,35 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useProfileStore } from "@/store/profileStore";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { sessionCheckState } from "@/lib/sessionCheckState";
 
 export const ProtectedRoute = () => {
-    const { isAuthenticated, token, validateSession } = useProfileStore();
+    const { isAuthenticated, validateSession } = useProfileStore();
     const location = useLocation();
-    const [isVerifying, setIsVerifying] = useState(false);
+    const [isVerifying, setIsVerifying] = useState(!sessionCheckState.validated);
+    const didRun = useRef(false);
 
     useEffect(() => {
-        // If we have a token but aren't authenticated (e.g. after refresh/update),
-        // try to validate the session
-        if (!isAuthenticated && token) {
-            const verify = async () => {
-                setIsVerifying(true);
-                await validateSession();
-                setIsVerifying(false);
-            };
-            verify();
-        }
-    }, [isAuthenticated, token, validateSession]);
+        if (didRun.current) return;
+        didRun.current = true;
 
-    // If fully authenticated, render content
-    if (isAuthenticated) {
-        return <Outlet />;
-    }
+        if (sessionCheckState.validated) return;
 
-    // If we have a token and are checking it (or about to), show nothing or loader
-    // This prevents the flicker/redirect while restoring session
-    if (token || isVerifying) {
-        // You could return a loading spinner here
+        // Cookie-based auth: isAuthenticated in the store is optimistic (persisted).
+        // Always validate against the server once per browser session so a stale
+        // persisted flag can't bypass a missing/expired auth_token cookie.
+        // sessionCheckState.validated is reset to false by the 401 interceptor so
+        // an expired cookie triggers re-validation on the next protected route visit.
+        const verify = async () => {
+            setIsVerifying(true);
+            await validateSession();
+            sessionCheckState.validated = true;
+            setIsVerifying(false);
+        };
+        verify();
+    }, [validateSession]);
+
+    if (isVerifying) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50">
                 <div className="animate-pulse flex flex-col items-center">
@@ -39,8 +40,9 @@ export const ProtectedRoute = () => {
         );
     }
 
-    // Valid session not found - redirect to auth
-    // Redirect to auth page if not logged in
-    // Save current location to redirect back after login (optional enhancement)
+    if (isAuthenticated) {
+        return <Outlet />;
+    }
+
     return <Navigate to="/auth" state={{ from: location }} replace />;
 };

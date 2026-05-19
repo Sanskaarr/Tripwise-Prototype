@@ -1,5 +1,6 @@
 import axios, { AxiosInstance, AxiosError, AxiosResponse } from 'axios';
 import { config } from '@/config/env';
+import { sessionCheckState } from '@/lib/sessionCheckState';
 
 export const apiClient: AxiosInstance = axios.create({
   baseURL: config.apiBaseUrl,
@@ -22,6 +23,18 @@ apiClient.interceptors.response.use(
       });
       if (response.status === 401) {
         console.warn('Session expired or not authenticated');
+        // Force re-validation on the next protected route visit so stale
+        // persisted isAuthenticated can't bypass an expired cookie.
+        sessionCheckState.validated = false;
+        // Dynamic import avoids circular dep (profileStore → authApi → client).
+        // Only trigger logout once — guard on isAuthenticated so concurrent 401s
+        // from parallel requests don't fire multiple logout calls.
+        import('@/store/profileStore').then(({ useProfileStore }) => {
+          const state = useProfileStore.getState();
+          if (state.isAuthenticated) {
+            state.logout();
+          }
+        });
       }
     } else if (request) {
       if (message.includes('timeout')) {
