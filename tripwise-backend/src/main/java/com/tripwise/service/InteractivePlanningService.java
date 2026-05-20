@@ -2,14 +2,13 @@ package com.tripwise.service;
 
 import com.tripwise.ai.GeminiClient;
 import com.tripwise.config.AIPrompts;
-import com.tripwise.dto.TripRequest;
+
 import com.tripwise.model.TravelerProfile;
 import com.tripwise.model.TripPlanSession;
 import com.tripwise.repository.TravelerProfileRepository;
 import com.tripwise.session.TripPlanSessionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
@@ -24,9 +23,6 @@ public class InteractivePlanningService {
     private final TripPlanSessionRepository sessionRepository;
     private final TravelerProfileRepository profileRepository;
     private final GeminiClient geminiClient;
-
-    @Value("${app.default.user.country:India}")
-    private String defaultUserCountry;
 
     // STEP 0a: GET SESSION BY ID
     public Mono<TripPlanSession> getSessionById(String sessionId) {
@@ -46,17 +42,21 @@ public class InteractivePlanningService {
                 .subscribeOn(Schedulers.boundedElastic())
                 .flatMap(optionalProfile -> optionalProfile
                         .map(profile -> {
-                            TripRequest request = mapProfileToRequest(profile);
+                            String dest = profile.getDestination() != null && profile.getDestination().getDestination() != null 
+                                    ? profile.getDestination().getDestination() : "your destination";
+                            int days = profile.getDates() != null && profile.getDates().getDuration() != null 
+                                    ? profile.getDates().getDuration() : 3;
+
                             String systemPrompt = "You are a professional travel planner. Provide a brief, inspiring overview of the destination "
-                                    + request.getDestination() + " for a " + request.getDays()
+                                    + dest + " for a " + days
                                     + " day trip. Return the response as a JSON object with fields: destination, overview, weatherForecast, estimatedCost, highlights (array).";
-                            String userPrompt = "Create a trip overview for " + request.getDestination();
+                            String userPrompt = "Create a trip overview for " + dest;
 
                             return geminiClient.generateResponse(systemPrompt, userPrompt)
                                     .flatMap(aiResponse -> {
                                         TripPlanSession session = TripPlanSession.builder()
                                                 .profileId(profileId)
-                                                .destination(request.getDestination())
+                                                .destination(dest)
                                                 .createdAt(LocalDateTime.now())
                                                 .updatedAt(LocalDateTime.now())
                                                 .currentStep(TripPlanSession.PlanningStep.INIT)
@@ -76,11 +76,15 @@ public class InteractivePlanningService {
                         .subscribeOn(Schedulers.boundedElastic())
                         .flatMap(optionalProfile -> optionalProfile
                                 .map(profile -> {
-                                    TripRequest request = mapProfileToRequest(profile);
-                                    String systemPrompt = "Find 3 best hotel options for " + request.getDestination()
-                                            + " with budget " + request.getBudgetLevel()
+                                    String dest = profile.getDestination() != null && profile.getDestination().getDestination() != null 
+                                            ? profile.getDestination().getDestination() : "your destination";
+                                    String budget = profile.getBudget() != null && profile.getBudget().getLevel() != null 
+                                            ? profile.getBudget().getLevel() : "medium";
+
+                                    String systemPrompt = "Find 3 best hotel options for " + dest
+                                            + " with budget " + budget
                                             + ". Return a JSON object with an 'options' array. Each option should have: name, address, costPerNight, reason.";
-                                    String userPrompt = "Find hotels in " + request.getDestination();
+                                    String userPrompt = "Find hotels in " + dest;
 
                                     return geminiClient.generateResponse(systemPrompt, userPrompt)
                                             .flatMap(rawResponse -> {
@@ -112,11 +116,13 @@ public class InteractivePlanningService {
                         .subscribeOn(Schedulers.boundedElastic())
                         .flatMap(optionalProfile -> optionalProfile
                                 .map(profile -> {
-                                    TripRequest request = mapProfileToRequest(profile);
-                                    String systemPrompt = "Suggest 3 transport options in " + request.getDestination()
+                                    String dest = profile.getDestination() != null && profile.getDestination().getDestination() != null 
+                                            ? profile.getDestination().getDestination() : "your destination";
+
+                                    String systemPrompt = "Suggest 3 transport options in " + dest
                                             + " starting from " + session.getSelectedHotel().getAddress()
                                             + ". Return a JSON object with an 'options' array. Each option: mode, cost, duration, details.";
-                                    String userPrompt = "Find transport for my trip in " + request.getDestination();
+                                    String userPrompt = "Find transport for my trip in " + dest;
 
                                     return geminiClient.generateResponse(systemPrompt, userPrompt)
                                             .flatMap(jsonResponse -> {
@@ -148,12 +154,18 @@ public class InteractivePlanningService {
                         .subscribeOn(Schedulers.boundedElastic())
                         .flatMap(optionalProfile -> optionalProfile
                                 .map(profile -> {
-                                    TripRequest request = mapProfileToRequest(profile);
+                                    String destFromProfile = profile.getDestination() != null && profile.getDestination().getDestination() != null 
+                                            ? profile.getDestination().getDestination() : "your destination";
+                                    int days = profile.getDates() != null && profile.getDates().getDuration() != null 
+                                            ? profile.getDates().getDuration() : 3;
+                                    String budget = profile.getBudget() != null && profile.getBudget().getLevel() != null 
+                                            ? profile.getBudget().getLevel() : "medium";
+
                                     String destination = session.getDestination() != null
-                                            ? session.getDestination() : request.getDestination();
+                                            ? session.getDestination() : destFromProfile;
                                     String systemPrompt = AIPrompts.getMasterPlanJsonPrompt(destination);
                                     String userPrompt = "Create a detailed day-by-day itinerary for " + destination
-                                            + ". Duration: " + request.getDays() + " days. Budget level: " + request.getBudgetLevel()
+                                            + ". Duration: " + days + " days. Budget level: " + budget
                                             + ". I am staying at '" + session.getSelectedHotel().getName()
                                             + "' (" + session.getSelectedHotel().getAddress() + ")"
                                             + " and using '" + session.getFinalizedTransportChoice().getMode() + "' as my primary local transport.";
@@ -170,20 +182,7 @@ public class InteractivePlanningService {
                                 .orElse(Mono.error(new RuntimeException("Profile not found")))));
     }
 
-    private TripRequest mapProfileToRequest(TravelerProfile profile) {
-        TripRequest request = new TripRequest();
-        if (profile.getDestination() != null)
-            request.setDestination(profile.getDestination().getDestination());
-        if (profile.getBudget() != null)
-            request.setBudgetLevel(profile.getBudget().getLevel());
-        if (profile.getDestination() != null)
-            request.setTravelStyle(profile.getDestination().getTravelStyle() != null
-                    ? profile.getDestination().getTravelStyle() : "balanced");
-        if (profile.getDates() != null)
-            request.setDays(profile.getDates().getDuration());
-        request.setUserCountry(defaultUserCountry);
-        return request;
-    }
+
 
     private String cleanJson(String response) {
         if (response == null) return "{}";

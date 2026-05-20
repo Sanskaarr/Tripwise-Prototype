@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useCallback, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { SiteHeader } from '@/components/layout/SiteHeader';
 import { useProfileStore } from '@/store/profileStore';
 import { useWizardStore } from '@/store/wizardStore';
@@ -8,7 +8,6 @@ import { useShallow } from 'zustand/react/shallow';
 import { Search, ArrowUp, Sparkles, Map, IndianRupee } from 'lucide-react';
 import ChatMessage, { ChatMessageData } from '@/components/chat/ChatMessage';
 import tripwiseLogo from '@/assets/tripwise-logo.png';
-import { extractAndGeocodePlaces } from '@/utils/extractPlaces';
 import { config } from '@/config/env';
 import { BudgetSummary } from '@/components/chat/BudgetSummary';
 
@@ -18,6 +17,7 @@ const uid = () => `msg_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 // ─── Component ─────────────────────────────────────────────────
 const ConversationalWizard: React.FC = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const bottomRef = useRef<HTMLDivElement>(null);
     const hasInitialized = useRef(false);
     const [inputText, setInputText] = useState('');
@@ -34,7 +34,7 @@ const ConversationalWizard: React.FC = () => {
         addMessage, removeLastMessage, updateLastMessage, clearMessages,
         setHotelOptions, selectHotel: storeSelectHotel,
         setTransportOptions, selectTransport: storeSelectTransport,
-        setMasterPlan, setStep, setLoading, resetWizard,
+        setMasterPlan, setStep, setLoading, setOverviewData, setSessionId, resetWizard,
     } = useWizardStore();
 
     const userName = basicInfo.fullName?.split(' ')[0] || 'Traveler';
@@ -54,12 +54,65 @@ const ConversationalWizard: React.FC = () => {
             const state = useWizardStore.getState();
             // If we're resuming a finalized plan (CONTINUE PLAN from dashboard), fall through to the step handler below
             if (state.currentStep === 'PLAN' && state.masterPlan) {
-                // intentional fall-through — step handler at line ~93 will display the plan
+                // intentional fall-through — step handler below will display the plan
             } else {
                 hasInitialized.current = true;
 
-                // Check if they have a draft trip in profileStore
                 const profileState = useProfileStore.getState();
+                const isReturning = (location.state as { isReturning?: boolean })?.isReturning;
+
+                // Returning user clicked "Continue Plan" on dashboard — re-initialize their AI session
+                if (isReturning && profileState.profileId) {
+                    addMessage({
+                        id: uid(),
+                        sender: 'bot',
+                        type: 'text',
+                        content: `Welcome back, ${userName}! Let me reload your trip plan...`,
+                        timestamp: Date.now(),
+                    });
+                    setLoading(true);
+                    InteractiveApi.initSession(profileState.profileId).then((res) => {
+                        setLoading(false);
+                        if (res.success && res.data) {
+                            const overviewStr = res.data.destinationOverview ?? '';
+                            const parsed = typeof overviewStr === 'string'
+                                ? (overviewStr ? JSON.parse(overviewStr) : null)
+                                : overviewStr;
+                            setSessionId(res.data.id);
+                            setOverviewData(overviewStr);
+                            setStep('OVERVIEW');
+                            addMessage({
+                                id: uid(),
+                                sender: 'bot',
+                                type: 'text',
+                                content: `I've analyzed your preferences for **${parsed?.destination || 'your trip'}**. Here's what I found:`,
+                                timestamp: Date.now(),
+                            });
+                            setTimeout(() => {
+                                addMessage({ id: uid(), sender: 'bot', type: 'overview', content: parsed, timestamp: Date.now() });
+                                setTimeout(() => {
+                                    addMessage({
+                                        id: uid(), sender: 'bot', type: 'text',
+                                        content: `Looks like an amazing trip ahead! When you're ready, I can search for the best hotels within your budget.`,
+                                        timestamp: Date.now(),
+                                    });
+                                }, 600);
+                            }, 800);
+                        } else {
+                            removeLastMessage();
+                            addMessage({
+                                id: uid(),
+                                sender: 'system',
+                                type: 'error',
+                                content: res.error || 'Failed to load your trip plan. Please try again.',
+                                timestamp: Date.now(),
+                            });
+                        }
+                    });
+                    return;
+                }
+
+                // New user with an in-progress draft — send them to confirm & submit their plan
                 if (profileState.destination?.destination && profileState.dates?.startDate) {
                     addMessage({
                         id: uid(),
@@ -188,7 +241,7 @@ const ConversationalWizard: React.FC = () => {
                 });
             }, 600);
         }, 800);
-    }, [overviewData, messages.length, userName, addMessage]);
+    }, [overviewData, messages.length, userName, addMessage, location]);
 
     // ─── Core Streaming Logic ─────────────────────────────────
     const processAIResponse = async (allMessages: ChatMessageData[]) => {
@@ -198,6 +251,7 @@ const ConversationalWizard: React.FC = () => {
         try {
             const response = await fetch(CHAT_URL, {
                 method: "POST",
+                credentials: "include",
                 headers: {
                     "Content-Type": "application/json",
                 },
@@ -249,19 +303,6 @@ const ConversationalWizard: React.FC = () => {
                 }
             }
 
-            // Extract places for the map
-            if (assistantContent) {
-                try {
-                    const dest = useProfileStore.getState().destination?.destination || '';
-                    const extractedPlaces = await extractAndGeocodePlaces(assistantContent, dest);
-                    if (extractedPlaces.length > 0) {
-                        // We can store these in the store if needed for the map
-                        console.log("Extracted Places:", extractedPlaces);
-                    }
-                } catch (err) {
-                    console.warn("Failed to extract places:", err);
-                }
-            }
         } catch (error) {
             console.error("Chat error:", error);
             addMessage({
@@ -275,8 +316,29 @@ const ConversationalWizard: React.FC = () => {
     };
 
     const handleFindHotels = useCallback(async () => {
-        if (!sessionId || isLoading) return;
+        if (isLoading) return;
         setLoading(true);
+
+        // If session was lost (e.g. page refresh), re-initialize it from the profile
+        let activeSessionId = sessionId;
+        if (!activeSessionId) {
+            const profileId = useProfileStore.getState().profileId;
+            if (!profileId) {
+                addMessage({ id: uid(), sender: 'system', type: 'error', content: 'No active plan found. Please start a new plan.', timestamp: Date.now() });
+                setLoading(false);
+                return;
+            }
+            const initRes = await InteractiveApi.initSession(profileId);
+            if (!initRes.success || !initRes.data) {
+                addMessage({ id: uid(), sender: 'system', type: 'error', content: 'Failed to resume your plan. Please try again.', timestamp: Date.now() });
+                setLoading(false);
+                return;
+            }
+            useWizardStore.getState().setSessionId(initRes.data.id);
+            useWizardStore.getState().setOverviewData(initRes.data.destinationOverview);
+            useWizardStore.getState().setStep('OVERVIEW');
+            activeSessionId = initRes.data.id;
+        }
 
         addMessage({
             id: uid(),
@@ -287,7 +349,7 @@ const ConversationalWizard: React.FC = () => {
         });
 
         try {
-            const response = await InteractiveApi.getHotelSuggestions(sessionId);
+            const response = await InteractiveApi.getHotelSuggestions(activeSessionId);
             removeLastMessage(); // Remove loading
 
             if (response.success) {
@@ -334,7 +396,7 @@ const ConversationalWizard: React.FC = () => {
                     id: uid(),
                     sender: 'system',
                     type: 'error',
-                    content: 'Failed to fetch hotel options. Please try again.',
+                    content: response.error || 'Failed to fetch hotel options. Please try again.',
                     timestamp: Date.now(),
                 });
             }
@@ -350,7 +412,7 @@ const ConversationalWizard: React.FC = () => {
         } finally {
             setLoading(false);
         }
-    }, [sessionId, isLoading, setLoading, addMessage, removeLastMessage, setHotelOptions, setStep]);
+    }, [sessionId, isLoading, setLoading, addMessage, removeLastMessage, setHotelOptions, setStep, setOverviewData]);
 
     const handleHotelSelect = useCallback(async (hotel: HotelOption) => {
         if (!sessionId || isLoading) return;
@@ -437,7 +499,7 @@ const ConversationalWizard: React.FC = () => {
                         id: uid(),
                         sender: 'system',
                         type: 'error',
-                        content: 'No transport options found. Please try again.',
+                        content: response.error || 'No transport options found. Please try again.',
                         timestamp: Date.now(),
                     });
                 }
@@ -530,7 +592,7 @@ const ConversationalWizard: React.FC = () => {
                     id: uid(),
                     sender: 'system',
                     type: 'error',
-                    content: 'Failed to generate the master plan. Please try again.',
+                    content: response.error || 'Failed to generate the master plan. Please try again.',
                     timestamp: Date.now(),
                 });
             }

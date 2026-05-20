@@ -22,19 +22,26 @@ apiClient.interceptors.response.use(
         status: response.status,
       });
       if (response.status === 401) {
-        console.warn('Session expired or not authenticated');
-        // Force re-validation on the next protected route visit so stale
-        // persisted isAuthenticated can't bypass an expired cookie.
         sessionCheckState.validated = false;
-        // Dynamic import avoids circular dep (profileStore → authApi → client).
-        // Only trigger logout once — guard on isAuthenticated so concurrent 401s
-        // from parallel requests don't fire multiple logout calls.
-        import('@/store/profileStore').then(({ useProfileStore }) => {
-          const state = useProfileStore.getState();
-          if (state.isAuthenticated) {
-            state.logout();
-          }
-        });
+        // A 401 from a resource endpoint doesn't necessarily mean the session is dead
+        // (e.g. a background call to a non-existent or restricted endpoint).
+        // Verify the session first; only logout if the session is genuinely expired.
+        // isVerifyingSession debounces concurrent 401s so we only fire one verify.
+        if (!sessionCheckState.isVerifyingSession) {
+          sessionCheckState.isVerifyingSession = true;
+          import('@/lib/api/authApi')
+            .then(({ validateSession }) => validateSession())
+            .then(res => {
+              sessionCheckState.isVerifyingSession = false;
+              if (!res.success) {
+                sessionCheckState.onUnauthorized?.();
+              }
+            })
+            .catch(() => {
+              sessionCheckState.isVerifyingSession = false;
+              sessionCheckState.onUnauthorized?.();
+            });
+        }
       }
     } else if (request) {
       if (message.includes('timeout')) {
@@ -55,7 +62,8 @@ export const getErrorMessage = (error: unknown): string => {
       switch (response.status) {
         case 401: return 'Session expired. Please log in again.';
         case 404: return 'Resource not found.';
-        case 500: return 'Server error. Please try again.';
+        case 500: return 'Our AI servers are currently busy. Please try again in a few minutes.';
+        case 503: return 'Our servers are currently busy. Please try again in a few minutes.';
         default: return (response.data as { message?: string })?.message || response.statusText || 'An error occurred';
       }
     } else if (request) {

@@ -13,15 +13,6 @@ export const tripService = {
         }
     },
 
-    getTripDetails: async (tripId: string) => {
-        try {
-            const response = await apiClient.get(`${API_URL}/${tripId}`);
-            return response.data;
-        } catch (error) {
-            console.error('Error fetching trip details:', error);
-            throw error;
-        }
-    },
 
     createTrip: async (tripData: any) => {
         try {

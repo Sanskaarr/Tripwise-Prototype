@@ -1,6 +1,6 @@
-import axios from 'axios';
+import { apiClient } from '@/lib/api/client';
 
-const API_URL = 'http://localhost:8080/api/cotravelers';
+const API_URL = '/api/cotravelers';
 
 export interface CoTraveler {
     id?: string;
@@ -13,21 +13,21 @@ export interface CoTraveler {
 
 export const coTravelerService = {
     getCoTravelers: async (profileId: string) => {
-        const response = await axios.get(`${API_URL}/profile/${profileId}`);
+        const response = await apiClient.get(`${API_URL}/profile/${profileId}`);
         return response.data;
     },
 
     addCoTraveler: async (data: CoTraveler) => {
-        const response = await axios.post(API_URL, data);
+        const response = await apiClient.post(API_URL, data);
         return response.data;
     },
 
     updateCoTraveler: async (id: string, data: CoTraveler) => {
-        const response = await axios.put(`${API_URL}/${id}`, data);
+        const response = await apiClient.put(`${API_URL}/${id}`, data);
         return response.data;
     },
 
     deleteCoTraveler: async (id: string) => {
-        await axios.delete(`${API_URL}/${id}`);
+        await apiClient.delete(`${API_URL}/${id}`);
     }
 };

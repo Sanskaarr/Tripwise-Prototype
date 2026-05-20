@@ -1,16 +1,11 @@
-'use client';
-
-import { useEffect } from 'react';
 import { Routes, Route } from 'react-router-dom';
 import ErrorBoundary from '@/components/ErrorBoundary';
 import NetworkStatusBanner from '@/components/NetworkStatusBanner';
 import ValidationErrors from '@/components/ValidationErrors';
-import SuccessToast from '@/components/SuccessToast';
 import WelcomeToast from '@/components/WelcomeToast';
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute';
 import { LiquidBackground } from '@/components/ui/LiquidBackground';
 import { useProfileStore } from '@/store/profileStore';
-import { useSessionRecovery } from '@/hooks/useSessionRecovery';
 
 import { useShallow } from 'zustand/react/shallow';
 
@@ -25,19 +20,13 @@ import AuthPage from '@/pages/auth/AuthPage';
 import QuickTripPage from '@/pages/plan/QuickTripPage';
 
 export default function App() {
-  const { error, isLoading } = useProfileStore(useShallow(state => ({
+  const { error } = useProfileStore(useShallow(state => ({
     error: state.error,
-    isLoading: state.isLoading
   })));
-  const { recoverSession } = useSessionRecovery({ enableAutoRecovery: true });
-
-  useEffect(() => {
-    recoverSession();
-  }, []);
 
   return (
     <ErrorBoundary
-      onError={(error, errorInfo, componentStack) => {
+      onError={(error, errorInfo) => {
         console.error('App Error Boundary caught:', error, errorInfo);
       }}
     >
@@ -72,11 +61,6 @@ export default function App() {
         </main>
 
         <WelcomeToast />
-
-        <SuccessToast
-          show={isLoading}
-          message="Processing..."
-        />
       </div>
     </ErrorBoundary>
   );

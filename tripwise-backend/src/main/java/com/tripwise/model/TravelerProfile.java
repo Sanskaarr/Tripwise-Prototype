@@ -68,12 +68,6 @@ public class TravelerProfile {
     @Field("communication")
     private Communication communication;
 
-    @Field("generatedPlan")
-    private String generatedPlan;
-
-    @Field("planGeneratedAt")
-    private LocalDateTime planGeneratedAt;
-
     @Data
     @Builder
     @NoArgsConstructor

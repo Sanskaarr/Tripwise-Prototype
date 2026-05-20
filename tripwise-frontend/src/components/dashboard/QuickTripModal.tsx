@@ -1,3 +1,4 @@
+import { apiClient } from '@/lib/api/client';
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -173,17 +174,13 @@ export function QuickTripModal({ isOpen, onClose }: QuickTripModalProps) {
           adults, children,
           infants: store.basicInfo.infants ?? 0,
         }),
-        fetch(`http://localhost:8080/api/profiles/${pid}/dates`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            startDate: startDate || null,
-            returnDate: endDate || null,
-            isFlexible: false,
-            duration: startDate && endDate
-              ? Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / 86400000)
-              : 0,
-          }),
+        apiClient.post(`/api/profiles/${pid}/dates`, {
+          startDate: startDate || null,
+          returnDate: endDate || null,
+          isFlexible: false,
+          duration: startDate && endDate
+            ? Math.ceil((new Date(endDate).getTime() - new Date(startDate).getTime()) / 86400000)
+            : 0,
         }),
       ]);
 

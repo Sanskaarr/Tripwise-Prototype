@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import localforage from 'localforage';
+import { sessionCheckState } from '@/lib/sessionCheckState';
 
 export interface TravelerInfo {
   fullName: string;
@@ -514,6 +515,16 @@ export const useProfileStore = create<ProfileState>()(
     }
   )
 );
+
+// Wire up the 401 interceptor in client.ts to call logout() synchronously.
+// Registered once at module load — no circular import because sessionCheckState
+// has no dependencies of its own.
+sessionCheckState.onUnauthorized = () => {
+  const state = useProfileStore.getState();
+  if (state.isAuthenticated) {
+    state.logout();
+  }
+};
 
 // Selectors for performance
 export const selectProfileId = (state: ProfileState) => state.profileId;
