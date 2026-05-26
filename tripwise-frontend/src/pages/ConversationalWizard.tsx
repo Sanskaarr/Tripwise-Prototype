@@ -5,12 +5,11 @@ import { useProfileStore } from '@/store/profileStore';
 import { useWizardStore } from '@/store/wizardStore';
 import { InteractiveApi } from '@/lib/api/interactiveApi';
 import { useShallow } from 'zustand/react/shallow';
-import { ArrowUp, Sparkles, Map, IndianRupee } from 'lucide-react';
+import { ArrowUp, Sparkles } from 'lucide-react';
 import ChatMessage, { ChatMessageData } from '@/components/chat/ChatMessage';
 import tripwiseLogo from '@/assets/tripwise-logo.png';
 import { config } from '@/config/env';
 import { sessionCheckState } from '@/lib/sessionCheckState';
-import { BudgetSummary } from '@/components/chat/BudgetSummary';
 
 // ─── Unique ID Generator ───────────────────────────────────────
 const uid = () => `msg_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -21,9 +20,8 @@ const ConversationalWizard: React.FC = () => {
     const location = useLocation();
     const bottomRef = useRef<HTMLDivElement>(null);
     const hasInitialized = useRef(false);
+    const autoGeneratePlanRef = useRef(false);
     const [inputText, setInputText] = useState('');
-    const [showMap, setShowMap] = useState(false);
-    const [showBudget, setShowBudget] = useState(false);
 
     // Profile store
     const { basicInfo } = useProfileStore(useShallow(state => ({ basicInfo: state.basicInfo })));
@@ -221,6 +219,12 @@ const ConversationalWizard: React.FC = () => {
                 }
             }
 
+            if (assistantContent.includes('[PLAN_READY]')) {
+                const cleaned = assistantContent.replace('[PLAN_READY]', '').trim();
+                updateLastMessage(cleaned);
+                autoGeneratePlanRef.current = true;
+            }
+
         } catch (error) {
             console.error("Chat error:", error);
             addMessage({
@@ -326,10 +330,14 @@ const ConversationalWizard: React.FC = () => {
 
         try {
             await processAIResponse([...messages, userMsg]);
+            if (autoGeneratePlanRef.current) {
+                autoGeneratePlanRef.current = false;
+                setTimeout(() => handleGenerateMasterPlanFromChat(), 1200);
+            }
         } finally {
             setLoading(false);
         }
-    }, [inputText, isLoading, messages, addMessage, setLoading]);
+    }, [inputText, isLoading, messages, addMessage, setLoading, handleGenerateMasterPlanFromChat]);
 
     const getInputPlaceholder = () => {
         if (isLoading) return 'TripWise AI is working...';
@@ -343,45 +351,19 @@ const ConversationalWizard: React.FC = () => {
             <main className="relative z-10 container mx-auto px-4 pt-24 pb-32 max-w-4xl min-h-screen flex flex-col">
 
                 {/* Controls Overlay */}
-                <div className="flex justify-between items-center gap-2 mb-4 sticky top-24 z-40">
-                    <div className="flex items-center gap-2">
-                        {sessionId && messages.filter(m => !(m as any).isHidden).length > 0 && useWizardStore.getState().currentStep !== 'PLAN' && (
-                            <button
-                                onClick={handleGenerateMasterPlanFromChat}
-                                disabled={isLoading}
-                                className="px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all duration-300
-                                bg-gradient-to-r from-primary to-purple-600 text-white hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-primary/20 border border-white/10 disabled:opacity-50 disabled:cursor-not-allowed animate-in fade-in slide-in-from-left duration-300"
-                            >
-                                <Sparkles className="w-3.5 h-3.5" />
-                                Generate Master Plan
-                            </button>
-                        )}
-                    </div>
-                    <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 mb-4 sticky top-24 z-40">
+                    {sessionId && messages.filter(m => !(m as any).isHidden).length > 0 && useWizardStore.getState().currentStep !== 'PLAN' && (
                         <button
-                            onClick={() => setShowBudget(!showBudget)}
-                            className={`p-2.5 rounded-xl border border-white/10 backdrop-blur-md transition-all ${showBudget ? 'bg-primary/20 text-primary border-primary/30' : 'bg-black/20 text-muted-foreground'}`}
+                            onClick={handleGenerateMasterPlanFromChat}
+                            disabled={isLoading}
+                            className="px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all duration-300
+                            bg-gradient-to-r from-primary to-purple-600 text-white hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-primary/20 border border-white/10 disabled:opacity-50 disabled:cursor-not-allowed animate-in fade-in slide-in-from-left duration-300"
                         >
-                            <IndianRupee className="w-5 h-5" />
+                            <Sparkles className="w-3.5 h-3.5" />
+                            Generate Master Plan
                         </button>
-                        <button
-                            onClick={() => setShowMap(!showMap)}
-                            className={`p-2.5 rounded-xl border border-white/10 backdrop-blur-md transition-all ${showMap ? 'bg-primary/20 text-primary border-primary/30' : 'bg-black/20 text-muted-foreground'}`}
-                        >
-                            <Map className="w-5 h-5" />
-                        </button>
-                    </div>
+                    )}
                 </div>
-
-                {/* Budget Summary Section */}
-                {showBudget && (
-                    <div className="mb-6 animate-in slide-in-from-top duration-300">
-                        <BudgetSummary messages={messages.filter(m => !(m as any).isHidden).map(m => ({
-                            role: m.sender === 'bot' ? 'assistant' : 'user',
-                            content: typeof m.content === 'string' ? m.content : JSON.stringify(m.content)
-                        }))} />
-                    </div>
-                )}
 
                 {/* Message List */}
                 <div className="flex-1 flex flex-col gap-5 pb-4">

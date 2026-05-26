@@ -222,18 +222,27 @@ public class BookingService {
                 if (itinerary.isArray() && !itinerary.isEmpty()) {
                     int numDays = itinerary.size();
                     String firstDate = itinerary.get(0).at("/date").asText("");
-                    String lastDate = itinerary.get(numDays - 1).at("/date").asText("");
                     if (!firstDate.isEmpty()) {
-                        sb.append("Departure date: ").append(firstDate).append("\n");
-                        sb.append("Return date: ").append(lastDate).append("\n");
+                        sb.append("Departure date: ").append(firstDate).append(" (use this EXACT date in arrivalTransport.departureDate)\n");
                     }
                     sb.append("Duration: ").append(numDays).append(" days\n");
+                }
+                // Extract origin city from first transit activity if available
+                outer:
+                for (JsonNode dayNode : itinerary) {
+                    for (JsonNode act : dayNode.path("activities")) {
+                        if (act.path("isTransit").asBoolean(false)) {
+                            String from = act.path("from").asText("");
+                            if (!from.isEmpty()) { sb.append("Origin city: ").append(from).append("\n"); break outer; }
+                        }
+                    }
                 }
             } catch (Exception e) {
                 log.debug("Could not parse master plan dates for booking prompt");
             }
         }
 
+        sb.append("\nDo NOT include returnTransport in the response.");
         sb.append("\nGenerate realistic booking confirmations matching the transport mode (flight/train/bus). ");
         sb.append("All refs must look authentic. PNRs must be exactly 6 uppercase alphanumeric chars.");
         return sb.toString();

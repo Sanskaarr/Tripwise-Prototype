@@ -2,6 +2,7 @@ import { apiClient, apiCall, ApiResponse } from './client';
 
 export interface TripwiseBooking {
   id: string;
+  shareToken: string;
   sessionId: string;
   profileId: string;
   destination: string;

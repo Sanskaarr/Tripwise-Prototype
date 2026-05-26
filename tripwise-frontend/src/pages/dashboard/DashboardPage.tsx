@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useWizardStore } from "@/store/wizardStore";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Plus, Settings, User as UserIcon, Receipt, Sparkles, Map, Wallet, Calendar, LogOut } from "lucide-react";
@@ -23,6 +24,7 @@ import { TripDetailsModal } from "@/components/dashboard/TripDetailsModal";
 const DashboardPage = () => {
     const navigate = useNavigate();
     const { basicInfo, destination, dates, profileId, isNewUser, logout } = useProfileStore();
+    const { bookingId: wizardBookingId } = useWizardStore();
     const [activeTab, setActiveTab] = useState<'upcoming' | 'completed' | 'cancelled'>('upcoming');
 
     // Data State
@@ -95,6 +97,7 @@ const DashboardPage = () => {
                             : 'Dates TBD',
                         status: 'upcoming',
                         bookingReference: 'DRAFT-001',
+                        passShareToken: wizardBookingId || undefined,
                     } : null;
 
                     setTrips(currentTrip ? [currentTrip] : []);
@@ -116,6 +119,7 @@ const DashboardPage = () => {
                         : 'Dates TBD',
                     status: 'upcoming',
                     bookingReference: 'DRAFT-001',
+                    passShareToken: wizardBookingId || undefined,
                 } : null;
 
                 setTrips(currentTrip ? [currentTrip] : []);
@@ -128,17 +132,28 @@ const DashboardPage = () => {
         };
 
         fetchTrips();
-    }, [profileId, destination, dates]);
+    }, [profileId, destination, dates, wizardBookingId]);
 
     // Combine Mock Data with Actual Profile Data
     const filteredTrips = trips.filter(trip => trip.status === activeTab);
 
     const handleAction = (action: string, tripId: string) => {
+        const trip = trips.find(t => t.id === tripId);
+
         if (action === 'continue') {
-            navigate('/chat', { state: { isReturning: true } });
-        } else if (action === 'view_ticket' || action === 'view_details') {
-            const trip = trips.find(t => t.id === tripId) || null;
-            setSelectedTrip(trip);
+            if (trip?.passShareToken) {
+                // Booking done — navigate directly to the Digital Pass
+                navigate(`/booking/${trip.passShareToken}`);
+            } else {
+                navigate('/chat', { state: { isReturning: true } });
+            }
+        } else if (action === 'view_ticket') {
+            if (trip?.passShareToken) {
+                navigate(`/booking/${trip.passShareToken}`);
+            }
+            // No pass yet — button is disabled in TripCard so this won't fire
+        } else if (action === 'view_details') {
+            setSelectedTrip(trip || null);
             setShowTripDetails(true);
         }
     };

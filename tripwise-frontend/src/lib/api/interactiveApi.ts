@@ -34,6 +34,30 @@ export interface TransportSuggestionsResponse {
     options: TransportOption[];
 }
 
+export interface BookingExpansion {
+    transport: {
+        carrier: string;
+        number: string;
+        departureTime: string;
+        arrivalTime: string;
+        duration: string;
+        terminal: string;
+        class: string;
+        fromCode: string;
+        toCode: string;
+    };
+    hotel: {
+        roomType: string;
+        checkInTime: string;
+        checkOutTime: string;
+        amenities: string[];
+    };
+    localTransport: {
+        operator: string;
+        coverage: string;
+    };
+}
+
 export const InteractiveApi = {
     // 1. Init Session (Overview)
     initSession: async (profileId: string): Promise<ApiResponse<TripPlanSession>> => {
@@ -64,5 +88,10 @@ export const InteractiveApi = {
     finalizeTrip: async (sessionId: string, messages?: { role: string; content: string }[]): Promise<ApiResponse<string>> => {
         // This returns the markdown string directly
         return apiCall(() => apiClient.post<string>(`/api/tripwise/interactive/${sessionId}/finalize`, { messages }));
-    }
+    },
+
+    // Stage 1: Booking Summary Expansion
+    getBookingDetails: async (sessionId: string): Promise<ApiResponse<BookingExpansion>> => {
+        return apiCall(() => apiClient.get<BookingExpansion>(`/api/tripwise/interactive/${sessionId}/booking-details`));
+    },
 };

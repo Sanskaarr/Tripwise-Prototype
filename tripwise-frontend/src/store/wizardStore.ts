@@ -22,6 +22,10 @@ interface WizardState {
     selectedTransport: TransportOption | null;
     masterPlan: string | null;
 
+    // Booking result
+    bookingId: string | null;
+    setBookingId: (id: string) => void;
+
     // Actions
     setHasHydrated: (hydrated: boolean) => void;
     setSessionId: (id: string) => void;
@@ -60,8 +64,10 @@ export const useWizardStore = create<WizardState>()(
             transportOptions: [],
             selectedTransport: null,
             masterPlan: null,
+            bookingId: null,
 
             setHasHydrated: (hydrated) => set({ _hasHydrated: hydrated }),
+            setBookingId: (id) => set({ bookingId: id }),
             setSessionId: (id) => set({ sessionId: id }),
             setLoading: (loading) => set({ isLoading: loading }),
             setError: (error) => set({ error }),
@@ -97,6 +103,7 @@ export const useWizardStore = create<WizardState>()(
                 transportOptions: [],
                 selectedTransport: null,
                 masterPlan: null,
+                bookingId: null,
             }),
         }),
         {

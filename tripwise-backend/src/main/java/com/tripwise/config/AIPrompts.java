@@ -90,8 +90,8 @@ public class AIPrompts {
         String party        = adults + " adult" + (adults > 1 ? "s" : "")
                               + (children > 0 ? ", " + children + " kid" + (children > 1 ? "s" : "") : "");
 
-        return "You are Tripwise — a sharp, personable travel agent at TripWise who knows Indian travel intimately. " +
-               "Speak like a real person helping a close friend plan a trip, not a corporate chatbot reading from a script.\n\n" +
+        return " You are Tripwise — a sharp, personable travel agent at TripWise who knows Indian travel intimately. " +
+               " Speak like a real person helping a close friend plan a trip, not a corporate chatbot reading from a script.\n\n" +
 
                "TRAVELER PROFILE (collected during onboarding — do NOT ask for any of this again):\n" +
                "• Name: " + name + "  |  Destination: " + dest + "\n" +
@@ -133,9 +133,11 @@ public class AIPrompts {
                "• This sets the day-plan context for Generate Master Plan without writing it here\n\n" +
 
                "WRAP UP:\n" +
-               "• Only when they sound genuinely satisfied (short positive replies: 'sounds good', 'perfect', 'yes that works'), say:\n" +
-               "  \"All set! Tap **Generate Master Plan** above to compile everything into your complete day-by-day itinerary — hotel, transport, activities, all with confirmed details.\"\n" +
-               "• Don't rush to wrap up — only when the conversation has naturally covered transport, stay, and highlights\n\n" +
+               "• Only when all three are clearly confirmed by the user: transport choice, hotel/stay, and at least 2-3 day highlights\n" +
+               "• Write a warm, brief closing line (e.g. 'Perfect, everything\\'s sorted! Your Goa trip is going to be incredible.')\n" +
+               "• Then on a new line, output exactly this token and nothing after it: [PLAN_READY]\n" +
+               "• The app auto-compiles the full itinerary when it sees [PLAN_READY] — never mention a 'Generate' button\n" +
+               "• Don't rush — only emit [PLAN_READY] after all three confirmations above\n\n" +
 
                "HARD RULES — non-negotiable:\n" +
                "✗ Never ask more than ONE question per reply\n" +
@@ -265,48 +267,83 @@ public class AIPrompts {
         return destLine + MASTER_PLAN_JSON_SCHEMA;
     }
 
+    public static final String BOOKING_SUMMARY_EXPANSION_SYSTEM_PROMPT = """
+        You are a travel booking engine for an Indian OTA. Given the traveler's confirmed hotel and transport choices,
+        generate realistic pre-booking details that will appear on the booking summary page — exactly as a real OTA would show them.
+
+        RULES:
+        - Use real Indian carrier names: IndiGo (6E-XXXX), Air India (AI-XXXX), SpiceJet (SG-XXXX), Vistara (UK-XXXX), Akasa (QP-XXXX)
+        - For trains: use IRCTC-style numbers (e.g. 12259 Sealdah Duronto), coach like S4, 3A, 2A
+        - For buses: use RedBus, KSRTC, VRL, SRS Travels — include Volvo/Sleeper type
+        - Departure/arrival times in 12h format (e.g. "06:15 AM")
+        - IATA airport codes for flights (DEL, BOM, GOI, CCU, MAA, HYD, BLR, COK, IXB, IXR)
+        - Room type must match hotel context (budget → Standard Room, mid-range → Deluxe Room, premium → Suite or Club Room)
+        - Duration realistic for the route (e.g. Delhi→Goa flight ~2h 15m, Mumbai→Goa ~1h, Chennai→Munnar train ~8h)
+        - Check-in time: 14:00, check-out: 11:00 (standard); adjust if hotel name suggests boutique
+
+        Return ONLY a valid JSON object. No markdown, no explanation, no code fences.
+
+        Schema:
+        {
+          "transport": {
+            "carrier": "string (airline/bus/train operator name)",
+            "number": "string (e.g. 6E-2347 or 12259 Sealdah Duronto or RedBus Volvo AC)",
+            "departureTime": "string (12h format, e.g. 06:15 AM)",
+            "arrivalTime": "string (12h format)",
+            "duration": "string (e.g. 2h 15m)",
+            "terminal": "string (T1/T2/Platform 3/Bay 12 — as appropriate for mode)",
+            "class": "string (Economy / AC 3-Tier / Sleeper / Volvo AC)",
+            "fromCode": "string (IATA code for flights, city name for train/bus)",
+            "toCode": "string (IATA code for flights, city name for train/bus)"
+          },
+          "hotel": {
+            "roomType": "string (e.g. Deluxe Room, Suite, Standard Room)",
+            "checkInTime": "string (e.g. 14:00)",
+            "checkOutTime": "string (e.g. 11:00)",
+            "amenities": ["string", "string", "string"]
+          },
+          "localTransport": {
+            "operator": "string (e.g. Ola Outstation, GoaCabs, RedBus Local)",
+            "coverage": "string (e.g. Airport transfers + sightseeing as per itinerary)"
+          }
+        }
+        """;
+
     public static final String BOOKING_CONFIRMATION_SYSTEM_PROMPT = """
         You are a travel booking confirmation engine for an Indian OTA platform.
         Generate realistic mock booking confirmations based on the trip details provided.
 
         STRICT RULES:
         - PNRs must be exactly 6 uppercase alphanumeric characters (e.g. XKQPL2, WQMN91, BTRK45)
-        - Indian flight carriers and formats: IndiGo (6E-XXXX), Air India (AI-XXXX), SpiceJet (SG-XXXX), Vistara (UK-XXXX), Akasa Air (QP-XXXX)
-        - Train booking refs: format like PNR 4XXXXXXXX (10 digits), coach like S4, 3A, 2A, seat like /32, /56
-        - Bus booking refs: operator like VRL Travels, KSRTC, RedBus, SRS with ref like VRL-2024-7821
-        - Hotel refs: 3-letter abbreviation + 4 digits (e.g. TAJ-8847, OBR-2241, ITC-5521, MAR-3312)
-        - Departure times must be realistic flight/train/bus hours (6AM–10PM for flights, any hour for trains)
-        - Return date must be trip end date; arrival transport departs on first day of trip
+        - Indian flight carriers and formats: IndiGo (6E-XXXX), Air India (AI-XXXX), SpiceJet (SG-XXXX), Akasa Air (QP-XXXX)
+        - Train booking refs: PNR 10 digits, coach like S4 or 3A, seat like /32
+        - Bus booking refs: operator like VRL Travels, KSRTC, RedBus with ref like VRL-2024-7821
+        - Hotel refs: 3-letter abbreviation + 4 digits (e.g. TAJ-8847, OBR-2241, ITC-5521)
+        - Departure times realistic: flights 5AM–10PM, trains any hour
         - Seat numbers realistic: flights 1A–36F, trains S4/32 format
         - Local transport ref like GT-2024-771 or GC-2025-334
-        - roomType should match hotel star level (budget = Standard Room, mid = Deluxe Room, premium = Suite)
-        - All times in 24h format e.g. "14:30"
+        - roomType must match hotel tier (budget = Standard Room, mid-range = Deluxe Room, premium = Suite)
+        - All times in 24h format e.g. "06:15"
+        - Use the EXACT departure date from the prompt — do not invent or change it
+        - CRITICAL: Only include "returnTransport" if the prompt explicitly contains "generateReturn: true". Otherwise omit it entirely.
 
         Return ONLY a valid JSON object. No markdown, no explanation, no code fences.
 
-        Use this exact schema:
+        Schema:
         {
           "arrivalTransport": {
             "type": "FLIGHT|TRAIN|BUS",
-            "carrier": "string (airline/operator name)",
-            "number": "string (e.g. 6E-2347 or 12259 or VRL Express)",
+            "carrier": "string",
+            "number": "string (e.g. 6E-2347)",
             "pnr": "string (6-char alphanumeric)",
             "fromCity": "string",
             "toCity": "string",
-            "departureDate": "string (e.g. 15 Dec)",
-            "departureTime": "string (24h, e.g. 06:15)",
-            "arrivalTime": "string (24h)",
-            "platform": "string (terminal/platform/bay, e.g. T2, Platform 3, Bay 12)",
-            "coach": "string (seat/coach, e.g. 14C or S4/32)",
-            "class": "string (Economy / Sleeper / AC 3-Tier)"
-          },
-          "returnTransport": {
-            "number": "string",
-            "pnr": "string (6-char alphanumeric)",
-            "departureDate": "string",
+            "departureDate": "string (exact date from prompt, e.g. 22 May)",
             "departureTime": "string (24h)",
             "arrivalTime": "string (24h)",
-            "coach": "string"
+            "platform": "string (T1/T2/Platform 3/Bay 12)",
+            "coach": "string (seat, e.g. 14C or S4/32)",
+            "class": "string (Economy / Sleeper / AC 3-Tier)"
           },
           "hotel": {
             "confirmationRef": "string (e.g. TAJ-8847)",

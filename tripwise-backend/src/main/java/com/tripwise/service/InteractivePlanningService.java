@@ -240,6 +240,61 @@ public class InteractivePlanningService {
 
 
 
+    // STAGE 1: BOOKING SUMMARY EXPANSION
+    public Mono<String> generateBookingExpansion(String sessionId) {
+        return sessionRepository.findById(sessionId)
+                .switchIfEmpty(Mono.error(new RuntimeException("Session not found: " + sessionId)))
+                .flatMap(session -> {
+                    String userPrompt = buildExpansionPrompt(session);
+                    return geminiClient.generateJsonResponse(
+                            AIPrompts.BOOKING_SUMMARY_EXPANSION_SYSTEM_PROMPT, userPrompt)
+                            .map(this::cleanJson);
+                });
+    }
+
+    private String buildExpansionPrompt(TripPlanSession session) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("Trip details:\n");
+        sb.append("Destination: ").append(session.getDestination()).append("\n");
+
+        if (session.getFinalizedTransportChoice() != null) {
+            TripPlanSession.TransportOption t = session.getFinalizedTransportChoice();
+            sb.append("Transport mode: ").append(t.getMode())
+              .append(", details: ").append(t.getDetails())
+              .append(", cost: ").append(t.getCost())
+              .append(", duration: ").append(t.getDuration()).append("\n");
+        }
+
+        if (session.getSelectedHotel() != null) {
+            TripPlanSession.HotelOption h = session.getSelectedHotel();
+            sb.append("Hotel: ").append(h.getName())
+              .append(", address: ").append(h.getAddress())
+              .append(", rate: ").append(h.getCostPerNight()).append("\n");
+        }
+
+        if (session.getMasterPlan() != null && !session.getMasterPlan().isBlank()) {
+            try {
+                com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                com.fasterxml.jackson.databind.JsonNode plan = mapper.readTree(session.getMasterPlan());
+                com.fasterxml.jackson.databind.JsonNode itinerary = plan.at("/itinerary");
+                if (itinerary.isArray() && !itinerary.isEmpty()) {
+                    String firstDate = itinerary.get(0).at("/date").asText("");
+                    String lastDate = itinerary.get(itinerary.size() - 1).at("/date").asText("");
+                    if (!firstDate.isEmpty()) {
+                        sb.append("Travel dates: ").append(firstDate).append(" to ").append(lastDate).append("\n");
+                    }
+                }
+                String fromCity = plan.at("/itinerary/0/activities/0/from").asText("");
+                if (!fromCity.isEmpty()) sb.append("Origin city: ").append(fromCity).append("\n");
+            } catch (Exception e) {
+                log.debug("Could not parse master plan for expansion prompt");
+            }
+        }
+
+        sb.append("\nGenerate realistic pre-booking details for the Booking Summary page.");
+        return sb.toString();
+    }
+
     private String cleanJson(String response) {
         if (response == null) return "{}";
         String cleaned = response.trim();

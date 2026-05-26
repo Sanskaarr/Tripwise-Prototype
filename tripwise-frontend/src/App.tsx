@@ -18,6 +18,9 @@ import ConversationalWizard from '@/pages/ConversationalWizard';
 import DashboardPage from '@/pages/dashboard/DashboardPage';
 import AuthPage from '@/pages/auth/AuthPage';
 import QuickTripPage from '@/pages/plan/QuickTripPage';
+import BookingSummaryPage from '@/pages/booking/BookingSummaryPage';
+import BookingProgressPage from '@/pages/booking/BookingProgressPage';
+import DigitalPassPage from '@/pages/booking/DigitalPassPage';
 
 export default function App() {
   const { error } = useProfileStore(useShallow(state => ({
@@ -56,6 +59,12 @@ export default function App() {
               <Route path="/plan/step/:stepId" element={<StepPage />} />
               <Route path="/plan/confirmation" element={<ConfirmationPage />} />
               <Route path="/plan/quick" element={<QuickTripPage />} />
+
+              {/* Booking + Digital Pass */}
+              <Route path="/booking/summary" element={<BookingSummaryPage />} />
+              <Route path="/booking/progress" element={<BookingProgressPage />} />
+              <Route path="/booking/:bookingId" element={<DigitalPassPage />} />
+              <Route path="/pass/:bookingId" element={<DigitalPassPage />} />
             </Route>
           </Routes>
         </main>

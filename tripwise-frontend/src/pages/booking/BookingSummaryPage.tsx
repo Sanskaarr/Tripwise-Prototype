@@ -1,12 +1,12 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Plane, Train, Bus, BedDouble, MapPin, ArrowLeft, ChevronRight, Shield } from 'lucide-react';
+import { Plane, Train, Bus, BedDouble, MapPin, ArrowLeft, ChevronRight, Shield, Clock, Loader2 } from 'lucide-react';
 import { useWizardStore } from '@/store/wizardStore';
 import { parseMasterPlan, extractTotalCostNumber } from '@/types/masterPlan';
 import { paymentService } from '@/services/paymentService';
 import { loadRazorpayScript } from '@/utils/razorpay';
-import { bookingApi } from '@/lib/api/bookingApi';
+import { InteractiveApi, type BookingExpansion } from '@/lib/api/interactiveApi';
 import { LiquidBackground } from '@/components/ui/LiquidBackground';
 import { SiteHeader } from '@/components/layout/SiteHeader';
 
@@ -22,6 +22,17 @@ export default function BookingSummaryPage() {
   const { sessionId, selectedHotel, selectedTransport, masterPlan, setBookingId } = useWizardStore();
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [expansion, setExpansion] = useState<BookingExpansion | null>(null);
+  const [expandLoading, setExpandLoading] = useState(false);
+
+  useEffect(() => {
+    if (!sessionId) return;
+    setExpandLoading(true);
+    InteractiveApi.getBookingDetails(sessionId)
+      .then(r => { if (r.data) setExpansion(r.data); })
+      .catch(() => { /* silently fall back to wizardStore data */ })
+      .finally(() => setExpandLoading(false));
+  }, [sessionId]);
 
   const plan = parseMasterPlan(masterPlan || '');
   const totalAmount = extractTotalCostNumber(plan);
@@ -100,30 +111,63 @@ export default function BookingSummaryPage() {
         {/* Arrival Transport */}
         {selectedTransport && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="rounded-2xl border border-sky-500/30 bg-sky-500/[0.06] px-5 py-4">
-            <p className="text-xs uppercase tracking-widest text-sky-400 mb-2">Arrival Transport</p>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs uppercase tracking-widest text-sky-400">Arrival Transport</p>
+              {expandLoading && <Loader2 className="w-3 h-3 text-sky-400 animate-spin" />}
+            </div>
             <div className="flex items-center gap-3">
               <TransportIcon mode={selectedTransport.mode} />
-              <div>
-                <p className="text-white font-semibold">{selectedTransport.mode}</p>
-                <p className="text-muted-foreground text-xs">{selectedTransport.details}</p>
+              <div className="flex-1 min-w-0">
+                <p className="text-white font-semibold">
+                  {expansion?.transport.carrier
+                    ? `${expansion.transport.carrier} ${expansion.transport.number}`
+                    : selectedTransport.mode}
+                </p>
+                <p className="text-muted-foreground text-xs">
+                  {expansion?.transport
+                    ? `${expansion.transport.fromCode} → ${expansion.transport.toCode} · ${expansion.transport.class}`
+                    : selectedTransport.details}
+                </p>
               </div>
-              <span className="ml-auto font-mono text-sm text-white/80">{selectedTransport.cost}</span>
+              <span className="ml-auto font-mono text-sm text-white/80 whitespace-nowrap">{selectedTransport.cost}</span>
             </div>
+            {expansion?.transport && (
+              <div className="flex items-center gap-4 mt-3 pt-3 border-t border-white/10 text-xs text-muted-foreground">
+                <span className="flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  {expansion.transport.departureTime} → {expansion.transport.arrivalTime}
+                </span>
+                <span>{expansion.transport.duration}</span>
+                {expansion.transport.terminal && <span>{expansion.transport.terminal}</span>}
+              </div>
+            )}
           </motion.div>
         )}
 
         {/* Hotel */}
         {selectedHotel && (
           <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.06 }} className="rounded-2xl border border-emerald-500/30 bg-emerald-500/[0.06] px-5 py-4">
-            <p className="text-xs uppercase tracking-widest text-emerald-400 mb-2">Hotel</p>
+            <div className="flex items-center justify-between mb-2">
+              <p className="text-xs uppercase tracking-widest text-emerald-400">Hotel</p>
+              {expandLoading && <Loader2 className="w-3 h-3 text-emerald-400 animate-spin" />}
+            </div>
             <div className="flex items-center gap-3">
               <BedDouble className="w-5 h-5 text-emerald-400 flex-shrink-0" />
               <div className="min-w-0">
                 <p className="text-white font-semibold truncate">{selectedHotel.name}</p>
-                <p className="text-muted-foreground text-xs truncate">{selectedHotel.address}</p>
+                <p className="text-muted-foreground text-xs truncate">
+                  {expansion?.hotel.roomType || selectedHotel.address}
+                </p>
               </div>
               <span className="ml-auto font-mono text-sm text-white/80 whitespace-nowrap">{selectedHotel.costPerNight}/night</span>
             </div>
+            {expansion?.hotel && (
+              <div className="flex items-center gap-4 mt-3 pt-3 border-t border-white/10 text-xs text-muted-foreground">
+                <span>Check-in {expansion.hotel.checkInTime}</span>
+                <span>·</span>
+                <span>Check-out {expansion.hotel.checkOutTime}</span>
+              </div>
+            )}
           </motion.div>
         )}
 

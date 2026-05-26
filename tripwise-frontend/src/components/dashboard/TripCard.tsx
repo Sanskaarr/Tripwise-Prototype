@@ -9,6 +9,8 @@ export interface Trip {
     status: 'upcoming' | 'completed' | 'cancelled';
     imageUrl?: string;
     bookingReference?: string;
+    /** shareToken of the confirmed TripwiseBooking — present only after payment */
+    passShareToken?: string;
 }
 
 interface TripCardProps {
@@ -68,15 +70,31 @@ export const TripCard = ({ trip, onAction }: TripCardProps) => {
                 <div className="flex items-center gap-3 pt-2">
                     {isUpcoming ? (
                         <>
-                            <Button
-                                className="h-10 flex-1 rounded-xl bg-primary/90 text-xs font-semibold uppercase tracking-widest text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary hover:shadow-primary/30 hover:scale-[1.02]"
-                                onClick={() => onAction('continue', trip.id)}
-                            >
-                                Continue Plan
-                            </Button>
+                            {trip.passShareToken ? (
+                                /* Booking complete — "Continue Plan" replaced by "View Booking" */
+                                <Button
+                                    className="h-10 flex-1 rounded-xl bg-emerald-600/80 text-xs font-semibold uppercase tracking-widest text-white shadow-lg shadow-emerald-700/20 transition-all hover:bg-emerald-600 hover:scale-[1.02]"
+                                    onClick={() => onAction('continue', trip.id)}
+                                >
+                                    View Booking
+                                </Button>
+                            ) : (
+                                <Button
+                                    className="h-10 flex-1 rounded-xl bg-primary/90 text-xs font-semibold uppercase tracking-widest text-white shadow-lg shadow-primary/20 transition-all hover:bg-primary hover:shadow-primary/30 hover:scale-[1.02]"
+                                    onClick={() => onAction('continue', trip.id)}
+                                >
+                                    Continue Plan
+                                </Button>
+                            )}
                             <Button
                                 variant="outline"
-                                className="h-10 w-10 rounded-xl border-white/10 bg-white/5 p-0 hover:bg-white/10 hover:border-white/20"
+                                disabled={!trip.passShareToken}
+                                title={trip.passShareToken ? 'View your Travel Pass' : 'Complete booking to unlock your pass'}
+                                className={`h-10 w-10 rounded-xl border-white/10 p-0 transition-all ${
+                                    trip.passShareToken
+                                        ? 'bg-primary/15 border-primary/30 text-primary hover:bg-primary/25 hover:border-primary/50'
+                                        : 'bg-white/5 text-muted-foreground/40 cursor-not-allowed opacity-50'
+                                }`}
                                 onClick={() => onAction('view_ticket', trip.id)}
                             >
                                 <Ticket className="h-4 w-4" />

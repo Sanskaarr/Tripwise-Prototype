@@ -63,9 +63,11 @@ export default function BookingProgressPage() {
       razorpayOrderId: state.razorpayOrderId,
       razorpaySignature: state.razorpaySignature,
     }).then(result => {
-      if (result.data?.id) {
-        setBookingId(result.data.id);
-        setLocalBookingId(result.data.id);
+      // Use shareToken as the public pass identifier — backend GET endpoint looks up by shareToken
+      const token = result.data?.shareToken || result.data?.id;
+      if (token) {
+        setBookingId(token);
+        setLocalBookingId(token);
       } else {
         setApiError('Booking could not be confirmed. Please contact support.');
       }

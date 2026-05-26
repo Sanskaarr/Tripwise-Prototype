@@ -61,6 +61,19 @@ public class InteractiveTripController {
                 .map(ResponseEntity::ok);
     }
 
+    // STAGE 1: Booking Summary Expansion
+    @GetMapping("/{sessionId}/booking-details")
+    public Mono<ResponseEntity<String>> getBookingDetails(@PathVariable String sessionId) {
+        return interactivePlanningService.generateBookingExpansion(sessionId)
+                .map(json -> ResponseEntity.ok()
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .body(json))
+                .onErrorResume(e -> {
+                    logger.warn("Booking expansion failed for session {}: {}", sessionId, e.getMessage());
+                    return Mono.just(ResponseEntity.status(500).<String>build());
+                });
+    }
+
     // STEP 4: Finalize & Generate Master Plan
     @PostMapping("/{sessionId}/finalize")
     public Mono<ResponseEntity<String>> finalizeTrip(
