@@ -11,4 +11,8 @@ export const sessionCheckState = {
   validated: false,
   isVerifyingSession: false,
   onUnauthorized: null as (() => void) | null,
+  // Cached JWT — set on login/session-validate, cleared on logout.
+  // Used by the request interceptor to attach Authorization: Bearer so
+  // cross-origin POSTs don't rely solely on the httpOnly cookie.
+  token: null as string | null,
 };

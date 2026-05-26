@@ -46,13 +46,13 @@ const AuthPage = () => {
             const response = await login(identifier.trim());
 
             if (response.success && response.data) {
-                const { exists, profile } = response.data;
+                const { exists, profile, token } = response.data;
 
                 if (exists && profile) {
-                    authenticateUser(identifier, '', profile);
+                    authenticateUser(identifier, token || '', profile);
                     navigate("/dashboard", { state: { isReturning: true } });
                 } else {
-                    authenticateUser(identifier, '');
+                    authenticateUser(identifier, token || '');
                     navigate("/plan", { state: { isNew: true } });
                 }
             } else {

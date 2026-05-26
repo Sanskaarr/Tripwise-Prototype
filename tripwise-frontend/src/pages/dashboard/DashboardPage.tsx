@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { TripCard, Trip } from "@/components/dashboard/TripCard";
 import { WalletSection } from "@/components/dashboard/WalletSection";
 import { tripService } from "@/services/tripService";
+import { coTravelerService } from "@/services/coTravelerService";
 import { EditProfileModal } from "@/components/profile/EditProfileModal";
 import { AddMoneyModal } from "@/components/dashboard/AddMoneyModal";
 import { walletService, Transaction } from "@/services/walletService";
@@ -42,6 +43,23 @@ const DashboardPage = () => {
     const [walletBalance, setWalletBalance] = useState(0);
     const [walletCurrency, setWalletCurrency] = useState('INR');
     const [transactions, setTransactions] = useState<Transaction[]>([]);
+
+    // Co-traveler count
+    const [coTravelerCount, setCoTravelerCount] = useState<number | null>(null);
+
+    const fetchCoTravelerCount = useCallback(async () => {
+        if (!profileId) return;
+        try {
+            const data = await coTravelerService.getCoTravelers(profileId);
+            setCoTravelerCount(Array.isArray(data) ? data.length : 0);
+        } catch {
+            setCoTravelerCount(null);
+        }
+    }, [profileId]);
+
+    useEffect(() => {
+        fetchCoTravelerCount();
+    }, [fetchCoTravelerCount]);
 
     const fetchWalletData = useCallback(async () => {
         if (!profileId) return;
@@ -214,7 +232,7 @@ const DashboardPage = () => {
 
                         {/* Trips Grid - Enhanced Responsive Grid */}
                         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 auto-rows-fr">
-                            <AnimatePresence mode="popLayout">
+                            <AnimatePresence mode="sync">
                                 {isLoadingTrips ? (
                                     // Loading Skeletons
                                     [1, 2].map(i => (
@@ -365,11 +383,21 @@ const DashboardPage = () => {
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-6">
                                         <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
                                             <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Travel Style</p>
-                                            <p className="font-medium">Adventure & Culture</p>
+                                            <p className="font-medium">
+                                                {destination.travelStyle
+                                                    ? destination.travelStyle.charAt(0).toUpperCase() + destination.travelStyle.slice(1)
+                                                    : '—'}
+                                            </p>
                                         </div>
                                         <div className="p-4 rounded-2xl bg-white/5 border border-white/10">
                                             <p className="text-xs uppercase tracking-wider text-muted-foreground mb-1">Co-Travelers</p>
-                                            <p className="font-medium">2 Saved</p>
+                                            <p className="font-medium">
+                                                {coTravelerCount === null
+                                                    ? '—'
+                                                    : coTravelerCount === 0
+                                                        ? 'None saved'
+                                                        : `${coTravelerCount} Saved`}
+                                            </p>
                                         </div>
                                     </div>
                                 </div>
@@ -398,7 +426,7 @@ const DashboardPage = () => {
 
                 {/* Modals */}
                 <EditProfileModal isOpen={showEditProfile} onClose={() => setShowEditProfile(false)} />
-                <CoTravelersModal isOpen={showCoTravelers} onClose={() => setShowCoTravelers(false)} />
+                <CoTravelersModal isOpen={showCoTravelers} onClose={() => { setShowCoTravelers(false); fetchCoTravelerCount(); }} />
                 <DocumentUploadModal isOpen={showDocuments} onClose={() => setShowDocuments(false)} />
                 <AddMoneyModal
                     isOpen={showAddMoney}

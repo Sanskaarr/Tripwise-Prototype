@@ -103,7 +103,11 @@ export const useWizardStore = create<WizardState>()(
             name: 'tripwise-wizard',
             storage: createJSONStorage(() => localforage),
             onRehydrateStorage: () => (state) => {
-                state?.setHasHydrated(true);
+                if (state) {
+                    state.setHasHydrated(true);
+                } else {
+                    useWizardStore.setState({ _hasHydrated: true });
+                }
             },
         }
     )

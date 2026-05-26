@@ -61,8 +61,8 @@ export const InteractiveApi = {
     },
 
     // 4. Finalize Trip (Master Plan)
-    finalizeTrip: async (sessionId: string): Promise<ApiResponse<string>> => {
+    finalizeTrip: async (sessionId: string, messages?: { role: string; content: string }[]): Promise<ApiResponse<string>> => {
         // This returns the markdown string directly
-        return apiCall(() => apiClient.post<string>(`/api/tripwise/interactive/${sessionId}/finalize`));
+        return apiCall(() => apiClient.post<string>(`/api/tripwise/interactive/${sessionId}/finalize`, { messages }));
     }
 };

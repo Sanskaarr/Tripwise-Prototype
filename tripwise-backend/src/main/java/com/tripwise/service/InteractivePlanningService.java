@@ -148,7 +148,8 @@ public class InteractivePlanningService {
     }
 
     // STEP 4: GENERATE MASTER PLAN
-    public Mono<String> generateMasterPlan(String sessionId) {
+    public Mono<String> generateMasterPlan(String sessionId, java.util.List<java.util.Map<String, String>> chatHistory) {
+        log.info("generateMasterPlan → sessionId={} | chatMessages={}", sessionId, chatHistory != null ? chatHistory.size() : 0);
         return sessionRepository.findById(sessionId)
                 .flatMap(session -> Mono.fromCallable(() -> profileRepository.findByProfileId(session.getProfileId()))
                         .subscribeOn(Schedulers.boundedElastic())
@@ -164,17 +165,72 @@ public class InteractivePlanningService {
                                     String destination = session.getDestination() != null
                                             ? session.getDestination() : destFromProfile;
                                     String systemPrompt = AIPrompts.getMasterPlanJsonPrompt(destination);
-                                    String userPrompt = "Create a detailed day-by-day itinerary for " + destination
-                                            + ". Duration: " + days + " days. Budget level: " + budget
-                                            + ". I am staying at '" + session.getSelectedHotel().getName()
-                                            + "' (" + session.getSelectedHotel().getAddress() + ")"
-                                            + " and using '" + session.getFinalizedTransportChoice().getMode() + "' as my primary local transport.";
+
+                                    // Build chat transcript for Gemini compilation
+                                    StringBuilder historyBuilder = new StringBuilder();
+                                    historyBuilder.append("Conversation history between traveler and AI travel agent:\n\n");
+                                    if (chatHistory != null) {
+                                        for (java.util.Map<String, String> msg : chatHistory) {
+                                            String role = msg.get("role");
+                                            String content = msg.get("content");
+                                            historyBuilder.append(role != null && role.equalsIgnoreCase("assistant") ? "Agent: " : "Traveler: ")
+                                                          .append(content).append("\n\n");
+                                        }
+                                    }
+
+                                    String userPrompt = historyBuilder.toString()
+                                            + "\nBased on the above conversation, extract the final agreed-upon hotel, transport choices (flights or trains), and day-by-day itinerary to " + destination
+                                            + ". Trip duration: " + days + " days. Budget level: " + budget + ". "
+                                            + "Compile into a single valid JSON object following the required schema. "
+                                            + "Preserve the specific hotel, transport, and activity choices discussed in the chat. "
+                                            + "Costs should be realistic for the " + budget + " budget level.";
 
                                     return geminiClient.generateJsonResponse(systemPrompt, userPrompt)
                                             .flatMap(finalPlan -> {
                                                 session.setCurrentStep(TripPlanSession.PlanningStep.FINALIZED);
                                                 session.setMasterPlan(finalPlan);
                                                 session.setUpdatedAt(LocalDateTime.now());
+
+                                                // Attempt to parse stay and transport from compiled JSON for backend record sync
+                                                try {
+                                                    com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
+                                                    com.fasterxml.jackson.databind.JsonNode root = mapper.readTree(finalPlan);
+                                                    
+                                                    // Parse first day stay if exists
+                                                    com.fasterxml.jackson.databind.JsonNode stayNode = root.at("/itinerary/0/stay");
+                                                    if (!stayNode.isMissingNode() && !stayNode.isNull()) {
+                                                        TripPlanSession.HotelOption hotel = new TripPlanSession.HotelOption();
+                                                        hotel.setName(stayNode.path("name").asText(""));
+                                                        hotel.setAddress(stayNode.path("address").asText(""));
+                                                        hotel.setCostPerNight(stayNode.path("cost").asText(""));
+                                                        session.setSelectedHotel(hotel);
+                                                    }
+                                                    
+                                                    // Find first transit or create transport mode
+                                                    com.fasterxml.jackson.databind.JsonNode itinerary = root.path("itinerary");
+                                                    if (itinerary.isArray() && !itinerary.isEmpty()) {
+                                                        String mode = "Flight"; // fallback
+                                                        for (com.fasterxml.jackson.databind.JsonNode dayNode : itinerary) {
+                                                            com.fasterxml.jackson.databind.JsonNode activities = dayNode.path("activities");
+                                                            if (activities.isArray()) {
+                                                                for (com.fasterxml.jackson.databind.JsonNode act : activities) {
+                                                                    if (act.path("isTransit").asBoolean(false)) {
+                                                                        mode = act.path("type").asText("Flight");
+                                                                        break;
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                        TripPlanSession.TransportOption trans = new TripPlanSession.TransportOption();
+                                                        trans.setMode(mode);
+                                                        trans.setCost(root.at("/budgetBreakdown").get(2) != null ? root.at("/budgetBreakdown").get(2).path("cost").asText("") : "");
+                                                        trans.setDetails("Selected travel route");
+                                                        session.setFinalizedTransportChoice(trans);
+                                                    }
+                                                } catch (Exception parseEx) {
+                                                    log.warn("Non-critical stay/transport extract failed: {}", parseEx.getMessage());
+                                                }
+
                                                 return sessionRepository.save(session).map(s -> finalPlan);
                                             })
                                             .switchIfEmpty(Mono.error(new RuntimeException("Failed to generate master plan")));

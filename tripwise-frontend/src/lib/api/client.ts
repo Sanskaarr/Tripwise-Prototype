@@ -6,9 +6,18 @@ export const apiClient: AxiosInstance = axios.create({
   baseURL: config.apiBaseUrl,
   timeout: 30000,
   headers: { 'Content-Type': 'application/json' },
-  // Sends the httpOnly auth_token cookie automatically on every request.
-  // The Authorization header is no longer used by browser clients.
   withCredentials: true,
+});
+
+// Request interceptor — attach JWT as Authorization header so cross-origin
+// POST requests are authenticated even when the httpOnly cookie is not forwarded.
+apiClient.interceptors.request.use((requestConfig) => {
+  const token = sessionCheckState.token;
+  if (token) {
+    requestConfig.headers = requestConfig.headers ?? {};
+    requestConfig.headers['Authorization'] = `Bearer ${token}`;
+  }
+  return requestConfig;
 });
 
 // Response interceptor — log errors, handle 401

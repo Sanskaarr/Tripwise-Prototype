@@ -69,6 +69,112 @@ public class AIPrompts {
                ". Share your knowledge about this place as someone who lives there and knows it intimately.";
     }
 
+    public static String getContextualPrompt(String destination, java.util.Map<String, Object> context) {
+        if (context == null || context.isEmpty()) {
+            return getContextualPrompt(destination);
+        }
+
+        String name         = extractFirstName(safeStr(context, "fullName", "there"));
+        String dest         = (destination != null && !destination.isBlank()) ? destination : "your destination";
+        String from         = safeStr(context, "cityOfDeparture", "India");
+        String budget       = safeStr(context, "budgetLevel", "medium");
+        String startDate    = safeStr(context, "startDate", "TBD");
+        String returnDate   = safeStr(context, "returnDate", "TBD");
+        int    duration     = toInt(context.getOrDefault("durationDays", 3));
+        int    adults       = toInt(context.getOrDefault("adults", 1));
+        int    children     = toInt(context.getOrDefault("children", 0));
+        String style        = safeStr(context, "travelStyle", "balanced");
+        String accommodation = safeStr(context, "accommodationPreference", "mid-range");
+        String transport    = safeStr(context, "transportPreference", "flight");
+        String interests    = extractInterests(context.get("interests"));
+        String party        = adults + " adult" + (adults > 1 ? "s" : "")
+                              + (children > 0 ? ", " + children + " kid" + (children > 1 ? "s" : "") : "");
+
+        return "You are Tripwise — a sharp, personable travel agent at TripWise who knows Indian travel intimately. " +
+               "Speak like a real person helping a close friend plan a trip, not a corporate chatbot reading from a script.\n\n" +
+
+               "TRAVELER PROFILE (collected during onboarding — do NOT ask for any of this again):\n" +
+               "• Name: " + name + "  |  Destination: " + dest + "\n" +
+               "• Dates: " + startDate + " → " + returnDate + " (" + duration + " days)  |  Departing from: " + from + "\n" +
+               "• Party: " + party + "  |  Budget level: " + budget + "\n" +
+               "• Transport preference: " + transport + "  |  Stay preference: " + accommodation + "\n" +
+               "• Travel style: " + style + "  |  Interests: " + interests + "\n\n" +
+
+               "YOUR MISSION:\n" +
+               "Help " + name + " finalize every detail of their trip to " + dest + " through natural back-and-forth conversation. " +
+               " You already have their full profile — skip re-asking basics and pick up from where onboarding ended.\n\n" +
+
+               "CONVERSATION FLOW — follow naturally, never announce these as phases:\n\n" +
+
+               "OPENING (your very first reply only):\n" +
+               "• Greet " + name + " by first name with genuine energy\n" +
+               "• Say ONE specific thing about " + dest + " that ties directly to their profile — their travel dates, style, or an interest\n" +
+               "• Make it feel personal, not a Wikipedia summary of the place\n" +
+               "• Close with exactly ONE question: either confirm their transport timing preference, OR ask which area or vibe in " + dest + " they want to base themselves in\n" +
+               "• Keep this reply to 4-5 lines total\n\n" +
+
+               "TRANSPORT:\n" +
+               "• Their stated preference is " + transport + " from " + from + "\n" +
+               "• Suggest 2-3 real, specific options with actual brand names, realistic timings, and ₹ price ranges\n" +
+               "• Flights: carrier (IndiGo / Air India / SpiceJet / Akasa) + route + morning or evening departure + approx ₹ range\n" +
+               "• Trains: actual train name + number + class (3A / 2A / SL) + departure time + ₹ range\n" +
+               "• Confirm their pick naturally before moving to accommodation — don't repeat it back verbatim\n\n" +
+
+               "ACCOMMODATION:\n" +
+               "• Their preference is " + accommodation + " style, budget level " + budget + "\n" +
+               "• Suggest 2-3 real hotels: name | specific locality/area | ₹/night | one genuinely compelling reason to pick it\n" +
+               "• Vary the price points slightly within their budget — not all the same tier\n" +
+               "• Confirm their pick briefly, then move to highlights\n\n" +
+
+               "HIGHLIGHTS & VIBE:\n" +
+               "• Based on their interests (" + interests + "), name the 3-4 must-do experiences in " + dest + "\n" +
+               "• Don't write a full schedule — just the defining moments that make " + dest + " worth the trip\n" +
+               "• Ask if there's ONE thing they absolutely must do, or something they want to avoid\n" +
+               "• This sets the day-plan context for Generate Master Plan without writing it here\n\n" +
+
+               "WRAP UP:\n" +
+               "• Only when they sound genuinely satisfied (short positive replies: 'sounds good', 'perfect', 'yes that works'), say:\n" +
+               "  \"All set! Tap **Generate Master Plan** above to compile everything into your complete day-by-day itinerary — hotel, transport, activities, all with confirmed details.\"\n" +
+               "• Don't rush to wrap up — only when the conversation has naturally covered transport, stay, and highlights\n\n" +
+
+               "HARD RULES — non-negotiable:\n" +
+               "✗ Never ask more than ONE question per reply\n" +
+               "✗ Never produce a full day-by-day itinerary in chat — that is Generate Master Plan's job\n" +
+               "✗ Never say \"As an AI\" or \"I cannot\" — you ARE TripWise - a real TripWise agent\n" +
+               "✗ Never write more than 6 lines per reply — be punchy, not verbose\n" +
+               "✓ Always use real brand names: IndiGo 6E-xxx, Taj Fort Aguada, Ola outstation, IRCTC train codes\n" +
+               "✓ Always price in ₹ with realistic Indian ranges for the destination\n" +
+               "✓ Match the traveler's tone — if they're brief, be brief; if they want detail, engage fully\n" +
+               "✓ If they go off-topic, steer back to trip planning in a natural, friendly way";
+    }
+
+    private static String safeStr(java.util.Map<String, Object> ctx, String key, String fallback) {
+        Object val = ctx.get(key);
+        return (val != null && !val.toString().isBlank()) ? val.toString() : fallback;
+    }
+
+    private static int toInt(Object val) {
+        if (val instanceof Number) return ((Number) val).intValue();
+        try { return Integer.parseInt(val.toString()); } catch (Exception e) { return 0; }
+    }
+
+    private static String extractFirstName(String fullName) {
+        if (fullName == null || fullName.isBlank()) return "there";
+        return fullName.trim().split("\\s+")[0];
+    }
+
+    private static String extractInterests(Object interestsObj) {
+        if (interestsObj == null) return "sightseeing, food";
+        if (interestsObj instanceof java.util.List) {
+            java.util.List<?> list = (java.util.List<?>) interestsObj;
+            String joined = list.stream().map(Object::toString)
+                    .collect(java.util.stream.Collectors.joining(", "));
+            return joined.isBlank() ? "sightseeing, food" : joined;
+        }
+        String str = interestsObj.toString().trim();
+        return str.isBlank() ? "sightseeing, food" : str;
+    }
+
     public static final String MASTER_PLAN_JSON_SCHEMA = """
 
         OVERRIDE FOR THIS REQUEST — OUTPUT FORMAT: Return ONLY a valid JSON object. No markdown, no explanation, no code fences.
@@ -151,7 +257,12 @@ public class AIPrompts {
         """;
 
     public static String getMasterPlanJsonPrompt(String destination) {
-        return getContextualPrompt(destination) + MASTER_PLAN_JSON_SCHEMA;
+        String destLine = (destination != null && !destination.isBlank())
+                ? "You are generating a structured travel master plan for: " + destination + ".\n" +
+                  "Apply authentic local knowledge — real venue names, correct addresses, " +
+                  "accurate timings, and realistic ₹ costs specific to " + destination + ".\n\n"
+                : "You are generating a structured travel master plan.\n\n";
+        return destLine + MASTER_PLAN_JSON_SCHEMA;
     }
 
     public static final String BOOKING_CONFIRMATION_SYSTEM_PROMPT = """

@@ -240,6 +240,9 @@ const initialDataState: Omit<TravelerProfile, 'profileId' | 'currentStep' | 'isL
   },
 };
 
+let resolveHydration!: () => void;
+const hydrationReady = new Promise<void>(resolve => { resolveHydration = resolve; });
+
 export const useProfileStore = create<ProfileState>()(
   persist(
     (set, get) => ({
@@ -344,7 +347,7 @@ export const useProfileStore = create<ProfileState>()(
       // Auth actions
       // Auth actions
       authenticateUser: (identifier: string, token: string = '', profile?: TravelerProfile) => {
-        // Token is now stored as an httpOnly cookie by the server — not in localStorage.
+        if (token) sessionCheckState.token = token;
         if (profile) {
           // Returning user - load their profile and merge with defaults to avoid nulls
           set({
@@ -390,28 +393,31 @@ export const useProfileStore = create<ProfileState>()(
       },
 
       validateSession: async () => {
-        // The auth_token cookie is sent automatically — no localStorage read needed.
+        await hydrationReady;
         try {
           const { validateSession } = await import('@/lib/api/authApi');
           set({ isSyncing: true });
           const response = await validateSession();
 
           if (response.success && response.data) {
-            const { profile, isNewUser, identifier } = response.data;
+            const { profile, isNewUser, identifier, token: freshToken } = response.data;
+            const resolvedToken = freshToken || sessionCheckState.token || get().token || '';
+            if (freshToken) sessionCheckState.token = freshToken;
             if (profile) {
               get().authenticateUser(
                 identifier || profile.basicInfo?.whatsappNumber || profile.basicInfo?.email || '',
-                '', // token managed by cookie, not by store
+                resolvedToken,
                 profile
               );
             } else if (isNewUser && identifier) {
-              get().authenticateUser(identifier, '');
+              get().authenticateUser(identifier, resolvedToken);
             }
           } else {
+            sessionCheckState.token = null;
             set({ isAuthenticated: false, token: null });
           }
         } catch (error) {
-          // 401 from the server means no valid session — treat as logged out
+          sessionCheckState.token = null;
           set({ isAuthenticated: false, token: null });
         } finally {
           set({ isSyncing: false });
@@ -421,7 +427,7 @@ export const useProfileStore = create<ProfileState>()(
       setNewUser: (isNew: boolean) => set({ isNewUser: isNew }),
 
       logout: () => {
-        // Tell the server to clear the httpOnly cookie
+        sessionCheckState.token = null;
         import('@/lib/api/authApi').then(({ logout }) => logout()).catch(() => {});
 
         set({
@@ -507,10 +513,12 @@ export const useProfileStore = create<ProfileState>()(
       onRehydrateStorage: () => (state) => {
         if (state) {
           state._hasHydrated = true;
-          // Session validity is checked via validateSession() which uses the httpOnly cookie.
-          // isAuthenticated from the persisted store is treated as optimistic — the next
-          // validateSession call will correct it if the cookie has expired.
+          if (state.token) sessionCheckState.token = state.token;
+        } else {
+          // If no state is stored yet (first load), mark hydrated to prevent hanging
+          useProfileStore.setState({ _hasHydrated: true });
         }
+        resolveHydration();
       },
     }
   )

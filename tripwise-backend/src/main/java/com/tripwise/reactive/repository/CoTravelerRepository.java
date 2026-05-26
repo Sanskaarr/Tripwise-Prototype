@@ -1,11 +1,4 @@
 package com.tripwise.reactive.repository;
 
-import com.tripwise.model.CoTraveler;
-import org.springframework.data.mongodb.repository.ReactiveMongoRepository;
-import org.springframework.stereotype.Repository;
-import reactor.core.publisher.Flux;
-
-@Repository
-public interface CoTravelerRepository extends ReactiveMongoRepository<CoTraveler, String> {
-    Flux<CoTraveler> findByProfileId(String profileId);
-}
+// Superseded by ReactiveCoTravelerRepository (reactive) and com.tripwise.repository.CoTravelerRepository (blocking).
+// Kept as a stub to avoid breaking any external references; Spring does not register this bean.

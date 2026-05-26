@@ -27,18 +27,28 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain) throws ServletException, IOException {
+        String path = request.getRequestURI();
+        String method = request.getMethod();
         String token = extractToken(request);
+        
+        log.info("JwtAuthenticationFilter: {} {} | hasToken={}", method, path, token != null);
+        
         if (token != null) {
             try {
-                if (jwtUtil.validateToken(token)) {
+                boolean isValid = jwtUtil.validateToken(token);
+                log.info("JwtAuthenticationFilter: token validation result={}", isValid);
+                if (isValid) {
                     String identifier = jwtUtil.extractUserId(token);
+                    log.info("JwtAuthenticationFilter: authenticated subject={}", identifier);
                     UsernamePasswordAuthenticationToken auth =
                             new UsernamePasswordAuthenticationToken(identifier, null, Collections.emptyList());
                     SecurityContextHolder.getContext().setAuthentication(auth);
                 }
             } catch (Exception e) {
-                log.debug("JWT validation failed: {}", e.getMessage());
+                log.error("JwtAuthenticationFilter: validation exception: {}", e.getMessage(), e);
             }
+        } else {
+            log.info("JwtAuthenticationFilter: No token found in request headers or cookies for path: {}", path);
         }
         filterChain.doFilter(request, response);
     }
@@ -61,5 +71,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         }
 
         return null;
+    }
+
+    @Override
+    protected boolean shouldNotFilterAsyncDispatch() {
+        return false;
     }
 }

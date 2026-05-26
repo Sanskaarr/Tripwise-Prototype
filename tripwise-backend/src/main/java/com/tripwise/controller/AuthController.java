@@ -49,12 +49,14 @@ public class AuthController {
             return ResponseEntity.ok(Map.of(
                     "success", true,
                     "exists", true,
+                    "token", token,
                     "profile", profile));
         }
         return ResponseEntity.ok(Map.of(
                 "success", true,
                 "exists", false,
-                "isNewUser", true));
+                "isNewUser", true,
+                "token", token));
     }
 
     @PostMapping("/logout")
@@ -71,16 +73,19 @@ public class AuthController {
     }
 
     @GetMapping("/validate")
-    public ResponseEntity<?> validateSession(@AuthenticationPrincipal String identifier) {
+    public ResponseEntity<?> validateSession(@AuthenticationPrincipal String identifier,
+                                             HttpServletResponse response) {
         if (identifier == null) {
             return ResponseEntity.status(401).body(Map.of("error", "No valid session"));
         }
         log.info("Validating session for: {}", identifier);
+        String token = jwtUtil.generateToken(identifier);
+        setAuthCookie(response, token);
         TravelerProfile profile = profileService.findByIdentifier(identifier);
         if (profile != null) {
-            return ResponseEntity.ok(Map.of("success", true, "isValid", true, "profile", profile));
+            return ResponseEntity.ok(Map.of("success", true, "isValid", true, "token", token, "profile", profile));
         }
-        return ResponseEntity.ok(Map.of("success", true, "isValid", true, "isNewUser", true, "identifier", identifier));
+        return ResponseEntity.ok(Map.of("success", true, "isValid", true, "token", token, "isNewUser", true, "identifier", identifier));
     }
 
     private void setAuthCookie(HttpServletResponse response, String token) {

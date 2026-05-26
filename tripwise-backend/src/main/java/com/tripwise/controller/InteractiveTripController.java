@@ -3,6 +3,8 @@ package com.tripwise.controller;
 import com.tripwise.model.TripPlanSession;
 import com.tripwise.service.InteractivePlanningService;
 import lombok.RequiredArgsConstructor;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
@@ -12,11 +14,13 @@ import reactor.core.publisher.Mono;
 @RequiredArgsConstructor
 public class InteractiveTripController {
 
+    private static final Logger logger = LoggerFactory.getLogger(InteractiveTripController.class);
     private final InteractivePlanningService interactivePlanningService;
 
     // STEP 1: Init Session & Get Overview
     @PostMapping("/init/{profileId}")
     public Mono<ResponseEntity<TripPlanSession>> initSession(@PathVariable String profileId) {
+        logger.info("POST /init/{} → creating planning session", profileId);
         return interactivePlanningService.initSession(profileId)
                 .map(ResponseEntity::ok);
     }
@@ -59,8 +63,14 @@ public class InteractiveTripController {
 
     // STEP 4: Finalize & Generate Master Plan
     @PostMapping("/{sessionId}/finalize")
-    public Mono<ResponseEntity<String>> finalizeTrip(@PathVariable String sessionId) {
-        return interactivePlanningService.generateMasterPlan(sessionId)
+    public Mono<ResponseEntity<String>> finalizeTrip(
+            @PathVariable String sessionId,
+            @RequestBody java.util.Map<String, Object> requestBody) {
+        java.util.List<java.util.Map<String, String>> chatHistory =
+                (java.util.List<java.util.Map<String, String>>) requestBody.get("messages");
+        logger.info("POST /finalize/{} → compiling master plan from {} chat messages",
+                sessionId, chatHistory != null ? chatHistory.size() : 0);
+        return interactivePlanningService.generateMasterPlan(sessionId, chatHistory)
                 .map(ResponseEntity::ok);
     }
 }

@@ -7,6 +7,7 @@ export interface AuthResponse {
     isNewUser?: boolean;
     identifier?: string;
     profile?: TravelerProfile;
+    token?: string;
 }
 
 export class AuthApi {

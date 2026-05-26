@@ -3,12 +3,13 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { SiteHeader } from '@/components/layout/SiteHeader';
 import { useProfileStore } from '@/store/profileStore';
 import { useWizardStore } from '@/store/wizardStore';
-import { InteractiveApi, HotelOption, TransportOption } from '@/lib/api/interactiveApi';
+import { InteractiveApi } from '@/lib/api/interactiveApi';
 import { useShallow } from 'zustand/react/shallow';
-import { Search, ArrowUp, Sparkles, Map, IndianRupee } from 'lucide-react';
+import { ArrowUp, Sparkles, Map, IndianRupee } from 'lucide-react';
 import ChatMessage, { ChatMessageData } from '@/components/chat/ChatMessage';
 import tripwiseLogo from '@/assets/tripwise-logo.png';
 import { config } from '@/config/env';
+import { sessionCheckState } from '@/lib/sessionCheckState';
 import { BudgetSummary } from '@/components/chat/BudgetSummary';
 
 // ─── Unique ID Generator ───────────────────────────────────────
@@ -29,11 +30,8 @@ const ConversationalWizard: React.FC = () => {
 
     // Wizard store
     const {
-        _hasHydrated, sessionId, overviewData, messages, isLoading,
-        selectedHotel, selectedTransport,
-        addMessage, removeLastMessage, updateLastMessage, clearMessages,
-        setHotelOptions, selectHotel: storeSelectHotel,
-        setTransportOptions, selectTransport: storeSelectTransport,
+        _hasHydrated, sessionId, messages, isLoading,
+        addMessage, removeLastMessage, updateLastMessage,
         setMasterPlan, setStep, setLoading, setOverviewData, setSessionId, resetWizard,
     } = useWizardStore();
 
@@ -46,202 +44,106 @@ const ConversationalWizard: React.FC = () => {
 
     // ─── Initialize Conversation ───────────────────────────────
     useEffect(() => {
-        if (!_hasHydrated) return; // Wait for Zustand to load from localforage
+        if (!_hasHydrated) return;
         if (hasInitialized.current) return;
 
-        // Handle empty state (e.g. user navigated here directly without a plan or local state was cleared)
-        if (!overviewData && messages.length === 0) {
-            const state = useWizardStore.getState();
-            // If we're resuming a finalized plan (CONTINUE PLAN from dashboard), fall through to the step handler below
-            if (state.currentStep === 'PLAN' && state.masterPlan) {
-                // intentional fall-through — step handler below will display the plan
-            } else {
-                hasInitialized.current = true;
-
-                const profileState = useProfileStore.getState();
-                const isReturning = (location.state as { isReturning?: boolean })?.isReturning;
-
-                // Returning user clicked "Continue Plan" on dashboard — re-initialize their AI session
-                if (isReturning && profileState.profileId) {
-                    addMessage({
-                        id: uid(),
-                        sender: 'bot',
-                        type: 'text',
-                        content: `Welcome back, ${userName}! Let me reload your trip plan...`,
-                        timestamp: Date.now(),
-                    });
-                    setLoading(true);
-                    InteractiveApi.initSession(profileState.profileId).then((res) => {
-                        setLoading(false);
-                        if (res.success && res.data) {
-                            const overviewStr = res.data.destinationOverview ?? '';
-                            const parsed = typeof overviewStr === 'string'
-                                ? (overviewStr ? JSON.parse(overviewStr) : null)
-                                : overviewStr;
-                            setSessionId(res.data.id);
-                            setOverviewData(overviewStr);
-                            setStep('OVERVIEW');
-                            addMessage({
-                                id: uid(),
-                                sender: 'bot',
-                                type: 'text',
-                                content: `I've analyzed your preferences for **${parsed?.destination || 'your trip'}**. Here's what I found:`,
-                                timestamp: Date.now(),
-                            });
-                            setTimeout(() => {
-                                addMessage({ id: uid(), sender: 'bot', type: 'overview', content: parsed, timestamp: Date.now() });
-                                setTimeout(() => {
-                                    addMessage({
-                                        id: uid(), sender: 'bot', type: 'text',
-                                        content: `Looks like an amazing trip ahead! When you're ready, I can search for the best hotels within your budget.`,
-                                        timestamp: Date.now(),
-                                    });
-                                }, 600);
-                            }, 800);
-                        } else {
-                            removeLastMessage();
-                            addMessage({
-                                id: uid(),
-                                sender: 'system',
-                                type: 'error',
-                                content: res.error || 'Failed to load your trip plan. Please try again.',
-                                timestamp: Date.now(),
-                            });
-                        }
-                    });
-                    return;
-                }
-
-                // New user with an in-progress draft — send them to confirm & submit their plan
-                if (profileState.destination?.destination && profileState.dates?.startDate) {
-                    addMessage({
-                        id: uid(),
-                        sender: 'bot',
-                        type: 'text',
-                        content: `I see you have a draft trip to **${profileState.destination.destination}**. Let me finalize the details to start...`,
-                        timestamp: Date.now(),
-                    });
-                    setTimeout(() => {
-                        navigate('/plan/confirmation');
-                    }, 2500);
-                } else {
-                    addMessage({
-                        id: uid(),
-                        sender: 'bot',
-                        type: 'text',
-                        content: `It looks like you don't have an active trip plan right now. Let's start a new one...`,
-                        timestamp: Date.now(),
-                    });
-                    setTimeout(() => {
-                        navigate('/plan');
-                    }, 2500);
-                }
-                return;
-            }
-        }
-
-        if (messages.length > 0) {
-            hasInitialized.current = true;
-            return;
-        }
-        hasInitialized.current = true;
-
         const state = useWizardStore.getState();
-        const step = state.currentStep;
+        const profileState = useProfileStore.getState();
 
-        if (step === 'PLAN' && state.masterPlan) {
-            addMessage({
-                id: uid(),
-                sender: 'bot',
-                type: 'text',
-                content: `Welcome back, ${userName}! Your trip plan is already finalized. Here is your complete itinerary:`,
-                timestamp: Date.now(),
-            });
-            setTimeout(() => {
-                addMessage({
-                    id: uid(),
-                    sender: 'bot',
-                    type: 'master-plan',
-                    content: state.masterPlan,
-                    timestamp: Date.now(),
-                });
-            }, 400);
-            return;
-        }
-
-        if (step === 'TRANSPORT' && state.transportOptions.length > 0) {
-            addMessage({
-                id: uid(),
-                sender: 'bot',
-                type: 'text',
-                content: `Welcome back! You were selecting a transport option. Here are the choices again:`,
-                timestamp: Date.now(),
-            });
-            setTimeout(() => {
-                addMessage({
-                    id: uid(),
-                    sender: 'bot',
-                    type: 'transport-options',
-                    content: state.transportOptions,
-                    timestamp: Date.now(),
-                });
-            }, 400);
-            return;
-        }
-
-        if (step === 'HOTEL' && state.hotelOptions.length > 0) {
-            addMessage({
-                id: uid(),
-                sender: 'bot',
-                type: 'text',
-                content: `Welcome back! You were selecting a hotel. Here are the options again:`,
-                timestamp: Date.now(),
-            });
-            setTimeout(() => {
-                addMessage({
-                    id: uid(),
-                    sender: 'bot',
-                    type: 'hotel-options',
-                    content: state.hotelOptions,
-                    timestamp: Date.now(),
-                });
-            }, 400);
-            return;
-        }
-
-        const parsed = typeof overviewData === 'string' ? JSON.parse(overviewData) : overviewData;
-
-        // Greeting
-        addMessage({
-            id: uid(),
-            sender: 'bot',
-            type: 'text',
-            content: `Welcome back, ${userName}! I've analyzed your preferences for **${parsed?.destination || 'your trip'}**. Here's what I found:`,
-            timestamp: Date.now(),
-        });
-
-        // Overview card (delayed slightly)
-        setTimeout(() => {
-            addMessage({
-                id: uid(),
-                sender: 'bot',
-                type: 'overview',
-                content: parsed,
-                timestamp: Date.now(),
-            });
-
-            // Action buttons
-            setTimeout(() => {
+        // 1. If resuming a finalized plan, display it
+        if (state.currentStep === 'PLAN' && state.masterPlan) {
+            hasInitialized.current = true;
+            if (messages.length === 0) {
                 addMessage({
                     id: uid(),
                     sender: 'bot',
                     type: 'text',
-                    content: `Looks like an amazing trip ahead! When you're ready, I can search for the best hotels within your budget.`,
+                    content: `Welcome back, ${userName}! Here is your finalized master plan:`,
                     timestamp: Date.now(),
                 });
-            }, 600);
-        }, 800);
-    }, [overviewData, messages.length, userName, addMessage, location]);
+                setTimeout(() => {
+                    addMessage({
+                        id: uid(),
+                        sender: 'bot',
+                        type: 'master-plan',
+                        content: state.masterPlan!,
+                        timestamp: Date.now(),
+                    });
+                }, 400);
+            }
+            return;
+        }
+
+        // 2. If messages already exist, resume without re-initializing
+        if (messages.length > 0) {
+            hasInitialized.current = true;
+            return;
+        }
+
+        // 3. Start a fresh interactive planning session
+        hasInitialized.current = true;
+
+        if (profileState.profileId) {
+            setLoading(true);
+            InteractiveApi.initSession(profileState.profileId).then((res) => {
+                setLoading(false);
+                if (res.success && res.data) {
+                    setSessionId(res.data.id);
+                    setOverviewData(res.data.destinationOverview ?? '');
+                    setStep('OVERVIEW');
+
+                    const dest = profileState.destination?.destination || 'my destination';
+                    const initPrompt = `Introduce yourself as my travel guide. I am planning a trip to ${dest}. Welcome me by name, ${userName}, and ask me if we should look at travel options (flights/trains) or hotels first.`;
+
+                    const initMsg: ChatMessageData = {
+                        id: uid(),
+                        sender: 'user',
+                        type: 'text',
+                        content: initPrompt,
+                        timestamp: Date.now(),
+                        isHidden: true,
+                    } as any;
+
+                    addMessage(initMsg);
+
+                    setLoading(true);
+                    processAIResponse([initMsg]).finally(() => {
+                        setLoading(false);
+                    });
+                } else {
+                    addMessage({
+                        id: uid(),
+                        sender: 'system',
+                        type: 'error',
+                        content: res.error || 'Failed to load your trip plan. Please try again.',
+                        timestamp: Date.now(),
+                    });
+                }
+            });
+            return;
+        }
+
+        // No profileId — redirect to onboarding
+        if (profileState.destination?.destination && profileState.dates?.startDate) {
+            addMessage({
+                id: uid(),
+                sender: 'bot',
+                type: 'text',
+                content: `I see you have a draft trip to **${profileState.destination.destination}**. Let me finalize the details to start...`,
+                timestamp: Date.now(),
+            });
+            setTimeout(() => navigate('/plan/confirmation'), 2500);
+        } else {
+            addMessage({
+                id: uid(),
+                sender: 'bot',
+                type: 'text',
+                content: `It looks like you don't have an active trip plan right now. Let's start a new one...`,
+                timestamp: Date.now(),
+            });
+            setTimeout(() => navigate('/plan'), 2500);
+        }
+    }, [messages.length, userName, addMessage, location, _hasHydrated, navigate, setOverviewData, setSessionId, setStep, setLoading]);
 
     // ─── Core Streaming Logic ─────────────────────────────────
     const processAIResponse = async (allMessages: ChatMessageData[]) => {
@@ -249,33 +151,52 @@ const ConversationalWizard: React.FC = () => {
         const CHAT_URL = `${config.apiBaseUrl}/api/chat/stream`;
 
         try {
+            const token = sessionCheckState.token;
+            const profileState = useProfileStore.getState();
+            const profileContext = {
+                fullName: profileState.basicInfo?.fullName,
+                cityOfDeparture: profileState.basicInfo?.cityOfDeparture,
+                adults: profileState.basicInfo?.adults,
+                children: profileState.basicInfo?.children,
+                infants: profileState.basicInfo?.infants,
+                budgetLevel: profileState.budget?.level,
+                startDate: profileState.dates?.startDate,
+                returnDate: profileState.dates?.returnDate,
+                durationDays: profileState.dates?.duration,
+                travelStyle: profileState.destination?.travelStyle,
+                interests: Object.entries(profileState.interests || {})
+                    .filter(([_, v]) => v)
+                    .map(([k]) => k),
+                accommodationPreference: profileState.accommodation?.category,
+                transportPreference: profileState.transport?.mode,
+            };
+
             const response = await fetch(CHAT_URL, {
                 method: "POST",
                 credentials: "include",
                 headers: {
                     "Content-Type": "application/json",
+                    ...(token ? { "Authorization": `Bearer ${token}` } : {}),
                 },
                 body: JSON.stringify({
-                    messages: allMessages.map((m) => ({
-                        role: m.sender === 'bot' ? 'assistant' : m.sender,
-                        content: typeof m.content === 'string' ? m.content : JSON.stringify(m.content),
-                    })),
-                    destination: useProfileStore.getState().destination?.destination,
+                    messages: allMessages
+                        .filter((m) => m.sender !== 'system')
+                        .map((m) => ({
+                            role: m.sender === 'bot' ? 'assistant' : 'user',
+                            content: typeof m.content === 'string' ? m.content : JSON.stringify(m.content),
+                        })),
+                    destination: profileState.destination?.destination,
+                    profileContext,
                 }),
             });
 
-            if (!response.ok) {
-                throw new Error("Failed to get travel advice");
-            }
-
-            if (!response.body) {
-                throw new Error("No response body");
-            }
+            if (!response.ok) throw new Error("Failed to get travel advice");
+            if (!response.body) throw new Error("No response body");
 
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
-            
-            // Add empty assistant message to start streaming
+
+            // Add empty bot message that will be filled by streaming
             addMessage({
                 id: uid(),
                 sender: 'bot',
@@ -289,10 +210,7 @@ const ConversationalWizard: React.FC = () => {
                 if (done) break;
 
                 const chunk = decoder.decode(value, { stream: true });
-                
-                // Process SSE lines
-                const lines = chunk.split('\n');
-                for (let line of lines) {
+                for (const line of chunk.split('\n')) {
                     if (line.startsWith('data:')) {
                         const data = line.replace('data:', '').trim();
                         if (data) {
@@ -315,254 +233,28 @@ const ConversationalWizard: React.FC = () => {
         }
     };
 
-    const handleFindHotels = useCallback(async () => {
-        if (isLoading) return;
-        setLoading(true);
-
-        // If session was lost (e.g. page refresh), re-initialize it from the profile
-        let activeSessionId = sessionId;
-        if (!activeSessionId) {
-            const profileId = useProfileStore.getState().profileId;
-            if (!profileId) {
-                addMessage({ id: uid(), sender: 'system', type: 'error', content: 'No active plan found. Please start a new plan.', timestamp: Date.now() });
-                setLoading(false);
-                return;
-            }
-            const initRes = await InteractiveApi.initSession(profileId);
-            if (!initRes.success || !initRes.data) {
-                addMessage({ id: uid(), sender: 'system', type: 'error', content: 'Failed to resume your plan. Please try again.', timestamp: Date.now() });
-                setLoading(false);
-                return;
-            }
-            useWizardStore.getState().setSessionId(initRes.data.id);
-            useWizardStore.getState().setOverviewData(initRes.data.destinationOverview);
-            useWizardStore.getState().setStep('OVERVIEW');
-            activeSessionId = initRes.data.id;
-        }
-
-        addMessage({
-            id: uid(),
-            sender: 'system',
-            type: 'loading',
-            content: 'Searching real-time hotel prices...',
-            timestamp: Date.now(),
-        });
-
-        try {
-            const response = await InteractiveApi.getHotelSuggestions(activeSessionId);
-            removeLastMessage(); // Remove loading
-
-            if (response.success) {
-                let options = response.data?.options;
-                if (!options && typeof response.data === 'string') {
-                    try {
-                        const parsed = JSON.parse(response.data as string);
-                        options = parsed.options;
-                    } catch { /* ignore */ }
-                }
-
-                if (options && options.length > 0) {
-                    setHotelOptions(options);
-                    setStep('HOTEL');
-
-                    addMessage({
-                        id: uid(),
-                        sender: 'bot',
-                        type: 'text',
-                        content: `I found ${options.length} great options for you. Pick the one that feels right:`,
-                        timestamp: Date.now(),
-                    });
-
-                    setTimeout(() => {
-                        addMessage({
-                            id: uid(),
-                            sender: 'bot',
-                            type: 'hotel-options',
-                            content: options,
-                            timestamp: Date.now(),
-                        });
-                    }, 300);
-                } else {
-                    addMessage({
-                        id: uid(),
-                        sender: 'system',
-                        type: 'error',
-                        content: 'No hotel options were found. This might be a temporary issue.',
-                        timestamp: Date.now(),
-                    });
-                }
-            } else {
-                addMessage({
-                    id: uid(),
-                    sender: 'system',
-                    type: 'error',
-                    content: response.error || 'Failed to fetch hotel options. Please try again.',
-                    timestamp: Date.now(),
-                });
-            }
-        } catch (e) {
-            removeLastMessage();
-            addMessage({
-                id: uid(),
-                sender: 'system',
-                type: 'error',
-                content: 'Something went wrong while searching for hotels. Please try again.',
-                timestamp: Date.now(),
-            });
-        } finally {
-            setLoading(false);
-        }
-    }, [sessionId, isLoading, setLoading, addMessage, removeLastMessage, setHotelOptions, setStep, setOverviewData]);
-
-    const handleHotelSelect = useCallback(async (hotel: HotelOption) => {
+    // ─── Generate Master Plan from Full Conversation ───────────
+    const handleGenerateMasterPlanFromChat = useCallback(async () => {
         if (!sessionId || isLoading) return;
-        storeSelectHotel(hotel);
         setLoading(true);
-
-        // User selection message
-        addMessage({
-            id: uid(),
-            sender: 'user',
-            type: 'selection',
-            content: `I'll go with ${hotel.name}`,
-            timestamp: Date.now(),
-        });
-
-        // Save selection to backend
-        try {
-            await InteractiveApi.selectHotel(sessionId, hotel);
-        } catch { /* non-critical */ }
-
-        // Bot acknowledges and auto-loads transport
-        setTimeout(() => {
-            addMessage({
-                id: uid(),
-                sender: 'bot',
-                type: 'text',
-                content: `Great choice! ${hotel.name} looks perfect. Now let me find the best way to get around...`,
-                timestamp: Date.now(),
-            });
-
-            setTimeout(() => {
-                loadTransportOptions();
-            }, 500);
-        }, 400);
-    }, [sessionId, isLoading, storeSelectHotel, setLoading, addMessage]);
-
-    const loadTransportOptions = useCallback(async () => {
-        if (!sessionId) return;
 
         addMessage({
             id: uid(),
             sender: 'system',
             type: 'loading',
-            content: 'Finding transport options...',
+            content: 'Compiling your conversation into a Master Plan...',
             timestamp: Date.now(),
         });
 
         try {
-            const response = await InteractiveApi.getTransportOptions(sessionId);
-            removeLastMessage();
+            const chatMessages = messages
+                .filter((m) => m.sender !== 'system')
+                .map((m) => ({
+                    role: m.sender === 'bot' ? 'assistant' : 'user',
+                    content: typeof m.content === 'string' ? m.content : JSON.stringify(m.content),
+                }));
 
-            if (response.success) {
-                let options = response.data?.options;
-                if (!options && typeof response.data === 'string') {
-                    try {
-                        const parsed = JSON.parse(response.data as string);
-                        options = parsed.options;
-                    } catch { /* ignore */ }
-                }
-
-                if (options && options.length > 0) {
-                    setTransportOptions(options);
-                    setStep('TRANSPORT');
-
-                    addMessage({
-                        id: uid(),
-                        sender: 'bot',
-                        type: 'text',
-                        content: `Here are ${options.length} transport options to get you around. Pick your preferred way:`,
-                        timestamp: Date.now(),
-                    });
-
-                    setTimeout(() => {
-                        addMessage({
-                            id: uid(),
-                            sender: 'bot',
-                            type: 'transport-options',
-                            content: options,
-                            timestamp: Date.now(),
-                        });
-                    }, 300);
-                } else {
-                    addMessage({
-                        id: uid(),
-                        sender: 'system',
-                        type: 'error',
-                        content: response.error || 'No transport options found. Please try again.',
-                        timestamp: Date.now(),
-                    });
-                }
-            }
-        } catch {
-            removeLastMessage();
-            addMessage({
-                id: uid(),
-                sender: 'system',
-                type: 'error',
-                content: 'Failed to fetch transport options. Please try again.',
-                timestamp: Date.now(),
-            });
-        } finally {
-            setLoading(false);
-        }
-    }, [sessionId, addMessage, removeLastMessage, setTransportOptions, setStep, setLoading]);
-
-    const handleTransportSelect = useCallback(async (transport: TransportOption) => {
-        if (!sessionId || isLoading) return;
-        storeSelectTransport(transport);
-        setLoading(true);
-
-        addMessage({
-            id: uid(),
-            sender: 'user',
-            type: 'selection',
-            content: `I'll take the ${transport.mode}`,
-            timestamp: Date.now(),
-        });
-
-        try {
-            await InteractiveApi.selectTransport(sessionId, transport);
-        } catch { /* non-critical */ }
-
-        setTimeout(() => {
-            addMessage({
-                id: uid(),
-                sender: 'bot',
-                type: 'text',
-                content: `Perfect! Everything is set. Let me now craft your complete travel plan...`,
-                timestamp: Date.now(),
-            });
-
-            setTimeout(() => {
-                generateMasterPlan();
-            }, 500);
-        }, 400);
-    }, [sessionId, isLoading, storeSelectTransport, setLoading, addMessage]);
-
-    const generateMasterPlan = useCallback(async () => {
-        if (!sessionId) return;
-
-        addMessage({
-            id: uid(),
-            sender: 'system',
-            type: 'loading',
-            content: 'Generating your master plan... This may take a moment.',
-            timestamp: Date.now(),
-        });
-
-        try {
-            const response = await InteractiveApi.finalizeTrip(sessionId);
+            const response = await InteractiveApi.finalizeTrip(sessionId, chatMessages);
             removeLastMessage();
 
             if (response.success && response.data) {
@@ -574,7 +266,7 @@ const ConversationalWizard: React.FC = () => {
                     id: uid(),
                     sender: 'bot',
                     type: 'text',
-                    content: `Your travel plan is ready! Here's your complete itinerary:`,
+                    content: `Here is your finalized master plan compiled from our conversation!`,
                     timestamp: Date.now(),
                 });
 
@@ -602,38 +294,18 @@ const ConversationalWizard: React.FC = () => {
                 id: uid(),
                 sender: 'system',
                 type: 'error',
-                content: 'Something went wrong while generating your plan. Please try again.',
+                content: 'Something went wrong while compiling your plan. Please try again.',
                 timestamp: Date.now(),
             });
         } finally {
             setLoading(false);
         }
-    }, [sessionId, addMessage, removeLastMessage, setMasterPlan, setStep, setLoading]);
-
-    const handleRetry = useCallback(() => {
-        // Remove the error message and retry the last failed action
-        removeLastMessage();
-        const step = useWizardStore.getState().currentStep;
-        if (step === 'OVERVIEW') handleFindHotels();
-        else if (step === 'HOTEL') loadTransportOptions();
-        else if (step === 'TRANSPORT') generateMasterPlan();
-    }, [removeLastMessage, handleFindHotels, loadTransportOptions, generateMasterPlan]);
+    }, [sessionId, messages, isLoading, setLoading, addMessage, removeLastMessage, setMasterPlan, setStep]);
 
     const handlePlanAnother = useCallback(() => {
         resetWizard();
         navigate('/dashboard');
     }, [resetWizard, navigate]);
-
-    // ─── Selection lock flags ──────────────────────────────────
-    const hotelSelectionLocked = !!selectedHotel;
-    const transportSelectionLocked = !!selectedTransport;
-
-    // ─── Determine if we should show action buttons ────────────
-    const showFindHotelsButton =
-        messages.length > 0 &&
-        !isLoading &&
-        !messages.some(m => m.type === 'hotel-options') &&
-        messages.some(m => m.type === 'overview');
 
     // ─── Handle user text input ────────────────────────────────
     const handleSendMessage = useCallback(async () => {
@@ -659,11 +331,9 @@ const ConversationalWizard: React.FC = () => {
         }
     }, [inputText, isLoading, messages, addMessage, setLoading]);
 
-    // ─── Get contextual input placeholder ──────────────────────
     const getInputPlaceholder = () => {
         if (isLoading) return 'TripWise AI is working...';
-        const step = useWizardStore.getState().currentStep;
-        if (step === 'PLAN') return 'Your trip plan is ready!';
+        if (useWizardStore.getState().currentStep === 'PLAN') return 'Your trip plan is ready!';
         return 'Type a message to TripWise AI...';
     };
 
@@ -671,28 +341,43 @@ const ConversationalWizard: React.FC = () => {
         <>
             <SiteHeader />
             <main className="relative z-10 container mx-auto px-4 pt-24 pb-32 max-w-4xl min-h-screen flex flex-col">
-                
+
                 {/* Controls Overlay */}
-                <div className="flex justify-end gap-2 mb-4 sticky top-24 z-40">
-                    <button 
-                        onClick={() => setShowBudget(!showBudget)}
-                        className={`p-2.5 rounded-xl border border-white/10 backdrop-blur-md transition-all ${showBudget ? 'bg-primary/20 text-primary border-primary/30' : 'bg-black/20 text-muted-foreground'}`}
-                    >
-                        <IndianRupee className="w-5 h-5" />
-                    </button>
-                    <button 
-                        onClick={() => setShowMap(!showMap)}
-                        className={`p-2.5 rounded-xl border border-white/10 backdrop-blur-md transition-all ${showMap ? 'bg-primary/20 text-primary border-primary/30' : 'bg-black/20 text-muted-foreground'}`}
-                    >
-                        <Map className="w-5 h-5" />
-                    </button>
+                <div className="flex justify-between items-center gap-2 mb-4 sticky top-24 z-40">
+                    <div className="flex items-center gap-2">
+                        {sessionId && messages.filter(m => !(m as any).isHidden).length > 0 && useWizardStore.getState().currentStep !== 'PLAN' && (
+                            <button
+                                onClick={handleGenerateMasterPlanFromChat}
+                                disabled={isLoading}
+                                className="px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all duration-300
+                                bg-gradient-to-r from-primary to-purple-600 text-white hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-primary/20 border border-white/10 disabled:opacity-50 disabled:cursor-not-allowed animate-in fade-in slide-in-from-left duration-300"
+                            >
+                                <Sparkles className="w-3.5 h-3.5" />
+                                Generate Master Plan
+                            </button>
+                        )}
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <button
+                            onClick={() => setShowBudget(!showBudget)}
+                            className={`p-2.5 rounded-xl border border-white/10 backdrop-blur-md transition-all ${showBudget ? 'bg-primary/20 text-primary border-primary/30' : 'bg-black/20 text-muted-foreground'}`}
+                        >
+                            <IndianRupee className="w-5 h-5" />
+                        </button>
+                        <button
+                            onClick={() => setShowMap(!showMap)}
+                            className={`p-2.5 rounded-xl border border-white/10 backdrop-blur-md transition-all ${showMap ? 'bg-primary/20 text-primary border-primary/30' : 'bg-black/20 text-muted-foreground'}`}
+                        >
+                            <Map className="w-5 h-5" />
+                        </button>
+                    </div>
                 </div>
 
                 {/* Budget Summary Section */}
                 {showBudget && (
                     <div className="mb-6 animate-in slide-in-from-top duration-300">
-                        <BudgetSummary messages={messages.map(m => ({ 
-                            role: m.sender === 'bot' ? 'assistant' : 'user', 
+                        <BudgetSummary messages={messages.filter(m => !(m as any).isHidden).map(m => ({
+                            role: m.sender === 'bot' ? 'assistant' : 'user',
                             content: typeof m.content === 'string' ? m.content : JSON.stringify(m.content)
                         }))} />
                     </div>
@@ -700,50 +385,17 @@ const ConversationalWizard: React.FC = () => {
 
                 {/* Message List */}
                 <div className="flex-1 flex flex-col gap-5 pb-4">
-                    {messages.map((msg) => (
+                    {messages.filter(msg => !(msg as any).isHidden).map((msg) => (
                         <ChatMessage
                             key={msg.id}
                             message={msg}
-                            onHotelSelect={handleHotelSelect}
-                            onTransportSelect={handleTransportSelect}
-                            onRetry={handleRetry}
                             onPlanAnother={handlePlanAnother}
-                            selectedHotelName={selectedHotel?.name}
-                            selectedTransportMode={selectedTransport?.mode}
-                            hotelSelectionLocked={hotelSelectionLocked}
-                            transportSelectionLocked={transportSelectionLocked}
                         />
                     ))}
-
-                    {/* Find Hotels Button — shown after overview */}
-                    {showFindHotelsButton && (
-                        <div className="flex items-start gap-3 max-w-[90%]">
-                            <div className="w-9 h-9 shrink-0" />
-                            <div className="flex flex-wrap gap-3">
-                                <button
-                                    onClick={handleFindHotels}
-                                    disabled={isLoading}
-                                    className="px-5 py-2.5 rounded-xl text-sm font-medium flex items-center gap-2 transition-all duration-300
-                    bg-primary/20 border border-primary/30 text-primary hover:bg-primary/30 hover:scale-105 shadow-lg shadow-primary/10"
-                                >
-                                    <Search className="w-4 h-4" />
-                                    Find Hotels
-                                </button>
-                                <button
-                                    onClick={() => navigate('/dashboard')}
-                                    className="px-5 py-2.5 rounded-xl text-sm font-medium flex items-center gap-2 transition-all duration-300
-                    border border-white/10 text-muted-foreground hover:bg-white/5 hover:text-foreground"
-                                >
-                                    Save for Later
-                                </button>
-                            </div>
-                        </div>
-                    )}
-
                     <div ref={bottomRef} />
                 </div>
 
-                {/* Fixed Input Bar — Functional */}
+                {/* Fixed Input Bar */}
                 <div className="fixed bottom-4 md:bottom-6 left-0 right-0 px-4 z-50">
                     <div className="max-w-4xl mx-auto">
                         <div className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-xl px-4 py-2.5 flex items-center gap-3 shadow-2xl shadow-black/30">
