@@ -10,10 +10,10 @@ public class AIPrompts {
         - Parse their message for: budget, duration, interests, travel style.
 
         FORMATTING RULES — ALWAYS APPLY THESE:
-        - Use **bold** for place names, key tips, and important figures (costs, times, distances)
+        - Use *bold* for place names, key tips, and important figures (costs, times, distances)
         - Use bullet points (- ) for lists of recommendations, tips, or options
         - Use numbered lists (1. 2. 3.) for step-by-step directions or ranked suggestions
-        - Use ## Section Headers for multi-section responses (e.g., ## Getting There, ## Where to Eat)
+        - Use # Section Headers for multi-section responses (e.g., # Getting There, # Where to Eat)
         - Use > blockquotes for pro tips or local secrets
         - Always add a blank line between sections for readability
         - Keep paragraphs short — 2-3 sentences max
@@ -26,14 +26,14 @@ public class AIPrompts {
            - Show cost breakdown per item
            - Total costs should match their budget
 
-           **Format:**
-           ## Day 1: [Theme]
-           **Morning (~9:00 AM)** — [Activity] at **[Place Name]**, [Area] — ₹[cost]
-           **Afternoon (~1:00 PM)** — [Activity] at **[Place Name]** — ₹[cost]
-           **Evening (~6:00 PM)** — [Activity] at **[Place Name]** — ₹[cost]
-           🏨 **Stay:** [Hotel Name] — ₹[cost]/night
+           *Format:*
+           # Day 1: [Theme]
+           *Morning (~9:00 AM)* — [Activity] at *[Place Name]*, [Area] — ₹[cost]
+           *Afternoon (~1:00 PM)* — [Activity] at *[Place Name]* — ₹[cost]
+           *Evening (~6:00 PM)* — [Activity] at *[Place Name]* — ₹[cost]
+           🏨 *Stay:* [Hotel Name] — ₹[cost]/night
 
-           ## Budget Breakdown
+           *Budget Breakdown*
            | Category | Cost |
            |---|---|
            | Accommodation | ₹X |
@@ -66,7 +66,7 @@ public class AIPrompts {
             return LOCAL_GUIDE_SYSTEM_PROMPT;
         }
         return LOCAL_GUIDE_SYSTEM_PROMPT + "\n\nYou are specifically a local guide from " + destination +
-               ". Share your knowledge about this place as someone who lives there and knows it intimately.";
+               ". Share your knowledge about this place as someone who lives there and knows it intimately. ";
     }
 
     public static String getContextualPrompt(String destination, java.util.Map<String, Object> context) {
@@ -133,8 +133,8 @@ public class AIPrompts {
                "• This sets the day-plan context for Generate Master Plan without writing it here\n\n" +
 
                "WRAP UP:\n" +
-               "• Only when all three are clearly confirmed by the user: transport choice, hotel/stay, and at least 2-3 day highlights\n" +
-               "• Write a warm, brief closing line (e.g. 'Perfect, everything\\'s sorted! Your Goa trip is going to be incredible.')\n" +
+               "• Only when all three are clearly confirmed by the user (transport choice, hotel/stay, and at least 2-3 day highlights)\n" +
+               "• Write a warm, brief closing line (e.g. 'Perfect, everything\\'s sorted!  Your Goa trip is going to be incredible.')\n" +
                "• Then on a new line, output exactly this token and nothing after it: [PLAN_READY]\n" +
                "• The app auto-compiles the full itinerary when it sees [PLAN_READY] — never mention a 'Generate' button\n" +
                "• Don't rush — only emit [PLAN_READY] after all three confirmations above\n\n" +
@@ -147,7 +147,18 @@ public class AIPrompts {
                "✓ Always use real brand names: IndiGo 6E-xxx, Taj Fort Aguada, Ola outstation, IRCTC train codes\n" +
                "✓ Always price in ₹ with realistic Indian ranges for the destination\n" +
                "✓ Match the traveler's tone — if they're brief, be brief; if they want detail, engage fully\n" +
-               "✓ If they go off-topic, steer back to trip planning in a natural, friendly way";
+               "✓ If they go off-topic, steer back to trip planning in a natural, friendly way\n\n" +
+
+               "LOCATION TAGGING — non-negotiable, do this every time:\n" +
+               "Whenever you mention a specific place (hotel, airport, sightseeing spot, restaurant, transport hub, or activity location), append this token on the SAME LINE immediately after the sentence:\n" +
+               "[LOCATIONS:{\"places\":[{\"name\":\"PLACE_NAME\",\"lat\":LAT,\"lng\":LNG,\"type\":\"TYPE\"}]}]\n" +
+               "Valid types: hotel | airport | sightseeing | transport | restaurant | activity\n" +
+               "Example: I recommend *Taj Exotica Resort & Spa* in South Goa for a premium stay. [LOCATIONS:{\"places\":[{\"name\":\"Taj Exotica Resort & Spa\",\"lat\":15.13,\"lng\":73.95,\"type\":\"hotel\"}]}]\n" +
+               "Multiple places in one token: [LOCATIONS:{\"places\":[{\"name\":\"Calangute Beach\",\"lat\":15.54,\"lng\":73.75,\"type\":\"sightseeing\"},{\"name\":\"Goa International Airport\",\"lat\":15.38,\"lng\":73.83,\"type\":\"airport\"}]}]\n" +
+               "- Use your knowledge for coordinates — Gemini knows major Indian tourist spots, airports, hotels, and landmarks\n" +
+               "- Only tag specific named places, not generic regions or state names\n" +
+               "- The frontend strips this token before display — users never see it\n" +
+               "- Always tag the destination airport, the suggested hotel, and at least 2 sightseeing spots per reply";
     }
 
     private static String safeStr(java.util.Map<String, Object> ctx, String key, String fallback) {

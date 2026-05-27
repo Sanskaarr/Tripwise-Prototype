@@ -52,4 +52,7 @@ public class Trip {
 
     @Field("updatedAt")
     private LocalDateTime updatedAt;
+
+    @Field("passShareToken")
+    private String passShareToken;
 }

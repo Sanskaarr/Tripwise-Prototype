@@ -68,7 +68,7 @@ const TripHero = ({ plan }: { plan: ParsedPlan }) => {
     return (
         <div className="relative px-6 pt-6 pb-5 overflow-hidden">
             {/* TripWise light-theme background */}
-            <div className="absolute inset-0 bg-gradient-to-br from-white via-slate-50 to-indigo-50/40" />
+            <div className="absolute inset-0 bg-gradient-to-br from-white/40 via-slate-50/20 to-indigo-50/10" />
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(99,102,241,0.07)_0%,_transparent_65%)]" />
             <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_bottom_left,_rgba(16,185,129,0.06)_0%,_transparent_65%)]" />
             <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-indigo-200/60 to-transparent" />
@@ -114,7 +114,7 @@ const TripHero = ({ plan }: { plan: ParsedPlan }) => {
 };
 
 const TabBar = ({ active, onChange }: { active: ActiveTab; onChange: (t: ActiveTab) => void }) => (
-    <div className="flex border-b border-slate-200/50 bg-slate-50/80 backdrop-blur-sm">
+    <div className="flex border-b border-slate-200/50 bg-slate-50/30 backdrop-blur-sm">
         {(['itinerary', 'budget'] as ActiveTab[]).map(tab => (
             <button
                 key={tab}
@@ -143,7 +143,7 @@ const TabBar = ({ active, onChange }: { active: ActiveTab; onChange: (t: ActiveT
 const DayPillNav = ({
     days, activeDay, onSelect,
 }: { days: Day[]; activeDay: number; onSelect: (d: number) => void }) => (
-    <div className="sticky top-0 z-20 flex gap-2 px-5 py-3 border-b border-slate-200/50 bg-white/80 backdrop-blur-md overflow-x-auto scrollbar-none">
+    <div className="sticky top-0 z-20 flex gap-2 px-5 py-3 border-b border-slate-200/50 bg-white/30 backdrop-blur-md overflow-x-auto scrollbar-none">
         {days.map(d => (
             <button
                 key={d.day}
@@ -189,7 +189,7 @@ const TransitCard = ({ activity }: { activity: Activity }) => (
     <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mx-5 my-3 rounded-2xl border border-dashed border-indigo-300/60 bg-gradient-to-br from-indigo-50/80 to-violet-50/40 p-4 relative overflow-hidden"
+        className="mx-5 my-3 rounded-2xl border border-dashed border-indigo-200 bg-indigo-50/20 p-4 relative overflow-hidden"
     >
         <div className="absolute top-0 right-0 w-24 h-24 bg-indigo-200/20 rounded-full blur-2xl -translate-y-6 translate-x-6" />
         <div className="flex items-center gap-2 mb-3 relative">
@@ -236,7 +236,7 @@ const ActivityCard = ({ activity, index }: { activity: Activity; index: number }
             onClick={() => setIsExpanded(!isExpanded)}
             className="mx-5 my-2.5"
         >
-            <div className={`rounded-xl border border-slate-200/50 border-l-2 ${tod.border} bg-white/70 p-3 hover:bg-white hover:shadow-md hover:border-slate-300 shadow-[0_2px_8px_-4px_rgba(0,0,0,0.06)] transition-all cursor-pointer group select-none relative`}>
+            <div className={`rounded-xl border border-slate-200/50 border-l-2 ${tod.border} bg-white/60 p-3 hover:bg-white/95 hover:shadow-md hover:border-slate-300 shadow-[0_2px_8px_-4px_rgba(0,0,0,0.06)] transition-all cursor-pointer group select-none relative`}>
                 <div className="flex items-start justify-between gap-3 mb-1.5">
                     <div className="flex items-center gap-2">
                         <span className={`text-[9px] font-bold uppercase tracking-widest px-2 py-0.5 rounded-full border ${tod.pill}`}>
@@ -283,7 +283,7 @@ const StayCard = ({ stay }: { stay: StayInfo }) => (
     <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        className="mx-5 mt-2 mb-4 rounded-xl border border-amber-300/40 bg-gradient-to-br from-amber-50/80 to-orange-50/30 p-4 relative overflow-hidden"
+        className="mx-5 mt-2 mb-4 rounded-xl border border-amber-200/60 bg-amber-50/30 p-4 relative overflow-hidden shadow-sm"
     >
         <div className="absolute top-0 right-0 w-20 h-20 bg-amber-200/20 rounded-full blur-2xl -translate-y-4 translate-x-4" />
         <div className="flex items-start justify-between gap-3 relative">
@@ -382,7 +382,7 @@ const BudgetTab = ({ breakdown, total }: { breakdown: BudgetItem[]; total: strin
                     const pct = Math.round(item.percentage * 100);
 
                     return (
-                        <div key={i} className={`bg-white border border-slate-200/70 rounded-xl p-3 space-y-2 hover:shadow-md ${glowColor} hover:shadow-sm transition-all duration-200`}>
+                        <div key={i} className={`bg-white/60 backdrop-blur-sm border border-slate-200/70 rounded-xl p-3 space-y-2 hover:shadow-md ${glowColor} hover:shadow-sm transition-all duration-200`}>
                             <div className="flex items-center gap-3">
                                 <div className={`w-2.5 h-2.5 rounded-full ${bgColor} shrink-0 shadow-[0_0_6px_rgba(0,0,0,0.15)]`} />
                                 <span className="text-xs text-slate-700 flex-1 font-semibold">{item.category}</span>
@@ -412,9 +412,10 @@ const BudgetTab = ({ breakdown, total }: { breakdown: BudgetItem[]; total: strin
 interface MasterPlanCardProps {
     plan: string | ParsedPlan;
     onPlanAnother?: () => void;
+    isSplitView?: boolean;
 }
 
-const MasterPlanCard: React.FC<MasterPlanCardProps> = ({ plan, onPlanAnother }) => {
+const MasterPlanCard: React.FC<MasterPlanCardProps> = ({ plan, onPlanAnother, isSplitView = false }) => {
     const navigate = useNavigate();
     const [activeDay, setActiveDay] = useState(1);
     const [activeTab, setActiveTab] = useState<ActiveTab>('itinerary');
@@ -454,7 +455,7 @@ const MasterPlanCard: React.FC<MasterPlanCardProps> = ({ plan, onPlanAnother }) 
             initial={{ opacity: 0, y: 16, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
-            className="w-full rounded-3xl border border-slate-200/50 overflow-hidden shadow-xl shadow-slate-900/8 text-slate-800 bg-white"
+            className={`w-full rounded-3xl border border-slate-200/50 overflow-hidden shadow-xl shadow-slate-900/8 text-slate-800 bg-white/70 backdrop-blur-md flex flex-col ${isSplitView ? 'h-full' : ''}`}
         >
             {/* Hero */}
             <TripHero plan={parsed} />
@@ -474,8 +475,9 @@ const MasterPlanCard: React.FC<MasterPlanCardProps> = ({ plan, onPlanAnother }) 
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.2 }}
+                        className={isSplitView ? 'flex-1 flex flex-col min-h-0 overflow-hidden' : ''}
                     >
-                        <div ref={containerRef} className="max-h-[52vh] overflow-y-auto custom-scrollbar relative bg-white">
+                        <div ref={containerRef} className={`${isSplitView ? 'flex-1 min-h-0' : 'max-h-[52vh]'} overflow-y-auto custom-scrollbar relative bg-transparent`}>
                             <DayPillNav days={parsed.itinerary} activeDay={activeDay} onSelect={scrollToDay} />
 
                             {parsed.itinerary.map((day, i) => (
@@ -499,18 +501,20 @@ const MasterPlanCard: React.FC<MasterPlanCardProps> = ({ plan, onPlanAnother }) 
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         transition={{ duration: 0.2 }}
-                        className="max-h-[52vh] overflow-y-auto custom-scrollbar bg-white"
+                        className={isSplitView ? 'flex-1 flex flex-col min-h-0 overflow-hidden' : ''}
                     >
-                        {parsed.budgetBreakdown?.length > 0 ? (
-                            <BudgetTab
-                                breakdown={parsed.budgetBreakdown}
-                                total={parsed.totalCost || parsed.tripOverview?.totalBudget || ''}
-                            />
-                        ) : (
-                            <div className="p-8 text-center text-xs text-slate-400">
-                                No budget breakdown available.
-                            </div>
-                        )}
+                        <div className={`${isSplitView ? 'flex-1 min-h-0' : 'max-h-[52vh]'} overflow-y-auto custom-scrollbar bg-transparent`}>
+                            {parsed.budgetBreakdown?.length > 0 ? (
+                                <BudgetTab
+                                    breakdown={parsed.budgetBreakdown}
+                                    total={parsed.totalCost || parsed.tripOverview?.totalBudget || ''}
+                                />
+                            ) : (
+                                <div className="p-8 text-center text-xs text-slate-400">
+                                    No budget breakdown available.
+                                </div>
+                            )}
+                        </div>
                     </motion.div>
                 )}
             </AnimatePresence>
@@ -520,7 +524,7 @@ const MasterPlanCard: React.FC<MasterPlanCardProps> = ({ plan, onPlanAnother }) 
                 {onPlanAnother && (
                     <button
                         onClick={onPlanAnother}
-                        title="Change Plan"
+                        title="Revise Plan"
                         className="w-10 h-10 rounded-xl border border-slate-200 text-slate-500 hover:bg-slate-100 hover:text-slate-700 hover:border-slate-300 transition-all flex items-center justify-center shrink-0"
                     >
                         <RotateCcw className="w-4 h-4" />

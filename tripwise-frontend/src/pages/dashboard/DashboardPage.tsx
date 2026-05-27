@@ -122,7 +122,7 @@ const DashboardPage = () => {
                     passShareToken: wizardBookingId || undefined,
                 } : null;
 
-                setTrips(currentTrip ? [currentTrip] : []);
+                setTrips(currentTrip ? [currentTrip, ...userTrips] : userTrips);
             } catch (error) {
                 console.error("Failed to fetch trips", error);
                 setTrips([]);

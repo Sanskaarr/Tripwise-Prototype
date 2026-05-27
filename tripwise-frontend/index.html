@@ -22,6 +22,15 @@
 
   <body>
     <div id="root"></div>
+    <script>
+      // Babel class-fields helper required by olamaps-web-sdk's pre-compiled dist
+      if (typeof __publicField === 'undefined') {
+        window.__publicField = function(obj, key, value) {
+          obj[key] = value;
+          return value;
+        };
+      }
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

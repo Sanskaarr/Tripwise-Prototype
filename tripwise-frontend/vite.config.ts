@@ -15,6 +15,18 @@ export default defineConfig(({ mode }) => ({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  optimizeDeps: {
+    include: ['olamaps-web-sdk'],
+    esbuildOptions: {
+      target: 'es2022',
+    },
+  },
+  esbuild: {
+    target: 'es2022',
+  },
+  build: {
+    target: 'es2022',
+  },
   define: {
     'import.meta.env.VITE_API_BASE_URL': JSON.stringify(process.env.VITE_API_BASE_URL || 'http://localhost:8080'),
     'import.meta.env.VITE_APP_ENV': JSON.stringify(process.env.VITE_APP_ENV || 'development'),

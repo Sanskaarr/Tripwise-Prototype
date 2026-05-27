@@ -438,7 +438,11 @@ export const useProfileStore = create<ProfileState>()(
           token: null,
           ...initialDataState
         });
-        localStorage.removeItem('tripwise-profile');
+        localforage.removeItem('tripwise-profile');
+        localforage.removeItem('tripwise-wizard');
+        import('@/store/wizardStore').then(({ useWizardStore }) => {
+          useWizardStore.getState().resetWizard();
+        });
       },
 
       // Legacy actions for compatibility

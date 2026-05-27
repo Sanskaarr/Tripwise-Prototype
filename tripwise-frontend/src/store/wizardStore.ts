@@ -4,6 +4,13 @@ import localforage from 'localforage';
 import { HotelOption, TransportOption } from '@/lib/api/interactiveApi';
 import { ChatMessageData } from '@/components/chat/ChatMessage';
 
+export interface MapLocation {
+    name: string;
+    lat: number;
+    lng: number;
+    type: 'hotel' | 'airport' | 'sightseeing' | 'transport' | 'restaurant' | 'activity';
+}
+
 interface WizardState {
     _hasHydrated: boolean;
     sessionId: string | null;
@@ -21,6 +28,10 @@ interface WizardState {
     transportOptions: TransportOption[];
     selectedTransport: TransportOption | null;
     masterPlan: string | null;
+
+    // Map
+    mapLocations: MapLocation[];
+    addLocations: (places: MapLocation[]) => void;
 
     // Booking result
     bookingId: string | null;
@@ -46,6 +57,7 @@ interface WizardState {
     clearMessages: () => void;
 
     resetWizard: () => void;
+    revisePlan: () => void;
 }
 
 export const useWizardStore = create<WizardState>()(
@@ -65,6 +77,13 @@ export const useWizardStore = create<WizardState>()(
             selectedTransport: null,
             masterPlan: null,
             bookingId: null,
+            mapLocations: [],
+
+            addLocations: (places) => set((state) => {
+                const existing = new Set(state.mapLocations.map(p => p.name));
+                const fresh = places.filter(p => !existing.has(p.name));
+                return fresh.length > 0 ? { mapLocations: [...state.mapLocations, ...fresh] } : state;
+            }),
 
             setHasHydrated: (hydrated) => set({ _hasHydrated: hydrated }),
             setBookingId: (id) => set({ bookingId: id }),
@@ -104,7 +123,15 @@ export const useWizardStore = create<WizardState>()(
                 selectedTransport: null,
                 masterPlan: null,
                 bookingId: null,
+                mapLocations: [],
             }),
+
+            revisePlan: () => set((state) => ({
+                currentStep: 'TRANSPORT',
+                masterPlan: null,
+                mapLocations: [],
+                messages: state.messages.filter(m => m.type !== 'master-plan'),
+            })),
         }),
         {
             name: 'tripwise-wizard',

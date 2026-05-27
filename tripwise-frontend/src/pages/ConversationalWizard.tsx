@@ -1,15 +1,52 @@
 import React, { useEffect, useRef, useCallback, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
 import { SiteHeader } from '@/components/layout/SiteHeader';
 import { useProfileStore } from '@/store/profileStore';
-import { useWizardStore } from '@/store/wizardStore';
+import { useWizardStore, MapLocation } from '@/store/wizardStore';
 import { InteractiveApi } from '@/lib/api/interactiveApi';
 import { useShallow } from 'zustand/react/shallow';
-import { ArrowUp, Sparkles } from 'lucide-react';
+import { ArrowUp, Sparkles, MessageSquare, LayoutList } from 'lucide-react';
 import ChatMessage, { ChatMessageData } from '@/components/chat/ChatMessage';
+import TripMap from '@/components/map/TripMap';
+import MasterPlanCard from '@/components/chat/MasterPlanCard';
+import { parseMasterPlan } from '@/types/masterPlan';
 import tripwiseLogo from '@/assets/tripwise-logo.png';
 import { config } from '@/config/env';
 import { sessionCheckState } from '@/lib/sessionCheckState';
+
+function extractLocationTokens(raw: string): { places: MapLocation[]; clean: string } {
+    const places: MapLocation[] = [];
+    let clean = raw;
+    const TOKEN = '[LOCATIONS:';
+    let idx = 0;
+
+    while ((idx = clean.indexOf(TOKEN, idx)) !== -1) {
+        const jsonStart = idx + TOKEN.length;
+        let depth = 0;
+        let jsonEnd = -1;
+
+        for (let i = jsonStart; i < clean.length; i++) {
+            const ch = clean.charAt(i);
+            if (ch === '{') depth++;
+            else if (ch === '}') {
+                depth--;
+                if (depth === 0) { jsonEnd = i; break; }
+            }
+        }
+
+        if (jsonEnd === -1 || clean.charAt(jsonEnd + 1) !== ']') { idx++; continue; }
+
+        try {
+            const parsed = JSON.parse(clean.slice(jsonStart, jsonEnd + 1));
+            if (Array.isArray(parsed?.places)) places.push(...parsed.places);
+        } catch {}
+
+        clean = clean.slice(0, idx) + clean.slice(jsonEnd + 2);
+    }
+
+    return { places, clean };
+}
 
 // ─── Unique ID Generator ───────────────────────────────────────
 const uid = () => `msg_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
@@ -22,15 +59,18 @@ const ConversationalWizard: React.FC = () => {
     const hasInitialized = useRef(false);
     const autoGeneratePlanRef = useRef(false);
     const [inputText, setInputText] = useState('');
+    const [viewMode, setViewMode] = useState<'chat' | 'dashboard'>('chat');
+    const prevStepRef = useRef('');
 
     // Profile store
     const { basicInfo } = useProfileStore(useShallow(state => ({ basicInfo: state.basicInfo })));
 
     // Wizard store
     const {
-        _hasHydrated, sessionId, messages, isLoading,
+        _hasHydrated, sessionId, messages, isLoading, currentStep, mapLocations, masterPlan,
         addMessage, removeLastMessage, updateLastMessage,
         setMasterPlan, setStep, setLoading, setOverviewData, setSessionId, resetWizard,
+        addLocations, revisePlan,
     } = useWizardStore();
 
     const userName = basicInfo.fullName?.split(' ')[0] || 'Traveler';
@@ -51,6 +91,7 @@ const ConversationalWizard: React.FC = () => {
         // 1. If resuming a finalized plan, display it
         if (state.currentStep === 'PLAN' && state.masterPlan) {
             hasInitialized.current = true;
+            setViewMode('dashboard');
             if (messages.length === 0) {
                 addMessage({
                     id: uid(),
@@ -193,6 +234,7 @@ const ConversationalWizard: React.FC = () => {
 
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
+            let buffer = '';
 
             // Add empty bot message that will be filled by streaming
             addMessage({
@@ -205,19 +247,43 @@ const ConversationalWizard: React.FC = () => {
 
             while (true) {
                 const { done, value } = await reader.read();
-                if (done) break;
 
-                const chunk = decoder.decode(value, { stream: true });
-                for (const line of chunk.split('\n')) {
-                    if (line.startsWith('data:')) {
-                        const data = line.replace('data:', '').trim();
-                        if (data) {
+                if (done) {
+                    // Flush any remaining buffered line
+                    if (buffer.startsWith('data:')) {
+                        const data = buffer.slice(5).trim();
+                        if (data && data !== '[DONE]') {
                             assistantContent += data;
-                            updateLastMessage(assistantContent);
+                            const { places, clean } = extractLocationTokens(assistantContent);
+                            if (places.length > 0) addLocations(places);
+                            updateLastMessage(clean);
+                        }
+                    }
+                    break;
+                }
+
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                // Keep the last (possibly incomplete) line in the buffer
+                buffer = lines.pop() ?? '';
+
+                for (const line of lines) {
+                    if (line.startsWith('data:')) {
+                        const data = line.slice(5).trim();
+                        if (data && data !== '[DONE]') {
+                            assistantContent += data;
+                            const { places, clean } = extractLocationTokens(assistantContent);
+                            if (places.length > 0) addLocations(places);
+                            updateLastMessage(clean);
                         }
                     }
                 }
             }
+
+            // Final cleanup of any tokens that survived the stream
+            const { places: finalPlaces, clean: finalClean } = extractLocationTokens(assistantContent);
+            if (finalPlaces.length > 0) addLocations(finalPlaces);
+            assistantContent = finalClean;
 
             if (assistantContent.includes('[PLAN_READY]')) {
                 const cleaned = assistantContent.replace('[PLAN_READY]', '').trim();
@@ -265,6 +331,7 @@ const ConversationalWizard: React.FC = () => {
                 const plan = typeof response.data === 'string' ? response.data : JSON.stringify(response.data);
                 setMasterPlan(plan);
                 setStep('PLAN');
+                setViewMode('dashboard');
 
                 addMessage({
                     id: uid(),
@@ -307,9 +374,26 @@ const ConversationalWizard: React.FC = () => {
     }, [sessionId, messages, isLoading, setLoading, addMessage, removeLastMessage, setMasterPlan, setStep]);
 
     const handlePlanAnother = useCallback(() => {
-        resetWizard();
-        navigate('/dashboard');
-    }, [resetWizard, navigate]);
+        revisePlan();
+    }, [revisePlan]);
+
+    // Track transitions into PLAN step to switch to dashboard
+    useEffect(() => {
+        if (currentStep === 'PLAN' && prevStepRef.current !== 'PLAN') {
+            setViewMode('dashboard');
+        }
+        prevStepRef.current = currentStep;
+    }, [currentStep]);
+
+    const handleBook = useCallback(() => {
+        if (!masterPlan) return;
+        try {
+            const parsed = typeof masterPlan === 'string' ? parseMasterPlan(masterPlan) : masterPlan;
+            navigate('/booking/summary', { state: { plan: parsed } });
+        } catch (e) {
+            console.error("Error parsing plan for booking:", e);
+        }
+    }, [masterPlan, navigate]);
 
     // ─── Handle user text input ────────────────────────────────
     const handleSendMessage = useCallback(async () => {
@@ -341,46 +425,142 @@ const ConversationalWizard: React.FC = () => {
 
     const getInputPlaceholder = () => {
         if (isLoading) return 'TripWise AI is working...';
-        if (useWizardStore.getState().currentStep === 'PLAN') return 'Your trip plan is ready!';
+        if (currentStep === 'PLAN') {
+            if (viewMode === 'dashboard') return 'Plan is ready!';
+            return 'Suggest refinements (e.g., "Add more beaches" or "Change Day 2 stay")...';
+        }
         return 'Type a message to TripWise AI...';
     };
+
+    const showMap = currentStep === 'PLAN' && viewMode === 'dashboard' && mapLocations.length > 0;
+
+    if (currentStep === 'PLAN' && viewMode === 'dashboard') {
+        const parsedPlan = typeof masterPlan === 'string' ? parseMasterPlan(masterPlan) : masterPlan;
+
+        return (
+            <>
+                <SiteHeader />
+                <div className="min-h-screen bg-slate-50/50 pt-20 flex flex-col animate-in fade-in duration-300">
+                    {/* Action Bar Header */}
+                    <div className="bg-transparent sticky top-16 z-30 px-6 py-4">
+                        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                            {/* Left: Trip summary */}
+                            <div>
+                                <div className="flex items-center gap-2">
+                                    <span className="inline-flex items-center gap-1.5 text-[9px] font-bold uppercase tracking-[0.2em] text-indigo-600 bg-indigo-50 border border-indigo-100 px-2.5 py-1 rounded-full">
+                                        <Sparkles className="w-2.5 h-2.5 text-indigo-500" />
+                                        Finalized Plan
+                                    </span>
+                                </div>
+                                <h1 className="text-lg sm:text-xl font-bold text-slate-900 mt-1 leading-tight">
+                                    {parsedPlan?.tripOverview?.title || 'Your Trip Plan'}
+                                </h1>
+                            </div>
+
+                            {/* Right: Actions */}
+                            <div className="flex items-center gap-2.5">
+                                <button
+                                    onClick={() => setViewMode('chat')}
+                                    className="px-4 py-2 rounded-xl text-xs font-semibold border border-slate-200 text-slate-600 bg-white hover:bg-slate-50 transition-all flex items-center gap-2 hover:border-slate-300 active:scale-[0.98]"
+                                >
+                                    <MessageSquare className="w-3.5 h-3.5 text-indigo-500" />
+                                    Refine Plan
+                                </button>
+                                <button
+                                    onClick={handleBook}
+                                    className="px-5 py-2.5 rounded-xl text-white text-xs font-bold uppercase tracking-wider transition-all flex items-center gap-2 shadow-md active:scale-[0.98] hover:opacity-95"
+                                    style={{ background: 'linear-gradient(135deg, hsl(222,47%,11%) 0%, hsl(225,50%,18%) 50%, hsl(222,47%,11%) 100%)' }}
+                                >
+                                    <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+                                    Book This Trip
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Main Split Body */}
+                    <div className="flex-grow max-w-7xl w-full mx-auto px-4 py-6 flex flex-col md:flex-row gap-6 md:h-[calc(100vh-11rem)]">
+                        {/* Left: Master Itinerary / Budget Card */}
+                        <div className="w-full md:w-1/2 h-full flex flex-col min-h-[500px] md:min-h-0">
+                            <MasterPlanCard plan={masterPlan!} onPlanAnother={handlePlanAnother} isSplitView={true} />
+                        </div>
+
+                        {/* Right: Interactive Map */}
+                        <div className="w-full md:w-1/2 h-[450px] md:h-full flex flex-col">
+                            <TripMap places={mapLocations} />
+                        </div>
+                    </div>
+                </div>
+            </>
+        );
+    }
 
     return (
         <>
             <SiteHeader />
-            <main className="relative z-10 container mx-auto px-4 pt-24 pb-32 max-w-4xl min-h-screen flex flex-col">
+            <main className={`relative z-10 container mx-auto px-4 pt-24 pb-32 min-h-screen flex ${showMap ? 'max-w-7xl gap-6 items-start' : 'max-w-4xl flex-col'}`}>
 
-                {/* Controls Overlay */}
-                <div className="flex items-center gap-2 mb-4 sticky top-24 z-40">
-                    {sessionId && messages.filter(m => !(m as any).isHidden).length > 0 && useWizardStore.getState().currentStep !== 'PLAN' && (
-                        <button
-                            onClick={handleGenerateMasterPlanFromChat}
-                            disabled={isLoading}
-                            className="px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all duration-300
-                            bg-gradient-to-r from-primary to-purple-600 text-white hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-primary/20 border border-white/10 disabled:opacity-50 disabled:cursor-not-allowed animate-in fade-in slide-in-from-left duration-300"
+                {/* Chat column */}
+                <div className="flex-1 flex flex-col min-w-0">
+
+                    {/* Controls Overlay */}
+                    <div className="flex items-center gap-2 mb-4 sticky top-24 z-40">
+                        {sessionId && messages.filter(m => !(m as any).isHidden).length > 0 && currentStep !== 'PLAN' && (
+                            <button
+                                onClick={handleGenerateMasterPlanFromChat}
+                                disabled={isLoading}
+                                className="px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all duration-300
+                                bg-gradient-to-r from-primary to-purple-600 text-white hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-primary/20 border border-white/10 disabled:opacity-50 disabled:cursor-not-allowed animate-in fade-in slide-in-from-left duration-300"
+                            >
+                                <Sparkles className="w-3.5 h-3.5" />
+                                Generate Master Plan
+                            </button>
+                        )}
+                        {currentStep === 'PLAN' && viewMode === 'chat' && (
+                            <button
+                                onClick={() => setViewMode('dashboard')}
+                                className="px-4 py-2 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all duration-300
+                                bg-slate-900 text-white hover:opacity-90 hover:scale-[1.02] active:scale-[0.98] shadow-lg shadow-slate-900/20 border border-slate-800 disabled:opacity-50 animate-in fade-in slide-in-from-left duration-300"
+                            >
+                                <LayoutList className="w-3.5 h-3.5 text-indigo-400" />
+                                View Interactive Dashboard
+                            </button>
+                        )}
+                    </div>
+
+                    {/* Message List */}
+                    <div className="flex-1 flex flex-col gap-5 pb-4">
+                        {messages.filter(msg => !(msg as any).isHidden).map((msg) => (
+                            <ChatMessage
+                                key={msg.id}
+                                message={msg}
+                                onPlanAnother={handlePlanAnother}
+                            />
+                        ))}
+                        <div ref={bottomRef} />
+                    </div>
+                </div>
+
+                {/* Map side panel — only in PLAN step */}
+                <AnimatePresence>
+                    {showMap && (
+                        <motion.div
+                            initial={{ opacity: 0, x: 40 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            exit={{ opacity: 0, x: 40 }}
+                            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}
+                            className="hidden md:block shrink-0 sticky top-24 self-start"
+                            style={{ width: 380, height: 'calc(100vh - 7rem)' }}
                         >
-                            <Sparkles className="w-3.5 h-3.5" />
-                            Generate Master Plan
-                        </button>
+                            <TripMap places={mapLocations} />
+                        </motion.div>
                     )}
-                </div>
-
-                {/* Message List */}
-                <div className="flex-1 flex flex-col gap-5 pb-4">
-                    {messages.filter(msg => !(msg as any).isHidden).map((msg) => (
-                        <ChatMessage
-                            key={msg.id}
-                            message={msg}
-                            onPlanAnother={handlePlanAnother}
-                        />
-                    ))}
-                    <div ref={bottomRef} />
-                </div>
+                </AnimatePresence>
 
                 {/* Fixed Input Bar */}
                 <div className="fixed bottom-4 md:bottom-6 left-0 right-0 px-4 z-50">
                     <div className="max-w-4xl mx-auto">
-                        <div className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-xl px-4 py-2.5 flex items-center gap-3 shadow-2xl shadow-black/30">
+                        <div className="rounded-2xl border border-white/10 bg-black/40 backdrop-blur-xl px-4 py-2.5 flex items-center gap-3 shadow-2xl shadow-black/30 animate-in slide-in-from-bottom duration-300">
                             <div className="w-8 h-8 rounded-full bg-white flex items-center justify-center shrink-0 overflow-hidden">
                                 <img src={tripwiseLogo} alt="" className="w-5 h-5 object-contain" />
                             </div>

@@ -6,16 +6,22 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tripwise.ai.GeminiClient;
 import com.tripwise.config.AIPrompts;
 import com.tripwise.dto.BookingPaymentRequest;
+import com.tripwise.model.Trip;
 import com.tripwise.model.TripPlanSession;
 import com.tripwise.model.TripwiseBooking;
 import com.tripwise.reactive.repository.BookingRepository;
+import com.tripwise.reactive.repository.ReactiveTripRepository;
 import com.tripwise.session.TripPlanSessionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Random;
 import java.util.UUID;
 
@@ -25,6 +31,7 @@ import java.util.UUID;
 public class BookingService {
 
     private final BookingRepository bookingRepository;
+    private final ReactiveTripRepository reactiveTripRepository;
     private final TripPlanSessionRepository sessionRepository;
     private final ObjectMapper objectMapper;
     private final GeminiClient geminiClient;
@@ -52,7 +59,11 @@ public class BookingService {
                                 log.warn("Gemini confirmation failed, using fallback PNRs: {}", e.getMessage());
                                 return Mono.just(buildFallbackBooking(session, payment));
                             })
-                            .flatMap(bookingRepository::save);
+                            .flatMap(bookingRepository::save)
+                            .flatMap(savedBooking -> reactiveTripRepository.save(buildTripFromBooking(savedBooking))
+                                    .doOnError(e -> log.error("Failed to save trip record: {}", e.getMessage()))
+                                    .onErrorResume(e -> reactor.core.publisher.Mono.empty())
+                                    .thenReturn(savedBooking));
                 });
     }
 
@@ -191,6 +202,56 @@ public class BookingService {
                 .hotelConfirmationRef(generateHotelRef(hotelName))
                 .transportRef(generateLocalRef())
                 .localTransportBookingRef(generateLocalRef());
+    }
+
+    private Trip buildTripFromBooking(TripwiseBooking booking) {
+        String startDate = booking.getTransportDate() != null ? booking.getTransportDate() : "";
+        String endDate = booking.getReturnDate() != null ? booking.getReturnDate() : "";
+        String bookingRef = "TW-" + (1000 + random.nextInt(8999));
+
+        BigDecimal cost = null;
+        try {
+            String raw = booking.getTotalAmount();
+            if (raw != null && !raw.isBlank()) {
+                cost = new BigDecimal(raw.replaceAll("[^\\d.]", ""));
+            }
+        } catch (Exception ignored) {}
+
+        return Trip.builder()
+                .profileId(booking.getProfileId())
+                .destination(booking.getDestination())
+                .startDate(startDate)
+                .endDate(endDate)
+                .dates(formatDateRange(startDate, endDate))
+                .status("upcoming")
+                .bookingReference(bookingRef)
+                .estimatedCost(cost)
+                .currency("INR")
+                .passShareToken(booking.getShareToken())
+                .createdAt(LocalDateTime.now())
+                .updatedAt(LocalDateTime.now())
+                .build();
+    }
+
+    private String formatDateRange(String start, String end) {
+        DateTimeFormatter[] parsers = {
+            DateTimeFormatter.ofPattern("yyyy-MM-dd"),
+            DateTimeFormatter.ofPattern("dd MMM yyyy"),
+            DateTimeFormatter.ofPattern("MMM dd, yyyy")
+        };
+        DateTimeFormatter display = DateTimeFormatter.ofPattern("MMM d, yyyy");
+        String formattedStart = start, formattedEnd = end;
+        for (DateTimeFormatter fmt : parsers) {
+            try { formattedStart = LocalDate.parse(start, fmt).format(display); break; }
+            catch (DateTimeParseException ignored) {}
+        }
+        for (DateTimeFormatter fmt : parsers) {
+            try { formattedEnd = LocalDate.parse(end, fmt).format(display); break; }
+            catch (DateTimeParseException ignored) {}
+        }
+        if (formattedStart.isBlank() && formattedEnd.isBlank()) return "";
+        if (formattedEnd.isBlank()) return formattedStart;
+        return formattedStart + " - " + formattedEnd;
     }
 
     private String buildBookingConfirmationPrompt(TripPlanSession session) {

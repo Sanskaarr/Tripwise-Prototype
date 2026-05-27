@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, Loader2, Plane, BedDouble, MapPin, CreditCard, Ticket } from 'lucide-react';
 import { useWizardStore } from '@/store/wizardStore';
+import { useProfileStore } from '@/store/profileStore';
 import { bookingApi } from '@/lib/api/bookingApi';
 import { LiquidBackground } from '@/components/ui/LiquidBackground';
 
@@ -25,7 +26,7 @@ export default function BookingProgressPage() {
   const location = useLocation();
   const navigate = useNavigate();
   const state = location.state as PaymentState | null;
-  const { selectedHotel, selectedTransport, setBookingId } = useWizardStore();
+  const { selectedHotel, selectedTransport, setBookingId, resetWizard } = useWizardStore();
 
   const [stepStatuses, setStepStatuses] = useState<StepStatus[]>([
     'loading', 'pending', 'pending', 'pending', 'pending',
@@ -68,6 +69,11 @@ export default function BookingProgressPage() {
       if (token) {
         setBookingId(token);
         setLocalBookingId(token);
+        useProfileStore.setState({
+          destination: { destination: '', travelType: null, preferenceType: null, travelStyle: null, isFirstVisit: null },
+          dates: { startDate: null, returnDate: null, isFlexible: false, duration: 0 },
+        });
+        resetWizard();
       } else {
         setApiError('Booking could not be confirmed. Please contact support.');
       }

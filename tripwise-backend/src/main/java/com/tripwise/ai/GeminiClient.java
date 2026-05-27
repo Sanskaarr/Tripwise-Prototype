@@ -24,7 +24,7 @@ public class GeminiClient {
     private final ApiConfig apiConfig;
     private final com.fasterxml.jackson.databind.ObjectMapper objectMapper = new com.fasterxml.jackson.databind.ObjectMapper();
 
-    private static final String GEMINI_STREAM_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent";
+    private static final String GEMINI_STREAM_URL = "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:streamGenerateContent";
 
     public Flux<String> streamChatResponse(ChatRequest request) {
         String apiKey = apiConfig.getGeminiApiKey();
@@ -93,7 +93,7 @@ public class GeminiClient {
                         "responseMimeType", "application/json"));
 
         return webClient.post()
-                .uri("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent")
+                .uri("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent")
                 .header("x-goog-api-key", apiKey)
                 .bodyValue(requestBody)
                 .retrieve()
@@ -136,11 +136,11 @@ public class GeminiClient {
                 "contents", List.of(Map.of("role", "user", "parts", List.of(Map.of("text", userPrompt)))),
                 "generationConfig", Map.of(
                         "temperature", 0.7,
-                        "maxOutputTokens", 4096,
+                        "maxOutputTokens", 8192,
                         "responseMimeType", "text/plain"));
 
         return webClient.post()
-                .uri("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent")
+                .uri("https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent")
                 .header("x-goog-api-key", apiKey)
                 .bodyValue(requestBody)
                 .retrieve()
