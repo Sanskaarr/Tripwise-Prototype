@@ -67,7 +67,7 @@ public class PaymentController {
             Number amountInPaise = order.get("amount");
             BigDecimal amountInRupees = BigDecimal.valueOf(amountInPaise.longValue())
                     .divide(BigDecimal.valueOf(100));
-            walletService.creditFunds(profileId, amountInRupees).subscribe();
+            walletService.creditFunds(profileId, amountInRupees).block();
             return ResponseEntity.ok(Map.of("status", "success", "message", "Payment verified successfully"));
         } catch (RazorpayException e) {
             log.error("Failed to fetch Razorpay order during verification", e);

@@ -11,7 +11,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle, Loader2, Lock, Plus, Wallet } from 'lucide-react';
 import { paymentService } from '@/services/paymentService';
 import { loadRazorpayScript } from '@/utils/razorpay';
-import { walletService } from '@/services/walletService';
 import { PremiumButton } from '@/components/ui/PremiumButton';
 
 interface AddMoneyModalProps {
@@ -23,7 +22,7 @@ interface AddMoneyModalProps {
 const PRESETS = [500, 1000, 2000, 5000];
 
 export function AddMoneyModal({ isOpen, onClose, onSuccess }: AddMoneyModalProps) {
-    const { profileId, basicInfo, userIdentifier } = useProfileStore();
+    const { basicInfo, userIdentifier } = useProfileStore();
     const [amount, setAmount] = useState<string>('');
     const [loading, setLoading] = useState(false);
 
@@ -79,11 +78,6 @@ export function AddMoneyModal({ isOpen, onClose, onSuccess }: AddMoneyModalProps
                             razorpay_order_id: response.razorpay_order_id,
                             razorpay_payment_id: response.razorpay_payment_id,
                             razorpay_signature: response.razorpay_signature,
-                        });
-                        await walletService.addFunds({
-                            profileId: profileId!,
-                            amount: numericAmount,
-                            method: 'UPI',
                         });
                         toast.success(`₹${numericAmount.toLocaleString('en-IN')} added to your wallet!`);
                         onSuccess();

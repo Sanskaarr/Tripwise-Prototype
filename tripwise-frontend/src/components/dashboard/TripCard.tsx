@@ -1,6 +1,13 @@
 import { motion } from "framer-motion";
-import { Calendar, MapPin, ArrowRight, MoreVertical, Ticket, Clock } from "lucide-react";
+import { Calendar, MoreVertical, Ticket, XCircle, Eye, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export interface Trip {
     id: string;
@@ -20,6 +27,8 @@ interface TripCardProps {
 
 export const TripCard = ({ trip, onAction }: TripCardProps) => {
     const isUpcoming = trip.status === 'upcoming';
+    // Draft trips (id='current') exist only in local state — no DB record to cancel
+    const isDraft = trip.id === 'current';
 
     return (
         <motion.div
@@ -47,9 +56,40 @@ export const TripCard = ({ trip, onAction }: TripCardProps) => {
                         </h3>
                     </div>
 
-                    <Button variant="ghost" size="icon" className="group/btn h-8 w-8 rounded-full hover:bg-white/10">
-                        <MoreVertical className="h-4 w-4 text-muted-foreground transition-colors group-hover/btn:text-foreground" />
-                    </Button>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="group/btn h-8 w-8 rounded-full hover:bg-white/10">
+                                <MoreVertical className="h-4 w-4 text-muted-foreground transition-colors group-hover/btn:text-foreground" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                            align="end"
+                            className="w-44 rounded-xl border border-white/10 bg-black/80 backdrop-blur-xl text-white shadow-xl"
+                        >
+                            <DropdownMenuItem
+                                className="flex items-center gap-2 cursor-pointer rounded-lg px-3 py-2 text-sm hover:bg-white/10 focus:bg-white/10"
+                                onClick={() => onAction('view_details', trip.id)}
+                            >
+                                <Eye className="h-4 w-4 text-muted-foreground" />
+                                View Details
+                            </DropdownMenuItem>
+
+                            {isUpcoming && (
+                                <>
+                                    <DropdownMenuSeparator className="bg-white/10" />
+                                    <DropdownMenuItem
+                                        disabled={isDraft}
+                                        title={isDraft ? 'Save your trip first to cancel it' : undefined}
+                                        className="flex items-center gap-2 cursor-pointer rounded-lg px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 focus:bg-red-500/10 disabled:opacity-40 disabled:cursor-not-allowed"
+                                        onClick={() => !isDraft && onAction('cancel', trip.id)}
+                                    >
+                                        <XCircle className="h-4 w-4" />
+                                        Cancel Trip
+                                    </DropdownMenuItem>
+                                </>
+                            )}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </div>
 
                 {/* Details */}
@@ -71,7 +111,6 @@ export const TripCard = ({ trip, onAction }: TripCardProps) => {
                     {isUpcoming ? (
                         <>
                             {trip.passShareToken ? (
-                                /* Booking complete — "Continue Plan" replaced by "View Booking" */
                                 <Button
                                     className="h-10 flex-1 rounded-xl bg-emerald-600/80 text-xs font-semibold uppercase tracking-widest text-white shadow-lg shadow-emerald-700/20 transition-all hover:bg-emerald-600 hover:scale-[1.02]"
                                     onClick={() => onAction('continue', trip.id)}

@@ -57,9 +57,10 @@ export interface TripwiseBooking {
 }
 
 export interface CreateBookingRequest {
-  razorpayPaymentId: string;
-  razorpayOrderId: string;
-  razorpaySignature: string;
+  razorpayPaymentId?: string;
+  razorpayOrderId?: string;
+  razorpaySignature?: string;
+  walletAmountUsed?: number;
 }
 
 export const bookingApi = {

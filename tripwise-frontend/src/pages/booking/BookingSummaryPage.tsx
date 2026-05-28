@@ -1,10 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { Plane, Train, Bus, BedDouble, MapPin, ArrowLeft, ChevronRight, Shield, Clock, Loader2 } from 'lucide-react';
+import { Plane, Train, Bus, BedDouble, MapPin, ArrowLeft, ChevronRight, Shield, Clock, Loader2, Wallet, CreditCard } from 'lucide-react';
 import { useWizardStore } from '@/store/wizardStore';
+import { useProfileStore } from '@/store/profileStore';
 import { parseMasterPlan, extractTotalCostNumber } from '@/types/masterPlan';
 import { paymentService } from '@/services/paymentService';
+import { walletService } from '@/services/walletService';
 import { loadRazorpayScript } from '@/utils/razorpay';
 import { InteractiveApi, type BookingExpansion } from '@/lib/api/interactiveApi';
 import { LiquidBackground } from '@/components/ui/LiquidBackground';
@@ -20,10 +22,12 @@ function TransportIcon({ mode }: { mode: string }) {
 export default function BookingSummaryPage() {
   const navigate = useNavigate();
   const { sessionId, selectedHotel, selectedTransport, masterPlan, setBookingId } = useWizardStore();
+  const { profileId } = useProfileStore();
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [expansion, setExpansion] = useState<BookingExpansion | null>(null);
   const [expandLoading, setExpandLoading] = useState(false);
+  const [walletBalance, setWalletBalance] = useState(0);
 
   useEffect(() => {
     if (!sessionId) return;
@@ -34,35 +38,56 @@ export default function BookingSummaryPage() {
       .finally(() => setExpandLoading(false));
   }, [sessionId]);
 
+  useEffect(() => {
+    if (!profileId) return;
+    walletService.getBalance(profileId)
+      .then(w => setWalletBalance(w.balance))
+      .catch(() => setWalletBalance(0));
+  }, [profileId]);
+
   const plan = parseMasterPlan(masterPlan || '');
   const totalAmount = extractTotalCostNumber(plan);
   const displayTotal = plan?.totalCost || `₹${totalAmount.toLocaleString('en-IN')}`;
+
+  const walletPortion = totalAmount > 0 ? Math.min(walletBalance, totalAmount) : 0;
+  const razorpayPortion = totalAmount - walletPortion;
 
   const handlePay = async () => {
     if (!sessionId) { setError('Session missing. Please restart.'); return; }
     setPaying(true);
     setError(null);
     try {
+      // Wallet covers the full amount — skip Razorpay entirely
+      if (razorpayPortion === 0) {
+        navigate('/booking/progress', {
+          state: {
+            sessionId,
+            walletAmountUsed: walletPortion,
+          },
+        });
+        return;
+      }
+
       const loaded = await loadRazorpayScript();
       if (!loaded) throw new Error('Razorpay SDK failed to load.');
 
-      // Send amount in RUPEES — backend converts to paise
-      const order = await paymentService.createOrder(totalAmount);
+      // Create order only for the Razorpay portion (remainder after wallet)
+      const order = await paymentService.createOrder(razorpayPortion);
 
       await new Promise<void>((resolve, reject) => {
         const rzp = new window.Razorpay({
           key: import.meta.env.VITE_RAZORPAY_KEY_ID || '',
-          amount: order.amount,           // paise — Razorpay standard
+          amount: order.amount,
           currency: order.currency || 'INR',
           order_id: order.id,
           name: 'TripWise',
           description: `Trip to ${plan?.tripOverview.destination || 'destination'}`,
           theme: { color: '#7c3aed' },
           handler: (response: { razorpay_payment_id: string; razorpay_order_id: string; razorpay_signature: string }) => {
-            // Navigate to progress page immediately — it will call the booking API
             navigate('/booking/progress', {
               state: {
                 sessionId,
+                walletAmountUsed: walletPortion > 0 ? walletPortion : undefined,
                 razorpayPaymentId: response.razorpay_payment_id,
                 razorpayOrderId: response.razorpay_order_id,
                 razorpaySignature: response.razorpay_signature,
@@ -192,6 +217,38 @@ export default function BookingSummaryPage() {
           </motion.div>
         )}
 
+        {/* Wallet breakdown — shown whenever wallet has any balance */}
+        {walletPortion > 0 && (
+          <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.18 }}
+            className="rounded-2xl border border-primary/25 bg-primary/[0.05] px-5 py-4 space-y-3">
+            <p className="text-xs uppercase tracking-widest text-primary/70 font-semibold">Payment Breakdown</p>
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground flex items-center gap-2">
+                  <Wallet className="w-3.5 h-3.5 text-primary" /> TripWise Wallet
+                </span>
+                <span className="text-emerald-400 font-mono font-semibold">
+                  − ₹{walletPortion.toLocaleString('en-IN')}
+                </span>
+              </div>
+              {razorpayPortion > 0 ? (
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground flex items-center gap-2">
+                    <CreditCard className="w-3.5 h-3.5 text-muted-foreground" /> Pay via Razorpay
+                  </span>
+                  <span className="text-white font-mono font-semibold">
+                    ₹{razorpayPortion.toLocaleString('en-IN')}
+                  </span>
+                </div>
+              ) : (
+                <p className="text-xs text-emerald-400 font-medium">
+                  Fully covered by your wallet — no card needed
+                </p>
+              )}
+            </div>
+          </motion.div>
+        )}
+
         {error && (
           <p className="text-red-400 text-sm text-center rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3">{error}</p>
         )}
@@ -202,7 +259,9 @@ export default function BookingSummaryPage() {
           whileTap={{ scale: 0.98 }}
           className="w-full py-4 rounded-2xl bg-primary text-primary-foreground font-bold text-base flex items-center justify-center gap-2 hover:opacity-90 transition-all disabled:opacity-50 shadow-[0_0_30px_rgba(124,58,237,0.35)]"
         >
-          {paying ? 'Processing…' : `Confirm & Pay ${displayTotal}`}
+          {paying ? 'Processing…' : razorpayPortion === 0
+            ? `Confirm & Pay from Wallet`
+            : `Confirm & Pay ₹${razorpayPortion.toLocaleString('en-IN')}`}
           {!paying && <ChevronRight className="w-5 h-5" />}
         </motion.button>
 

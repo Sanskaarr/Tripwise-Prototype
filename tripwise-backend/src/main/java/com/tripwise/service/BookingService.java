@@ -36,12 +36,18 @@ public class BookingService {
     private final ObjectMapper objectMapper;
     private final GeminiClient geminiClient;
     private final PaymentService paymentService;
+    private final WalletService walletService;
 
     private static final String CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     private static final Random random = new Random();
 
     public Mono<TripwiseBooking> createBooking(String sessionId, BookingPaymentRequest payment) {
-        if (!paymentService.verifySignature(
+        boolean hasRazorpay = payment.getRazorpayOrderId() != null && !payment.getRazorpayOrderId().isBlank();
+        BigDecimal walletAmount = payment.getWalletAmountUsed() != null ? payment.getWalletAmountUsed() : BigDecimal.ZERO;
+        boolean usesWallet = walletAmount.compareTo(BigDecimal.ZERO) > 0;
+
+        // Verify Razorpay only when it was actually used
+        if (hasRazorpay && !paymentService.verifySignature(
                 payment.getRazorpayOrderId(),
                 payment.getRazorpayPaymentId(),
                 payment.getRazorpaySignature())) {
@@ -51,19 +57,35 @@ public class BookingService {
         return sessionRepository.findById(sessionId)
                 .switchIfEmpty(Mono.error(new RuntimeException("Session not found: " + sessionId)))
                 .flatMap(session -> {
-                    String userPrompt = buildBookingConfirmationPrompt(session);
-                    return geminiClient.generateJsonResponse(
-                                    AIPrompts.BOOKING_CONFIRMATION_SYSTEM_PROMPT, userPrompt)
-                            .map(geminiJson -> buildBookingFromGemini(session, payment, geminiJson))
-                            .onErrorResume(e -> {
-                                log.warn("Gemini confirmation failed, using fallback PNRs: {}", e.getMessage());
-                                return Mono.just(buildFallbackBooking(session, payment));
-                            })
-                            .flatMap(bookingRepository::save)
-                            .flatMap(savedBooking -> reactiveTripRepository.save(buildTripFromBooking(savedBooking))
-                                    .doOnError(e -> log.error("Failed to save trip record: {}", e.getMessage()))
-                                    .onErrorResume(e -> reactor.core.publisher.Mono.empty())
-                                    .thenReturn(savedBooking));
+                    // Deduct wallet first; if no wallet used, skip
+                    Mono<Void> walletStep = usesWallet
+                            ? walletService.deductFunds(session.getProfileId(), walletAmount,
+                                    "Trip booking: " + session.getDestination()).then()
+                            : Mono.empty();
+
+                    return walletStep.then(Mono.defer(() -> {
+                        String userPrompt = buildBookingConfirmationPrompt(session);
+                        return geminiClient.generateJsonResponse(
+                                        AIPrompts.BOOKING_CONFIRMATION_SYSTEM_PROMPT, userPrompt)
+                                .map(geminiJson -> buildBookingFromGemini(session, payment, geminiJson))
+                                .onErrorResume(e -> {
+                                    log.warn("Gemini confirmation failed, using fallback PNRs: {}", e.getMessage());
+                                    return Mono.just(buildFallbackBooking(session, payment));
+                                })
+                                .flatMap(bookingRepository::save)
+                                .flatMap(savedBooking -> reactiveTripRepository.save(buildTripFromBooking(savedBooking))
+                                        .doOnError(e -> log.error("Failed to save trip record: {}", e.getMessage()))
+                                        .onErrorResume(e -> reactor.core.publisher.Mono.empty())
+                                        .thenReturn(savedBooking));
+                    })).onErrorResume(e -> {
+                        // Compensating refund: if booking failed after wallet was already deducted
+                        if (usesWallet) {
+                            return walletService.creditFunds(session.getProfileId(), walletAmount)
+                                    .doOnSuccess(w -> log.info("Wallet refunded after booking failure, profileId={}", session.getProfileId()))
+                                    .then(Mono.error(e));
+                        }
+                        return Mono.error(e);
+                    });
                 });
     }
 
@@ -96,6 +118,7 @@ public class BookingService {
                 .totalAmount(totalAmount)
                 .razorpayPaymentId(payment.getRazorpayPaymentId())
                 .razorpayOrderId(payment.getRazorpayOrderId())
+                .checkOutDate(extractLastItineraryDate(session.getMasterPlan()))
                 .status(TripwiseBooking.BookingStatus.CONFIRMED)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now());
@@ -189,6 +212,7 @@ public class BookingService {
                 .hotelConfirmationRef(generateHotelRef(hotelName))
                 .transportRef(generateLocalRef())
                 .localTransportBookingRef(generateLocalRef())
+                .checkOutDate(extractLastItineraryDate(session.getMasterPlan()))
                 .status(TripwiseBooking.BookingStatus.CONFIRMED)
                 .createdAt(LocalDateTime.now())
                 .updatedAt(LocalDateTime.now())
@@ -206,7 +230,10 @@ public class BookingService {
 
     private Trip buildTripFromBooking(TripwiseBooking booking) {
         String startDate = booking.getTransportDate() != null ? booking.getTransportDate() : "";
-        String endDate = booking.getReturnDate() != null ? booking.getReturnDate() : "";
+        // checkOutDate is derived from the master plan's last itinerary day (returnDate is always null
+        // because the booking prompt excludes returnTransport from Gemini's response)
+        String endDate = booking.getCheckOutDate() != null ? booking.getCheckOutDate()
+                : (booking.getReturnDate() != null ? booking.getReturnDate() : "");
         String bookingRef = "TW-" + (1000 + random.nextInt(8999));
 
         BigDecimal cost = null;
@@ -323,6 +350,21 @@ public class BookingService {
         StringBuilder sb = new StringBuilder(6);
         for (int i = 0; i < 6; i++) sb.append(CHARS.charAt(random.nextInt(CHARS.length())));
         return sb.toString();
+    }
+
+    private String extractLastItineraryDate(String masterPlanJson) {
+        if (masterPlanJson == null || masterPlanJson.isBlank()) return null;
+        try {
+            JsonNode plan = objectMapper.readTree(masterPlanJson);
+            JsonNode itinerary = plan.at("/itinerary");
+            if (itinerary.isArray() && !itinerary.isEmpty()) {
+                String date = itinerary.get(itinerary.size() - 1).at("/date").asText(null);
+                return (date != null && !date.isBlank()) ? date : null;
+            }
+        } catch (Exception e) {
+            log.debug("Could not extract last itinerary date from master plan");
+        }
+        return null;
     }
 
     private String extractTotalCost(String masterPlanJson) {

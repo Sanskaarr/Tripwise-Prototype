@@ -13,6 +13,15 @@ export const tripService = {
         }
     },
 
+    cancelTrip: async (tripId: string) => {
+        try {
+            const response = await apiClient.put(`${API_URL}/${tripId}/cancel`);
+            return response.data;
+        } catch (error) {
+            console.error('Error cancelling trip:', error);
+            throw error;
+        }
+    },
 
     createTrip: async (tripData: any) => {
         try {

@@ -40,7 +40,7 @@ public class AIPrompts {
            | Food | ₹X |
            | Transport | ₹X |
            | Attractions | ₹X |
-           | **Total** | **₹X** |
+           | *Total* | *₹X* |
 
         2. RECOMMENDATIONS (e.g., "where to eat", "what to see", "best markets"):
            - Lead with a 1-sentence opener

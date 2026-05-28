@@ -52,9 +52,31 @@ public class WalletService {
                 });
     }
 
+    public Mono<Wallet> deductFunds(String profileId, BigDecimal amount, String description) {
+        return walletRepository.findByProfileId(profileId)
+                .switchIfEmpty(Mono.error(new RuntimeException("Wallet not found")))
+                .flatMap(wallet -> {
+                    if (wallet.getBalance().compareTo(amount) < 0) {
+                        return Mono.error(new RuntimeException("Insufficient wallet balance"));
+                    }
+                    wallet.setBalance(wallet.getBalance().subtract(amount));
+                    Transaction transaction = Transaction.builder()
+                            .walletId(wallet.getId())
+                            .amount(amount)
+                            .type(Transaction.TransactionType.SPEND)
+                            .method(Transaction.PaymentMethod.SYSTEM)
+                            .status(Transaction.TransactionStatus.SUCCESS)
+                            .timestamp(LocalDateTime.now())
+                            .description(description)
+                            .build();
+                    return transactionRepository.save(transaction)
+                            .then(walletRepository.save(wallet));
+                });
+    }
+
     // Overloaded method for internal use (e.g. from PaymentController)
     public Mono<Wallet> creditFunds(String profileId, BigDecimal amount) {
-        return addFunds(profileId, amount, Transaction.PaymentMethod.UPI); // Defaulting to UPI/Online for now
+        return addFunds(profileId, amount, Transaction.PaymentMethod.UPI);
     }
 
     public Flux<Transaction> getHistory(String profileId) {

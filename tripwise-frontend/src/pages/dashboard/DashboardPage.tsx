@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { TripCard, Trip } from "@/components/dashboard/TripCard";
 import { WalletSection } from "@/components/dashboard/WalletSection";
 import { tripService } from "@/services/tripService";
+import { useToast } from "@/hooks/use-toast";
 import { coTravelerService } from "@/services/coTravelerService";
 import { EditProfileModal } from "@/components/profile/EditProfileModal";
 import { AddMoneyModal } from "@/components/dashboard/AddMoneyModal";
@@ -23,6 +24,7 @@ import { TripDetailsModal } from "@/components/dashboard/TripDetailsModal";
 
 const DashboardPage = () => {
     const navigate = useNavigate();
+    const { toast } = useToast();
     const { basicInfo, destination, dates, profileId, isNewUser, logout } = useProfileStore();
     const { bookingId: wizardBookingId } = useWizardStore();
     const [activeTab, setActiveTab] = useState<'upcoming' | 'completed' | 'cancelled'>('upcoming');
@@ -137,12 +139,11 @@ const DashboardPage = () => {
     // Combine Mock Data with Actual Profile Data
     const filteredTrips = trips.filter(trip => trip.status === activeTab);
 
-    const handleAction = (action: string, tripId: string) => {
+    const handleAction = async (action: string, tripId: string) => {
         const trip = trips.find(t => t.id === tripId);
 
         if (action === 'continue') {
             if (trip?.passShareToken) {
-                // Booking done — navigate directly to the Digital Pass
                 navigate(`/booking/${trip.passShareToken}`);
             } else {
                 navigate('/chat', { state: { isReturning: true } });
@@ -151,10 +152,17 @@ const DashboardPage = () => {
             if (trip?.passShareToken) {
                 navigate(`/booking/${trip.passShareToken}`);
             }
-            // No pass yet — button is disabled in TripCard so this won't fire
         } else if (action === 'view_details') {
             setSelectedTrip(trip || null);
             setShowTripDetails(true);
+        } else if (action === 'cancel' && trip) {
+            try {
+                await tripService.cancelTrip(tripId);
+                setTrips(prev => prev.map(t => t.id === tripId ? { ...t, status: 'cancelled' as const } : t));
+                toast({ title: 'Trip cancelled', description: `Your trip to ${trip.destination} has been cancelled.` });
+            } catch {
+                toast({ title: 'Error', description: 'Could not cancel the trip. Please try again.', variant: 'destructive' });
+            }
         }
     };
 

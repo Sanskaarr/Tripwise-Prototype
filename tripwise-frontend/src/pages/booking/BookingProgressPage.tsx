@@ -9,9 +9,10 @@ import { LiquidBackground } from '@/components/ui/LiquidBackground';
 
 interface PaymentState {
   sessionId: string;
-  razorpayPaymentId: string;
-  razorpayOrderId: string;
-  razorpaySignature: string;
+  razorpayPaymentId?: string;
+  razorpayOrderId?: string;
+  razorpaySignature?: string;
+  walletAmountUsed?: number;
 }
 
 interface Step {
@@ -39,8 +40,10 @@ export default function BookingProgressPage() {
   const transportLabel = selectedTransport?.mode || 'your flight';
   const hotelLabel = selectedHotel?.name || 'your hotel';
 
+  const walletOnly = !state?.razorpayOrderId;
+
   const steps: Step[] = [
-    { icon: CreditCard,  label: 'Payment secured',                   sublabel: 'Razorpay payment verified' },
+    { icon: CreditCard,  label: 'Payment secured',  sublabel: walletOnly ? 'Wallet balance applied' : 'Razorpay payment verified' },
     { icon: Plane,       label: `Confirming ${transportLabel}`,       sublabel: 'Checking seat availability...' },
     { icon: BedDouble,   label: `Reserving ${hotelLabel}`,            sublabel: 'Locking in your room...' },
     { icon: MapPin,      label: 'Arranging local transport',          sublabel: 'Coordinating pickup & tours...' },
@@ -63,6 +66,7 @@ export default function BookingProgressPage() {
       razorpayPaymentId: state.razorpayPaymentId,
       razorpayOrderId: state.razorpayOrderId,
       razorpaySignature: state.razorpaySignature,
+      walletAmountUsed: state.walletAmountUsed,
     }).then(result => {
       // Use shareToken as the public pass identifier — backend GET endpoint looks up by shareToken
       const token = result.data?.shareToken || result.data?.id;
