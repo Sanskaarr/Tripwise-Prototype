@@ -1,11 +1,10 @@
-'use client';
 
 import { useNavigate } from 'react-router-dom';
 import { useProfileStore } from '@/store/profileStore';
 import { queueSync } from '@/lib/api/syncManager';
 import { useShallow } from 'zustand/react/shallow';
 import { Label } from '@/components/ui/label';
-import { Map, Plane, Compass, CheckCircle, Waypoints } from 'lucide-react';
+import { Map, Plane, CheckCircle, Waypoints } from 'lucide-react';
 import { ConversationalLayout } from '@/components/layout/ConversationalLayout';
 
 export default function DestinationStep() {
@@ -14,14 +13,12 @@ export default function DestinationStep() {
     destination,
     updateDestinationPreference,
     goToNextStep,
-    goToPrevStep,
     currentStep,
     profileId
   } = useProfileStore(useShallow(state => ({
     destination: state.destination,
     updateDestinationPreference: state.updateDestinationPreference,
     goToNextStep: state.goToNextStep,
-    goToPrevStep: state.goToPrevStep,
     currentStep: state.currentStep,
     profileId: state.profileId
   })));
@@ -131,34 +128,6 @@ export default function DestinationStep() {
                 label={option.label}
                 desc={option.desc}
               />
-            ))}
-          </div>
-        </div>
-
-        {/* Interests Grid - Compact */}
-        <div className="space-y-3">
-          <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground/70 flex items-center gap-2">
-            <Compass className="w-3 h-3 text-primary" />
-            Vibe Preference
-          </Label>
-          <div className="grid grid-cols-3 gap-2">
-            {[
-              { value: 'mountains', label: 'Mountains' },
-              { value: 'beach', label: 'Beach' },
-              { value: 'city', label: 'City' },
-              { value: 'spiritual', label: 'Spirit' },
-              { value: 'adventure', label: 'Action' }
-            ].map((option) => (
-              <button
-                key={option.value}
-                onClick={() => updateDestinationPreference({ preferenceType: option.value as any })}
-                className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all duration-200 ${destination.preferenceType === option.value
-                  ? 'border-primary bg-primary/10 text-primary font-medium shadow-sm'
-                  : 'border-white/10 bg-white/5 text-muted-foreground hover:bg-white/10 hover:text-foreground'
-                  }`}
-              >
-                <span className="text-xs">{option.label}</span>
-              </button>
             ))}
           </div>
         </div>

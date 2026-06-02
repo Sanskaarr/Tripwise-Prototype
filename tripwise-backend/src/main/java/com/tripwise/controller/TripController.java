@@ -1,10 +1,11 @@
 package com.tripwise.controller;
 
 import com.tripwise.model.Trip;
-import com.tripwise.repository.TripRepository;
+import com.tripwise.reactive.repository.ReactiveTripRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Mono;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -19,7 +20,7 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class TripController {
 
-    private final TripRepository tripRepository;
+    private final ReactiveTripRepository tripRepository;
 
     private static final DateTimeFormatter[] DATE_PARSERS = {
         DateTimeFormatter.ofPattern("yyyy-MM-dd"),
@@ -29,56 +30,55 @@ public class TripController {
     };
 
     @GetMapping("/user/{profileId}")
-    public ResponseEntity<List<Trip>> getUserTrips(@PathVariable String profileId) {
-        List<Trip> trips = tripRepository.findByProfileId(profileId);
+    public Mono<ResponseEntity<List<Trip>>> getUserTrips(@PathVariable String profileId) {
         LocalDate today = LocalDate.now();
-
-        List<Trip> toSave = new ArrayList<>();
-        for (Trip trip : trips) {
-            if ("cancelled".equals(trip.getStatus())) continue;
-            if (trip.getEndDate() == null || trip.getEndDate().isBlank()) continue;
-            for (DateTimeFormatter fmt : DATE_PARSERS) {
-                try {
-                    LocalDate end = LocalDate.parse(trip.getEndDate(), fmt);
-                    if (end.isBefore(today)) {
-                        trip.setStatus("completed");
-                        trip.setUpdatedAt(LocalDateTime.now());
-                        toSave.add(trip);
+        return tripRepository.findByProfileId(profileId)
+            .collectList()
+            .flatMap(trips -> {
+                List<Trip> toSave = new ArrayList<>();
+                for (Trip trip : trips) {
+                    if ("cancelled".equals(trip.getStatus())) continue;
+                    if (trip.getEndDate() == null || trip.getEndDate().isBlank()) continue;
+                    for (DateTimeFormatter fmt : DATE_PARSERS) {
+                        try {
+                            LocalDate end = LocalDate.parse(trip.getEndDate(), fmt);
+                            if (end.isBefore(today)) {
+                                trip.setStatus("completed");
+                                trip.setUpdatedAt(LocalDateTime.now());
+                                toSave.add(trip);
+                            }
+                            break;
+                        } catch (DateTimeParseException ignored) {}
                     }
-                    break;
-                } catch (DateTimeParseException ignored) {}
-            }
-        }
-        if (!toSave.isEmpty()) {
-            tripRepository.saveAll(toSave);
-        }
-
-        return ResponseEntity.ok(trips);
+                }
+                if (!toSave.isEmpty()) {
+                    return tripRepository.saveAll(toSave).then(Mono.just(ResponseEntity.ok(trips)));
+                }
+                return Mono.just(ResponseEntity.ok(trips));
+            });
     }
 
     @PutMapping("/{tripId}/cancel")
-    public ResponseEntity<Trip> cancelTrip(@PathVariable String tripId) {
+    public Mono<ResponseEntity<Trip>> cancelTrip(@PathVariable String tripId) {
         return tripRepository.findById(tripId)
-                .map(trip -> {
-                    trip.setStatus("cancelled");
-                    trip.setUpdatedAt(LocalDateTime.now());
-                    return ResponseEntity.ok(tripRepository.save(trip));
-                })
-                .orElse(ResponseEntity.notFound().build());
+            .flatMap(trip -> {
+                trip.setStatus("cancelled");
+                trip.setUpdatedAt(LocalDateTime.now());
+                return tripRepository.save(trip);
+            })
+            .map(ResponseEntity::ok)
+            .defaultIfEmpty(ResponseEntity.notFound().build());
     }
 
     @PostMapping("/create")
-    public ResponseEntity<Trip> createTrip(@RequestBody Trip trip) {
+    public Mono<ResponseEntity<Trip>> createTrip(@RequestBody Trip trip) {
         if (trip.getId() == null) {
             trip.setCreatedAt(LocalDateTime.now());
         }
         trip.setUpdatedAt(LocalDateTime.now());
-
         if (trip.getBookingReference() == null) {
             trip.setBookingReference("TW-" + UUID.randomUUID().toString().substring(0, 4).toUpperCase());
         }
-
-        Trip savedTrip = tripRepository.save(trip);
-        return ResponseEntity.ok(savedTrip);
+        return tripRepository.save(trip).map(ResponseEntity::ok);
     }
 }

@@ -74,31 +74,79 @@ public class AIPrompts {
             return getContextualPrompt(destination);
         }
 
-        String name         = extractFirstName(safeStr(context, "fullName", "there"));
-        String dest         = (destination != null && !destination.isBlank()) ? destination : "your destination";
-        String from         = safeStr(context, "cityOfDeparture", "India");
-        String budget       = safeStr(context, "budgetLevel", "medium");
-        String startDate    = safeStr(context, "startDate", "TBD");
-        String returnDate   = safeStr(context, "returnDate", "TBD");
-        int    duration     = toInt(context.getOrDefault("durationDays", 3));
-        int    adults       = toInt(context.getOrDefault("adults", 1));
-        int    children     = toInt(context.getOrDefault("children", 0));
-        String style        = safeStr(context, "travelStyle", "balanced");
-        String accommodation = safeStr(context, "accommodationPreference", "mid-range");
-        String transport    = safeStr(context, "transportPreference", "flight");
-        String interests    = extractInterests(context.get("interests"));
-        String party        = adults + " adult" + (adults > 1 ? "s" : "")
-                              + (children > 0 ? ", " + children + " kid" + (children > 1 ? "s" : "") : "");
+        String name           = extractFirstName(safeStr(context, "fullName", "there"));
+        String dest           = (destination != null && !destination.isBlank()) ? destination : "your destination";
+        String from           = safeStr(context, "cityOfDeparture", "India");
+        String budget         = safeStr(context, "budgetLevel", "medium");
+        String startDate      = safeStr(context, "startDate", "TBD");
+        String returnDate     = safeStr(context, "returnDate", "TBD");
+        int    duration       = toInt(context.getOrDefault("durationDays", 3));
+        int    adults         = toInt(context.getOrDefault("adults", 1));
+        int    children       = toInt(context.getOrDefault("children", 0));
+        String style          = safeStr(context, "travelStyle", "balanced");
+        String accommodation  = safeStr(context, "accommodationPreference", "mid-range");
+        String roomType       = safeStr(context, "roomType", "");
+        String transport      = safeStr(context, "transportPreference", "flight");
+        String timingPref     = safeStr(context, "timingPreference", "");
+        String interests      = extractInterests(context.get("interests"));
+        String party          = adults + " adult" + (adults > 1 ? "s" : "")
+                                + (children > 0 ? ", " + children + " kid" + (children > 1 ? "s" : "") : "");
+
+        // New context fields
+        boolean isFlexible    = Boolean.parseBoolean(String.valueOf(context.getOrDefault("isFlexible", "false")));
+        String travelType     = safeStr(context, "travelType", "");
+        Object isFirstVisitRaw = context.get("isFirstVisit");
+        boolean isFirstVisit  = isFirstVisitRaw != null && Boolean.parseBoolean(String.valueOf(isFirstVisitRaw));
+        String purpose        = safeStr(context, "purpose", "");
+        String specialOccasion = safeStr(context, "specialOccasion", "");
+        String dietary        = safeStr(context, "dietaryType", "");
+        String allergies      = safeStr(context, "allergies", "");
+        String travelFreq     = safeStr(context, "travelFrequency", "");
+        String badExp         = safeStr(context, "badExperiences", "");
+
+        // Build purpose-specific guidance
+        String purposeGuidance = "";
+        if ("honeymoon".equals(purpose))
+            purposeGuidance = "• HONEYMOON trip — lead with romantic experiences: sunset dinners, couples' spa, private beaches, candlelit stays.\n";
+        else if ("family".equals(purpose))
+            purposeGuidance = "• FAMILY trip — prioritise kid-friendly activities, safe neighbourhoods, and roomy family accommodations.\n";
+        else if ("business".equals(purpose))
+            purposeGuidance = "• BUSINESS trip — central location, strong WiFi, efficient transport, and quick dining options near work areas.\n";
+        else if ("solo".equals(purpose))
+            purposeGuidance = "• SOLO traveler — safe solo-friendly areas, sociable stays (hostels/homestays), local community spots to connect.\n";
+        else if ("religious".equals(purpose))
+            purposeGuidance = "• RELIGIOUS/SPIRITUAL trip — temples, pilgrimage routes, ashrams, sattvic food options, serene stays.\n";
+
+        String experienceGuidance = "";
+        if ("never".equals(travelFreq))
+            experienceGuidance = "• FIRST-TIME TRAVELER overall — naturally weave in practical basics: transport apps, currency tips, safety advice, packing hints.\n";
+        else if ("frequent".equals(travelFreq))
+            experienceGuidance = "• FREQUENT TRAVELER — skip generic advice, go straight to curated picks and off-the-beaten-path gems.\n";
+
+        String visitGuidance = (isFirstVisitRaw != null)
+            ? (isFirstVisit
+                ? "• First visit to " + dest + " — cover iconic must-sees and orient them before going deeper.\n"
+                : "• Returning visitor to " + dest + " — skip obvious tourist traps, surface insider knowledge and new experiences.\n")
+            : "";
+
+        String avoidGuidance = badExp.isBlank() ? "" : "• Past issues to avoid: " + badExp + " — actively steer clear of similar scenarios.\n";
 
         return " You are Tripwise — a sharp, personable travel agent at TripWise who knows Indian travel intimately. " +
                " Speak like a real person helping a close friend plan a trip, not a corporate chatbot reading from a script.\n\n" +
 
                "TRAVELER PROFILE (collected during onboarding — do NOT ask for any of this again):\n" +
-               "• Name: " + name + "  |  Destination: " + dest + "\n" +
-               "• Dates: " + startDate + " → " + returnDate + " (" + duration + " days)  |  Departing from: " + from + "\n" +
+               "• Name: " + name + "  |  Destination: " + dest + (!travelType.isBlank() ? " (" + travelType + ")" : "") + "\n" +
+               "• Dates: " + startDate + " → " + returnDate + " (" + duration + " days, " + (isFlexible ? "flexible" : "fixed") + ")  |  Departing from: " + from + "\n" +
                "• Party: " + party + "  |  Budget level: " + budget + "\n" +
-               "• Transport preference: " + transport + "  |  Stay preference: " + accommodation + "\n" +
-               "• Travel style: " + style + "  |  Interests: " + interests + "\n\n" +
+               "• Transport: " + transport + (!timingPref.isBlank() ? " (" + timingPref + ")" : "") +
+                   "  |  Stay: " + accommodation + (!roomType.isBlank() ? " — " + roomType : "") + "\n" +
+               "• Travel style: " + style + "  |  Interests: " + interests + "\n" +
+               (!purpose.isBlank() ? "• Purpose: " + purpose + (!specialOccasion.isBlank() ? " — " + specialOccasion : "") + "\n" : "") +
+               (!dietary.isBlank() ? "• Dietary: " + dietary + (!allergies.isBlank() ? "  |  Allergies: " + allergies : "") + "\n" : "") +
+               (isFirstVisitRaw != null ? "• First visit to " + dest + ": " + (isFirstVisit ? "Yes" : "No") + "\n" : "") +
+               (!travelFreq.isBlank() ? "• Travel experience: " + ("never".equals(travelFreq) ? "First-time traveler" : "sometimes".equals(travelFreq) ? "Occasional traveler" : "Frequent traveler") + "\n" : "") +
+               (!badExp.isBlank() ? "• Avoid: " + badExp + "\n" : "") +
+               "\n" +
 
                "YOUR MISSION:\n" +
                "Help " + name + " finalize every detail of their trip to " + dest + " through natural back-and-forth conversation. " +
@@ -148,6 +196,11 @@ public class AIPrompts {
                "✓ Always price in ₹ with realistic Indian ranges for the destination\n" +
                "✓ Match the traveler's tone — if they're brief, be brief; if they want detail, engage fully\n" +
                "✓ If they go off-topic, steer back to trip planning in a natural, friendly way\n\n" +
+
+               (!purposeGuidance.isBlank() || !experienceGuidance.isBlank() || !visitGuidance.isBlank() || !avoidGuidance.isBlank()
+                   ? "CONTEXT-SPECIFIC BEHAVIOR (apply these throughout the conversation):\n" +
+                     purposeGuidance + experienceGuidance + visitGuidance + avoidGuidance + "\n"
+                   : "") +
 
                "LOCATION TAGGING — non-negotiable, do this every time:\n" +
                "Whenever you mention a specific place (hotel, airport, sightseeing spot, restaurant, transport hub, or activity location), append this token on the SAME LINE immediately after the sentence:\n" +

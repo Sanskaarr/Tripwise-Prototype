@@ -1,7 +1,6 @@
 import { GlassCard } from '@/components/ui/GlassCard';
 import { PremiumButton } from '@/components/ui/PremiumButton';
 import { PageTransition } from '@/components/layout/PageTransition';
-'use client';
 
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';

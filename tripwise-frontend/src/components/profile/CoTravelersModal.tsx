@@ -18,24 +18,50 @@ interface CoTravelersModalProps {
     onClose: () => void;
 }
 
+const AGE_GROUPS = ['Adult', 'Child', 'Senior'] as const;
+const PREFERENCE_CHIPS = ['Sightseeing', 'Relaxation', 'Adventure', 'Shopping', 'Nature', 'Food & Dining'];
 const EMPTY_FORM = { name: '', relation: '', ageGroup: 'Adult', preferences: [] as string[] };
+
+function ToggleChip({ label, selected, onToggle }: { label: string; selected: boolean; onToggle: () => void }) {
+    return (
+        <button
+            type="button"
+            onClick={onToggle}
+            className={`px-3 py-1 rounded-full text-xs border transition-colors ${
+                selected
+                    ? 'bg-primary/20 border-primary/40 text-primary'
+                    : 'bg-white/5 border-white/10 text-muted-foreground hover:border-white/30'
+            }`}
+        >
+            {label}
+        </button>
+    );
+}
+
+function AgeGroupSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+    return (
+        <select
+            value={value}
+            onChange={e => onChange(e.target.value)}
+            className="w-full bg-white/5 border border-white/10 rounded-md px-3 h-8 text-sm text-foreground"
+        >
+            {AGE_GROUPS.map(g => <option key={g} value={g}>{g}</option>)}
+        </select>
+    );
+}
 
 export function CoTravelersModal({ isOpen, onClose }: CoTravelersModalProps) {
     const { profileId } = useProfileStore();
     const [travelers, setTravelers] = useState<CoTraveler[]>([]);
 
-    // Add mode
     const [isAdding, setIsAdding] = useState(false);
     const [newTraveler, setNewTraveler] = useState(EMPTY_FORM);
 
-    // Edit mode — stores the id of the traveler being edited + its form data
     const [editingId, setEditingId] = useState<string | null>(null);
     const [editForm, setEditForm] = useState(EMPTY_FORM);
 
     useEffect(() => {
-        if (isOpen && profileId) {
-            fetchCoTravelers();
-        }
+        if (isOpen && profileId) fetchCoTravelers();
     }, [isOpen, profileId]);
 
     const fetchCoTravelers = async () => {
@@ -45,9 +71,12 @@ export function CoTravelersModal({ isOpen, onClose }: CoTravelersModalProps) {
             setTravelers(data);
         } catch (error) {
             console.error(error);
-            toast.error("Failed to load co-travelers");
+            toast.error('Failed to load co-travelers');
         }
     };
+
+    const togglePref = (list: string[], pref: string) =>
+        list.includes(pref) ? list.filter(p => p !== pref) : [...list, pref];
 
     const handleAdd = async () => {
         if (!newTraveler.name || !profileId) return;
@@ -56,23 +85,28 @@ export function CoTravelersModal({ isOpen, onClose }: CoTravelersModalProps) {
                 profileId,
                 name: newTraveler.name,
                 relation: newTraveler.relation,
-                ageGroup: 'Adult',
-                preferences: []
+                ageGroup: newTraveler.ageGroup,
+                preferences: newTraveler.preferences,
             });
             setTravelers([...travelers, added]);
             setNewTraveler(EMPTY_FORM);
             setIsAdding(false);
-            toast.success("Co-traveler added");
+            toast.success('Co-traveler added');
         } catch (error) {
             console.error(error);
-            toast.error("Failed to add");
+            toast.error('Failed to add');
         }
     };
 
     const handleEditStart = (traveler: CoTraveler) => {
         setEditingId(traveler.id!);
-        setEditForm({ name: traveler.name, relation: traveler.relation, ageGroup: traveler.ageGroup, preferences: traveler.preferences });
-        setIsAdding(false); // close add form if open
+        setEditForm({
+            name: traveler.name,
+            relation: traveler.relation,
+            ageGroup: traveler.ageGroup || 'Adult',
+            preferences: traveler.preferences || [],
+        });
+        setIsAdding(false);
     };
 
     const handleEditCancel = () => {
@@ -93,10 +127,10 @@ export function CoTravelersModal({ isOpen, onClose }: CoTravelersModalProps) {
             setTravelers(travelers.map(t => t.id === traveler.id ? updated : t));
             setEditingId(null);
             setEditForm(EMPTY_FORM);
-            toast.success("Co-traveler updated");
+            toast.success('Co-traveler updated');
         } catch (error) {
             console.error(error);
-            toast.error("Failed to update");
+            toast.error('Failed to update');
         }
     };
 
@@ -106,10 +140,10 @@ export function CoTravelersModal({ isOpen, onClose }: CoTravelersModalProps) {
             await coTravelerService.deleteCoTraveler(id);
             setTravelers(travelers.filter(t => t.id !== id));
             if (editingId === id) handleEditCancel();
-            toast.success("Removed co-traveler");
+            toast.success('Removed co-traveler');
         } catch (error) {
             console.error(error);
-            toast.error("Failed to delete");
+            toast.error('Failed to delete');
         }
     };
 
@@ -122,35 +156,41 @@ export function CoTravelersModal({ isOpen, onClose }: CoTravelersModalProps) {
 
                 <div className="space-y-4 py-4">
                     {/* List */}
-                    <div className="space-y-3 max-h-[320px] overflow-y-auto pr-1">
+                    <div className="space-y-3 max-h-[340px] overflow-y-auto pr-1">
                         {travelers.map(t => (
                             <div key={t.id} className="rounded-xl bg-white/5 border border-white/10 overflow-hidden">
-                                {/* View row */}
                                 {editingId !== t.id ? (
-                                    <div className="flex items-center justify-between p-3">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                                    /* View row */
+                                    <div className="flex items-start justify-between p-3">
+                                        <div className="flex items-start gap-3">
+                                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 mt-0.5">
                                                 <User className="w-4 h-4 text-primary" />
                                             </div>
-                                            <div>
+                                            <div className="space-y-1">
                                                 <p className="font-medium text-sm">{t.name}</p>
-                                                <p className="text-xs text-muted-foreground">{t.relation || '—'}</p>
+                                                <div className="flex items-center gap-2 flex-wrap">
+                                                    <span className="text-xs text-muted-foreground">{t.relation || '—'}</span>
+                                                    <span className="text-xs bg-white/10 px-2 py-0.5 rounded-full">{t.ageGroup || 'Adult'}</span>
+                                                </div>
+                                                {t.preferences && t.preferences.length > 0 && (
+                                                    <div className="flex gap-1 flex-wrap">
+                                                        {t.preferences.map(p => (
+                                                            <span key={p} className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full">{p}</span>
+                                                        ))}
+                                                    </div>
+                                                )}
                                             </div>
                                         </div>
-                                        <div className="flex items-center gap-1">
-                                            {/* Edit button */}
+                                        <div className="flex items-center gap-1 shrink-0">
                                             <Button
-                                                variant="ghost"
-                                                size="icon"
+                                                variant="ghost" size="icon"
                                                 className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
                                                 onClick={() => handleEditStart(t)}
                                             >
                                                 <Pencil className="w-3.5 h-3.5" />
                                             </Button>
-                                            {/* Delete button */}
                                             <Button
-                                                variant="ghost"
-                                                size="icon"
+                                                variant="ghost" size="icon"
                                                 className="h-8 w-8 text-red-400 hover:text-red-300 hover:bg-red-500/10"
                                                 onClick={() => t.id && handleDelete(t.id)}
                                             >
@@ -181,6 +221,26 @@ export function CoTravelersModal({ isOpen, onClose }: CoTravelersModalProps) {
                                                 />
                                             </div>
                                         </div>
+                                        <div className="grid gap-1">
+                                            <Label className="text-xs">Age Group</Label>
+                                            <AgeGroupSelect
+                                                value={editForm.ageGroup}
+                                                onChange={v => setEditForm({ ...editForm, ageGroup: v })}
+                                            />
+                                        </div>
+                                        <div className="grid gap-1">
+                                            <Label className="text-xs">Preferences</Label>
+                                            <div className="flex flex-wrap gap-1.5">
+                                                {PREFERENCE_CHIPS.map(chip => (
+                                                    <ToggleChip
+                                                        key={chip}
+                                                        label={chip}
+                                                        selected={editForm.preferences.includes(chip)}
+                                                        onToggle={() => setEditForm({ ...editForm, preferences: togglePref(editForm.preferences, chip) })}
+                                                    />
+                                                ))}
+                                            </div>
+                                        </div>
                                         <div className="flex gap-2">
                                             <Button size="sm" onClick={() => handleEditSave(t)} className="h-8 flex-1 gap-1.5">
                                                 <Check className="w-3.5 h-3.5" /> Save
@@ -202,23 +262,45 @@ export function CoTravelersModal({ isOpen, onClose }: CoTravelersModalProps) {
                     {/* Add New Section */}
                     {isAdding ? (
                         <div className="p-4 rounded-xl border border-dashed border-white/20 space-y-3">
+                            <div className="grid grid-cols-2 gap-2">
+                                <div className="grid gap-2">
+                                    <Label>Name</Label>
+                                    <Input
+                                        value={newTraveler.name}
+                                        onChange={e => setNewTraveler({ ...newTraveler, name: e.target.value })}
+                                        placeholder="John Doe"
+                                        className="bg-white/5"
+                                    />
+                                </div>
+                                <div className="grid gap-2">
+                                    <Label>Relation</Label>
+                                    <Input
+                                        value={newTraveler.relation}
+                                        onChange={e => setNewTraveler({ ...newTraveler, relation: e.target.value })}
+                                        placeholder="Friend, Family…"
+                                        className="bg-white/5"
+                                    />
+                                </div>
+                            </div>
                             <div className="grid gap-2">
-                                <Label>Name</Label>
-                                <Input
-                                    value={newTraveler.name}
-                                    onChange={e => setNewTraveler({ ...newTraveler, name: e.target.value })}
-                                    placeholder="John Doe"
-                                    className="bg-white/5"
+                                <Label>Age Group</Label>
+                                <AgeGroupSelect
+                                    value={newTraveler.ageGroup}
+                                    onChange={v => setNewTraveler({ ...newTraveler, ageGroup: v })}
                                 />
                             </div>
                             <div className="grid gap-2">
-                                <Label>Relation</Label>
-                                <Input
-                                    value={newTraveler.relation}
-                                    onChange={e => setNewTraveler({ ...newTraveler, relation: e.target.value })}
-                                    placeholder="Friend, Family, etc."
-                                    className="bg-white/5"
-                                />
+                                <Label>Preferences</Label>
+                                <div className="flex flex-wrap gap-1.5">
+                                    {PREFERENCE_CHIPS.map(chip => (
+                                        <ToggleChip
+                                            key={chip}
+                                            label={chip}
+                                            selected={newTraveler.preferences.includes(chip)}
+                                            onToggle={() => setNewTraveler({ ...newTraveler, preferences: togglePref(newTraveler.preferences, chip) })}
+                                        />
+                                    ))}
+                                </div>
                             </div>
                             <div className="flex gap-2">
                                 <Button size="sm" onClick={handleAdd} className="w-full">Save</Button>

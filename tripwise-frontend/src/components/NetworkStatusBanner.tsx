@@ -1,4 +1,3 @@
-'use client';
 
 import { useNetworkStatus } from '@/hooks/useNetworkStatus';
 import { Wifi, WifiOff, AlertTriangle } from 'lucide-react';

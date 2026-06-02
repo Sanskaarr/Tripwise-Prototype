@@ -580,12 +580,12 @@ export const selectIsComplete = (stepId: string) => (state: ProfileState) => {
 
     case 'destination': {
       const destination = stepData as DestinationPreference;
-      return !!(destination.destination && destination.travelType && destination.preferenceType);
+      return !!(destination.destination && destination.travelType);
     }
 
     case 'budget': {
       const budget = stepData as BudgetPreference;
-      return !!(budget.level && budget.includesFlights);
+      return !!budget.level;
     }
 
     case 'accommodation': {

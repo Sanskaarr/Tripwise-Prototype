@@ -21,12 +21,12 @@ public class WalletService {
     public Mono<Wallet> getBalance(String profileId) {
         return walletRepository.findByProfileId(profileId)
                 .switchIfEmpty(
-                        walletRepository.save(
+                        Mono.defer(() -> walletRepository.save(
                                 Wallet.builder()
                                         .profileId(profileId)
                                         .balance(BigDecimal.ZERO)
                                         .currency("INR")
-                                        .build()));
+                                        .build())));
     }
 
     public Mono<Wallet> addFunds(String profileId, BigDecimal amount, Transaction.PaymentMethod method) {

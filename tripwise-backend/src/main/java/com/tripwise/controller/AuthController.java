@@ -1,6 +1,5 @@
 package com.tripwise.controller;
 
-import com.tripwise.model.TravelerProfile;
 import com.tripwise.security.JwtUtil;
 import com.tripwise.service.ProfileService;
 import jakarta.servlet.http.HttpServletResponse;
@@ -11,6 +10,7 @@ import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.util.Map;
@@ -32,31 +32,29 @@ public class AuthController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> request,
-                                   HttpServletResponse response) {
+    public Mono<ResponseEntity<?>> login(@RequestBody Map<String, String> request,
+                                         HttpServletResponse response) {
         String identifier = request.get("identifier");
         if (identifier == null || identifier.trim().isEmpty()) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "error", "Identifier is required"));
+            return Mono.just(ResponseEntity.badRequest().body(Map.of("success", false, "error", "Identifier is required")));
         }
-        identifier = identifier.trim();
-        log.info("Login attempt for: {}", identifier);
+        String trimmed = identifier.trim();
+        log.info("Login attempt for: {}", trimmed);
 
-        String token = jwtUtil.generateToken(identifier);
+        String token = jwtUtil.generateToken(trimmed);
         setAuthCookie(response, token);
 
-        TravelerProfile profile = profileService.findByIdentifier(identifier);
-        if (profile != null) {
-            return ResponseEntity.ok(Map.of(
-                    "success", true,
-                    "exists", true,
-                    "token", token,
-                    "profile", profile));
-        }
-        return ResponseEntity.ok(Map.of(
-                "success", true,
-                "exists", false,
-                "isNewUser", true,
-                "token", token));
+        return profileService.findByIdentifier(trimmed)
+                .<ResponseEntity<?>>map(profile -> ResponseEntity.ok(Map.of(
+                        "success", true,
+                        "exists", true,
+                        "token", token,
+                        "profile", profile)))
+                .defaultIfEmpty(ResponseEntity.ok(Map.of(
+                        "success", true,
+                        "exists", false,
+                        "isNewUser", true,
+                        "token", token)));
     }
 
     @PostMapping("/logout")
@@ -73,19 +71,20 @@ public class AuthController {
     }
 
     @GetMapping("/validate")
-    public ResponseEntity<?> validateSession(@AuthenticationPrincipal String identifier,
-                                             HttpServletResponse response) {
+    public Mono<ResponseEntity<?>> validateSession(@AuthenticationPrincipal String identifier,
+                                                   HttpServletResponse response) {
         if (identifier == null) {
-            return ResponseEntity.status(401).body(Map.of("error", "No valid session"));
+            return Mono.just(ResponseEntity.status(401).body(Map.of("error", "No valid session")));
         }
         log.info("Validating session for: {}", identifier);
         String token = jwtUtil.generateToken(identifier);
         setAuthCookie(response, token);
-        TravelerProfile profile = profileService.findByIdentifier(identifier);
-        if (profile != null) {
-            return ResponseEntity.ok(Map.of("success", true, "isValid", true, "token", token, "profile", profile));
-        }
-        return ResponseEntity.ok(Map.of("success", true, "isValid", true, "token", token, "isNewUser", true, "identifier", identifier));
+
+        return profileService.findByIdentifier(identifier)
+                .<ResponseEntity<?>>map(profile -> ResponseEntity.ok(Map.of(
+                        "success", true, "isValid", true, "token", token, "profile", profile)))
+                .defaultIfEmpty(ResponseEntity.ok(Map.of(
+                        "success", true, "isValid", true, "token", token, "isNewUser", true, "identifier", identifier)));
     }
 
     private void setAuthCookie(HttpServletResponse response, String token) {

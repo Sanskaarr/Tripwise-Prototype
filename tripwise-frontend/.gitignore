@@ -124,3 +124,10 @@ dist
 .vscode
 *.swp
 *.swo
+
+# Playwright E2E Testing
+test-results/
+playwright-report/
+blob-report/
+
+playwright.config.ts

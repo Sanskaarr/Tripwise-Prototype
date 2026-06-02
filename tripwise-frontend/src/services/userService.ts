@@ -65,6 +65,26 @@ export const userService = {
         }
     },
 
+    updateAccommodation: async (profileId: string, data: any) => {
+        try {
+            const response = await apiClient.post(`${API_URL}/${profileId}/accommodation`, data);
+            return response.data;
+        } catch (error) {
+            console.error('Error updating accommodation:', error);
+            throw error;
+        }
+    },
+
+    updateFood: async (profileId: string, data: any) => {
+        try {
+            const response = await apiClient.post(`${API_URL}/${profileId}/food`, data);
+            return response.data;
+        } catch (error) {
+            console.error('Error updating food preference:', error);
+            throw error;
+        }
+    },
+
     addCoTraveler: async (profileId: string, coTravelerData: any) => {
         try {
             const currentList = await userService.getCoTravelers(profileId);

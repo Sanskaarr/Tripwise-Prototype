@@ -16,3 +16,8 @@ dist/
 .env.production.local
 
 CLAUDE.md
+
+# Playwright E2E Testing
+test-results/
+playwright-report/
+blob-report/

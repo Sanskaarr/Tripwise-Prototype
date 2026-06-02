@@ -1,11 +1,10 @@
-'use client';
 
 import { useNavigate } from 'react-router-dom';
 import { useProfileStore } from '@/store/profileStore';
 import { queueSync } from '@/lib/api/syncManager';
 import { useShallow } from 'zustand/react/shallow';
 import { Label } from '@/components/ui/label';
-import { Wallet, Plane, CheckCircle } from 'lucide-react';
+import { Wallet, CheckCircle } from 'lucide-react';
 import { ConversationalLayout } from '@/components/layout/ConversationalLayout';
 
 export default function BudgetStep() {
@@ -27,10 +26,7 @@ export default function BudgetStep() {
   })));
 
   const handleContinue = () => {
-    if (!budget.level || !budget.includesFlights) {
-      // Animation trigger
-      return;
-    }
+    if (!budget.level) return;
     goToNextStep();
     const nextStep = currentStep + 1;
     navigate(`/plan/step/${nextStep}`);
@@ -41,7 +37,7 @@ export default function BudgetStep() {
     navigate(`/plan/step/${prevStep}`);
   };
 
-  const isFormValid = !!budget.level && !!budget.includesFlights;
+  const isFormValid = !!budget.level;
 
   const SelectionCard = ({
     selected,
@@ -119,31 +115,6 @@ export default function BudgetStep() {
           </div>
         </div>
 
-        {/* Flight Preference */}
-        <div className="space-y-3">
-          <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground/70 flex items-center gap-2">
-            <Plane className="w-3 h-3 text-primary" />
-            Include Flights?
-          </Label>
-          <div className="bg-white/5 rounded-xl p-1 border border-white/10 flex gap-2">
-            {[
-              { value: 'yes', label: 'Yes, Include' },
-              { value: 'no', label: 'No Flights' },
-              { value: 'not-sure', label: 'Not Sure' }
-            ].map((option) => (
-              <button
-                key={option.value}
-                onClick={() => updateBudgetPreference({ includesFlights: option.value as any })}
-                className={`flex-1 py-2 rounded-lg text-xs font-bold uppercase tracking-wider transition-all duration-300 ${budget.includesFlights === option.value
-                  ? 'bg-foreground text-background shadow-md'
-                  : 'text-muted-foreground hover:text-foreground hover:bg-white/5'
-                  }`}
-              >
-                {option.label}
-              </button>
-            ))}
-          </div>
-        </div>
       </div>
     </ConversationalLayout>
   );

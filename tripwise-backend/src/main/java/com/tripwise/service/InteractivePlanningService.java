@@ -5,13 +5,12 @@ import com.tripwise.config.AIPrompts;
 
 import com.tripwise.model.TravelerProfile;
 import com.tripwise.model.TripPlanSession;
-import com.tripwise.repository.TravelerProfileRepository;
+import com.tripwise.reactive.repository.ReactiveTravelerProfileRepository;
 import com.tripwise.session.TripPlanSessionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
-import reactor.core.scheduler.Schedulers;
 
 import java.time.LocalDateTime;
 
@@ -21,7 +20,7 @@ import java.time.LocalDateTime;
 public class InteractivePlanningService {
 
     private final TripPlanSessionRepository sessionRepository;
-    private final TravelerProfileRepository profileRepository;
+    private final ReactiveTravelerProfileRepository profileRepository;
     private final GeminiClient geminiClient;
 
     // STEP 0a: GET SESSION BY ID
@@ -38,65 +37,61 @@ public class InteractivePlanningService {
 
     // STEP 1: INIT SESSION & OVERVIEW
     public Mono<TripPlanSession> initSession(String profileId) {
-        return Mono.fromCallable(() -> profileRepository.findByProfileId(profileId))
-                .subscribeOn(Schedulers.boundedElastic())
-                .flatMap(optionalProfile -> optionalProfile
-                        .map(profile -> {
-                            String dest = profile.getDestination() != null && profile.getDestination().getDestination() != null 
-                                    ? profile.getDestination().getDestination() : "your destination";
-                            int days = profile.getDates() != null && profile.getDates().getDuration() != null 
-                                    ? profile.getDates().getDuration() : 3;
+        return profileRepository.findByProfileId(profileId)
+                .switchIfEmpty(Mono.error(new RuntimeException("Profile not found")))
+                .flatMap(profile -> {
+                    String dest = profile.getDestination() != null && profile.getDestination().getDestination() != null
+                            ? profile.getDestination().getDestination() : "your destination";
+                    int days = profile.getDates() != null && profile.getDates().getDuration() != null
+                            ? profile.getDates().getDuration() : 3;
 
-                            String systemPrompt = "You are a professional travel planner. Provide a brief, inspiring overview of the destination "
-                                    + dest + " for a " + days
-                                    + " day trip. Return the response as a JSON object with fields: destination, overview, weatherForecast, estimatedCost, highlights (array).";
-                            String userPrompt = "Create a trip overview for " + dest;
+                    String systemPrompt = "You are a professional travel planner. Provide a brief, inspiring overview of the destination "
+                            + dest + " for a " + days
+                            + " day trip. Return the response as a JSON object with fields: destination, overview, weatherForecast, estimatedCost, highlights (array).";
+                    String userPrompt = "Create a trip overview for " + dest;
 
-                            return geminiClient.generateResponse(systemPrompt, userPrompt)
-                                    .flatMap(aiResponse -> {
-                                        TripPlanSession session = TripPlanSession.builder()
-                                                .profileId(profileId)
-                                                .destination(dest)
-                                                .createdAt(LocalDateTime.now())
-                                                .updatedAt(LocalDateTime.now())
-                                                .currentStep(TripPlanSession.PlanningStep.INIT)
-                                                .destinationOverview(cleanJson(aiResponse))
-                                                .build();
-                                        return sessionRepository.save(session);
-                                    })
-                                    .switchIfEmpty(Mono.error(new RuntimeException("Failed to generate trip overview")));
-                        })
-                        .orElse(Mono.error(new RuntimeException("Profile not found"))));
+                    return geminiClient.generateResponse(systemPrompt, userPrompt)
+                            .flatMap(aiResponse -> {
+                                TripPlanSession session = TripPlanSession.builder()
+                                        .profileId(profileId)
+                                        .destination(dest)
+                                        .createdAt(LocalDateTime.now())
+                                        .updatedAt(LocalDateTime.now())
+                                        .currentStep(TripPlanSession.PlanningStep.INIT)
+                                        .destinationOverview(cleanJson(aiResponse))
+                                        .build();
+                                return sessionRepository.save(session);
+                            })
+                            .switchIfEmpty(Mono.error(new RuntimeException("Failed to generate trip overview")));
+                });
     }
 
     // STEP 2A: GENERATE HOTELS
     public Mono<String> generateHotelOptions(String sessionId) {
         return sessionRepository.findById(sessionId)
-                .flatMap(session -> Mono.fromCallable(() -> profileRepository.findByProfileId(session.getProfileId()))
-                        .subscribeOn(Schedulers.boundedElastic())
-                        .flatMap(optionalProfile -> optionalProfile
-                                .map(profile -> {
-                                    String dest = profile.getDestination() != null && profile.getDestination().getDestination() != null 
-                                            ? profile.getDestination().getDestination() : "your destination";
-                                    String budget = profile.getBudget() != null && profile.getBudget().getLevel() != null 
-                                            ? profile.getBudget().getLevel() : "medium";
+                .flatMap(session -> profileRepository.findByProfileId(session.getProfileId())
+                        .switchIfEmpty(Mono.error(new RuntimeException("Profile not found")))
+                        .flatMap(profile -> {
+                            String dest = profile.getDestination() != null && profile.getDestination().getDestination() != null
+                                    ? profile.getDestination().getDestination() : "your destination";
+                            String budget = profile.getBudget() != null && profile.getBudget().getLevel() != null
+                                    ? profile.getBudget().getLevel() : "medium";
 
-                                    String systemPrompt = "Find 3 best hotel options for " + dest
-                                            + " with budget " + budget
-                                            + ". Return a JSON object with an 'options' array. Each option should have: name, address, costPerNight, reason.";
-                                    String userPrompt = "Find hotels in " + dest;
+                            String systemPrompt = "Find 3 best hotel options for " + dest
+                                    + " with budget " + budget
+                                    + ". Return a JSON object with an 'options' array. Each option should have: name, address, costPerNight, reason.";
+                            String userPrompt = "Find hotels in " + dest;
 
-                                    return geminiClient.generateResponse(systemPrompt, userPrompt)
-                                            .flatMap(rawResponse -> {
-                                                String jsonResponse = cleanJson(rawResponse);
-                                                session.setSuggestedHotelsJson(jsonResponse);
-                                                session.setCurrentStep(TripPlanSession.PlanningStep.HOTEL_SELECTION);
-                                                session.setUpdatedAt(LocalDateTime.now());
-                                                return sessionRepository.save(session).<String>map(s -> jsonResponse);
-                                            })
-                                            .switchIfEmpty(Mono.error(new RuntimeException("Failed to generate hotel options")));
-                                })
-                                .orElse(Mono.<String>error(new RuntimeException("Profile not found")))));
+                            return geminiClient.generateResponse(systemPrompt, userPrompt)
+                                    .flatMap(rawResponse -> {
+                                        String jsonResponse = cleanJson(rawResponse);
+                                        session.setSuggestedHotelsJson(jsonResponse);
+                                        session.setCurrentStep(TripPlanSession.PlanningStep.HOTEL_SELECTION);
+                                        session.setUpdatedAt(LocalDateTime.now());
+                                        return sessionRepository.save(session).<String>map(s -> jsonResponse);
+                                    })
+                                    .switchIfEmpty(Mono.error(new RuntimeException("Failed to generate hotel options")));
+                        }));
     }
 
     // STEP 2B: SELECT HOTEL
@@ -112,29 +107,27 @@ public class InteractivePlanningService {
     // STEP 3A: GENERATE TRANSPORT
     public Mono<String> generateTransportOptions(String sessionId) {
         return sessionRepository.findById(sessionId)
-                .flatMap(session -> Mono.fromCallable(() -> profileRepository.findByProfileId(session.getProfileId()))
-                        .subscribeOn(Schedulers.boundedElastic())
-                        .flatMap(optionalProfile -> optionalProfile
-                                .map(profile -> {
-                                    String dest = profile.getDestination() != null && profile.getDestination().getDestination() != null 
-                                            ? profile.getDestination().getDestination() : "your destination";
+                .flatMap(session -> profileRepository.findByProfileId(session.getProfileId())
+                        .switchIfEmpty(Mono.error(new RuntimeException("Profile not found")))
+                        .flatMap(profile -> {
+                            String dest = profile.getDestination() != null && profile.getDestination().getDestination() != null
+                                    ? profile.getDestination().getDestination() : "your destination";
 
-                                    String systemPrompt = "Suggest 3 transport options in " + dest
-                                            + " starting from " + session.getSelectedHotel().getAddress()
-                                            + ". Return a JSON object with an 'options' array. Each option: mode, cost, duration, details.";
-                                    String userPrompt = "Find transport for my trip in " + dest;
+                            String systemPrompt = "Suggest 3 transport options in " + dest
+                                    + " starting from " + session.getSelectedHotel().getAddress()
+                                    + ". Return a JSON object with an 'options' array. Each option: mode, cost, duration, details.";
+                            String userPrompt = "Find transport for my trip in " + dest;
 
-                                    return geminiClient.generateResponse(systemPrompt, userPrompt)
-                                            .flatMap(jsonResponse -> {
-                                                String cleaned = cleanJson(jsonResponse);
-                                                session.setSuggestedTransportJson(cleaned);
-                                                session.setCurrentStep(TripPlanSession.PlanningStep.TRANSPORT_SELECTION);
-                                                session.setUpdatedAt(LocalDateTime.now());
-                                                return sessionRepository.save(session).map(s -> cleaned);
-                                            })
-                                            .switchIfEmpty(Mono.error(new RuntimeException("Failed to generate transport options")));
-                                })
-                                .orElse(Mono.error(new RuntimeException("Profile not found")))));
+                            return geminiClient.generateResponse(systemPrompt, userPrompt)
+                                    .flatMap(jsonResponse -> {
+                                        String cleaned = cleanJson(jsonResponse);
+                                        session.setSuggestedTransportJson(cleaned);
+                                        session.setCurrentStep(TripPlanSession.PlanningStep.TRANSPORT_SELECTION);
+                                        session.setUpdatedAt(LocalDateTime.now());
+                                        return sessionRepository.save(session).map(s -> cleaned);
+                                    })
+                                    .switchIfEmpty(Mono.error(new RuntimeException("Failed to generate transport options")));
+                        }));
     }
 
     // STEP 3B: SELECT TRANSPORT
@@ -151,81 +144,84 @@ public class InteractivePlanningService {
     public Mono<String> generateMasterPlan(String sessionId, java.util.List<java.util.Map<String, String>> chatHistory) {
         log.info("generateMasterPlan → sessionId={} | chatMessages={}", sessionId, chatHistory != null ? chatHistory.size() : 0);
         return sessionRepository.findById(sessionId)
-                .flatMap(session -> Mono.fromCallable(() -> profileRepository.findByProfileId(session.getProfileId()))
-                        .subscribeOn(Schedulers.boundedElastic())
-                        .flatMap(optionalProfile -> optionalProfile
-                                .map(profile -> {
-                                    String destFromProfile = profile.getDestination() != null && profile.getDestination().getDestination() != null 
-                                            ? profile.getDestination().getDestination() : "your destination";
-                                    int days = profile.getDates() != null && profile.getDates().getDuration() != null 
-                                            ? profile.getDates().getDuration() : 3;
-                                    String budget = profile.getBudget() != null && profile.getBudget().getLevel() != null 
-                                            ? profile.getBudget().getLevel() : "medium";
+                .flatMap(session -> profileRepository.findByProfileId(session.getProfileId())
+                        .switchIfEmpty(Mono.error(new RuntimeException("Profile not found")))
+                        .flatMap(profile -> {
+                            String destFromProfile = profile.getDestination() != null && profile.getDestination().getDestination() != null
+                                    ? profile.getDestination().getDestination() : "your destination";
+                            int days = profile.getDates() != null && profile.getDates().getDuration() != null
+                                    ? profile.getDates().getDuration() : 3;
+                            String budget = profile.getBudget() != null && profile.getBudget().getLevel() != null
+                                    ? profile.getBudget().getLevel() : "medium";
 
-                                    String destination = session.getDestination() != null
-                                            ? session.getDestination() : destFromProfile;
-                                    String systemPrompt = AIPrompts.getMasterPlanJsonPrompt(destination);
+                            String destination = session.getDestination() != null
+                                    ? session.getDestination() : destFromProfile;
+                            String systemPrompt = AIPrompts.getMasterPlanJsonPrompt(destination);
 
-                                    // Build chat transcript for Gemini compilation
-                                    StringBuilder historyBuilder = new StringBuilder();
-                                    historyBuilder.append("Conversation history between traveler and AI travel agent:\n\n");
-                                    if (chatHistory != null) {
-                                        for (java.util.Map<String, String> msg : chatHistory) {
-                                            String role = msg.get("role");
-                                            String content = msg.get("content");
-                                            historyBuilder.append(role != null && role.equalsIgnoreCase("assistant") ? "Agent: " : "Traveler: ")
-                                                          .append(content).append("\n\n");
-                                        }
-                                    }
+                            StringBuilder historyBuilder = new StringBuilder();
+                            historyBuilder.append("Conversation history between traveler and AI travel agent:\n\n");
+                            if (chatHistory != null) {
+                                for (java.util.Map<String, String> msg : chatHistory) {
+                                    String role = msg.get("role");
+                                    String content = msg.get("content");
+                                    historyBuilder.append(role != null && role.equalsIgnoreCase("assistant") ? "Agent: " : "Traveler: ")
+                                                  .append(content).append("\n\n");
+                                }
+                            }
 
-                                    String userPrompt = historyBuilder.toString()
-                                            + "\nBased on the above conversation, extract the final agreed-upon hotel, transport choices (flights or trains), and day-by-day itinerary to " + destination
-                                            + ". Trip duration: " + days + " days. Budget level: " + budget + ". "
-                                            + "Compile into a single valid JSON object following the required schema. "
-                                            + "Preserve the specific hotel, transport, and activity choices discussed in the chat. "
-                                            + "Costs should be realistic for the " + budget + " budget level.";
+                            String userPrompt = historyBuilder.toString()
+                                    + "\nBased on the above conversation, extract the final agreed-upon hotel, transport choices (flights or trains), and day-by-day itinerary to " + destination
+                                    + ". Trip duration: " + days + " days. Budget level: " + budget + ". "
+                                    + "Compile into a single valid JSON object following the required schema. "
+                                    + "Preserve the specific hotel, transport, and activity choices discussed in the chat. "
+                                    + "Costs should be realistic for the " + budget + " budget level.";
 
-                                    return geminiClient.generateJsonResponse(systemPrompt, userPrompt)
+                            return geminiClient.generateJsonResponse(systemPrompt, userPrompt)
                                             .flatMap(finalPlan -> {
                                                 session.setCurrentStep(TripPlanSession.PlanningStep.FINALIZED);
                                                 session.setMasterPlan(finalPlan);
                                                 session.setUpdatedAt(LocalDateTime.now());
 
-                                                // Attempt to parse stay and transport from compiled JSON for backend record sync
+                                                // Only populate hotel/transport from master plan if the user never went
+                                                // through the explicit wizard selection steps (fields still null).
+                                                // Overwriting here would replace the user's real selections with
+                                                // degraded AI-parsed data, causing DB↔frontend desync.
                                                 try {
                                                     com.fasterxml.jackson.databind.ObjectMapper mapper = new com.fasterxml.jackson.databind.ObjectMapper();
                                                     com.fasterxml.jackson.databind.JsonNode root = mapper.readTree(finalPlan);
-                                                    
-                                                    // Parse first day stay if exists
-                                                    com.fasterxml.jackson.databind.JsonNode stayNode = root.at("/itinerary/0/stay");
-                                                    if (!stayNode.isMissingNode() && !stayNode.isNull()) {
-                                                        TripPlanSession.HotelOption hotel = new TripPlanSession.HotelOption();
-                                                        hotel.setName(stayNode.path("name").asText(""));
-                                                        hotel.setAddress(stayNode.path("address").asText(""));
-                                                        hotel.setCostPerNight(stayNode.path("cost").asText(""));
-                                                        session.setSelectedHotel(hotel);
+
+                                                    if (session.getSelectedHotel() == null) {
+                                                        com.fasterxml.jackson.databind.JsonNode stayNode = root.at("/itinerary/0/stay");
+                                                        if (!stayNode.isMissingNode() && !stayNode.isNull()) {
+                                                            TripPlanSession.HotelOption hotel = new TripPlanSession.HotelOption();
+                                                            hotel.setName(stayNode.path("name").asText(""));
+                                                            hotel.setAddress(stayNode.path("address").asText(""));
+                                                            hotel.setCostPerNight(stayNode.path("cost").asText(""));
+                                                            session.setSelectedHotel(hotel);
+                                                        }
                                                     }
-                                                    
-                                                    // Find first transit or create transport mode
-                                                    com.fasterxml.jackson.databind.JsonNode itinerary = root.path("itinerary");
-                                                    if (itinerary.isArray() && !itinerary.isEmpty()) {
-                                                        String mode = "Flight"; // fallback
-                                                        for (com.fasterxml.jackson.databind.JsonNode dayNode : itinerary) {
-                                                            com.fasterxml.jackson.databind.JsonNode activities = dayNode.path("activities");
-                                                            if (activities.isArray()) {
-                                                                for (com.fasterxml.jackson.databind.JsonNode act : activities) {
-                                                                    if (act.path("isTransit").asBoolean(false)) {
-                                                                        mode = act.path("type").asText("Flight");
-                                                                        break;
+
+                                                    if (session.getFinalizedTransportChoice() == null) {
+                                                        com.fasterxml.jackson.databind.JsonNode itinerary = root.path("itinerary");
+                                                        if (itinerary.isArray() && !itinerary.isEmpty()) {
+                                                            String mode = "Flight";
+                                                            for (com.fasterxml.jackson.databind.JsonNode dayNode : itinerary) {
+                                                                com.fasterxml.jackson.databind.JsonNode activities = dayNode.path("activities");
+                                                                if (activities.isArray()) {
+                                                                    for (com.fasterxml.jackson.databind.JsonNode act : activities) {
+                                                                        if (act.path("isTransit").asBoolean(false)) {
+                                                                            mode = act.path("type").asText("Flight");
+                                                                            break;
+                                                                        }
                                                                     }
                                                                 }
                                                             }
+                                                            TripPlanSession.TransportOption trans = new TripPlanSession.TransportOption();
+                                                            trans.setMode(mode);
+                                                            trans.setCost(root.at("/budgetBreakdown").get(2) != null ? root.at("/budgetBreakdown").get(2).path("cost").asText("") : "");
+                                                            trans.setDetails("Selected travel route");
+                                                            session.setFinalizedTransportChoice(trans);
                                                         }
-                                                        TripPlanSession.TransportOption trans = new TripPlanSession.TransportOption();
-                                                        trans.setMode(mode);
-                                                        trans.setCost(root.at("/budgetBreakdown").get(2) != null ? root.at("/budgetBreakdown").get(2).path("cost").asText("") : "");
-                                                        trans.setDetails("Selected travel route");
-                                                        session.setFinalizedTransportChoice(trans);
                                                     }
                                                 } catch (Exception parseEx) {
                                                     log.warn("Non-critical stay/transport extract failed: {}", parseEx.getMessage());
@@ -234,8 +230,7 @@ public class InteractivePlanningService {
                                                 return sessionRepository.save(session).map(s -> finalPlan);
                                             })
                                             .switchIfEmpty(Mono.error(new RuntimeException("Failed to generate master plan")));
-                                })
-                                .orElse(Mono.error(new RuntimeException("Profile not found")))));
+                        }));
     }
 
 

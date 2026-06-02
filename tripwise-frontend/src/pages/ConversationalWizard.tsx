@@ -202,12 +202,24 @@ const ConversationalWizard: React.FC = () => {
                 startDate: profileState.dates?.startDate,
                 returnDate: profileState.dates?.returnDate,
                 durationDays: profileState.dates?.duration,
+                isFlexible: profileState.dates?.isFlexible,
+                travelType: profileState.destination?.travelType,
                 travelStyle: profileState.destination?.travelStyle,
+                isFirstVisit: profileState.destination?.isFirstVisit,
                 interests: Object.entries(profileState.interests || {})
                     .filter(([_, v]) => v)
                     .map(([k]) => k),
                 accommodationPreference: profileState.accommodation?.category,
+                roomType: profileState.accommodation?.roomType,
+                amenities: profileState.accommodation?.specialNeeds,
                 transportPreference: profileState.transport?.mode,
+                timingPreference: profileState.transport?.timingPreference,
+                purpose: profileState.purpose?.purpose,
+                specialOccasion: profileState.purpose?.specialOccasion,
+                dietaryType: profileState.food?.type,
+                allergies: profileState.food?.allergies,
+                travelFrequency: profileState.experience?.frequency,
+                badExperiences: profileState.experience?.badExperiences,
             };
 
             const response = await fetch(CHAT_URL, {
